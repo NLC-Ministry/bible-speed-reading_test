@@ -78,13 +78,37 @@ async function updateStatsView() {
     pastoralStats = pastoralStats.filter(z => z.great_region === mockUser.great_region);
   }
 
-  // 1. Update Mini Card Labels based on User Role
+  // 1. Determine Stats Scoped Users
+  let statsUsers = [];
+  if (role === "senior_pastor" || role === "admin") {
+    const zoneSelectGroup = document.getElementById("stats-zone-selector");
+    const selectedZone = zoneSelectGroup ? zoneSelectGroup.value : "";
+    if (selectedZone) {
+      statsUsers = unfilteredAllUsers.filter(u => u.pastoral_zone === selectedZone);
+    } else {
+      statsUsers = unfilteredAllUsers;
+    }
+  } else if (role === "great_zone_leader") {
+    statsUsers = unfilteredAllUsers.filter(u => u.great_region === mockUser.great_region);
+  } else if (role === "zone_leader") {
+    statsUsers = unfilteredAllUsers.filter(u => u.pastoral_zone === mockUser.pastoral_zone);
+  } else { // group_leader or member
+    statsUsers = unfilteredAllUsers.filter(u => u.pastoral_zone === mockUser.pastoral_zone && u.small_group === mockUser.small_group);
+  }
+
+  if (statsUsers.length === 0) {
+    statsUsers = [mockUser];
+  }
+
+  // 2. Update Mini Card Labels based on Scoped Team
   const miniCardLabels = document.querySelectorAll('.stats-overview-row .label');
   if (miniCardLabels.length === 3) {
     if (role === "senior_pastor" || role === "admin") {
-      miniCardLabels[0].textContent = "全教會總閱讀章數";
-      miniCardLabels[1].textContent = "全教會參與人數";
-      miniCardLabels[2].textContent = "全教會本週活躍人數";
+      const zoneSelectGroup = document.getElementById("stats-zone-selector");
+      const selectedZone = zoneSelectGroup ? zoneSelectGroup.value : "";
+      miniCardLabels[0].textContent = selectedZone ? `「${selectedZone}」總閱讀章數` : "全教會總閱讀章數";
+      miniCardLabels[1].textContent = selectedZone ? `「${selectedZone}」參與人數` : "全教會參與人數";
+      miniCardLabels[2].textContent = selectedZone ? `「${selectedZone}」本週活躍人數` : "全教會本週活躍人數";
     } else if (role === "great_zone_leader") {
       miniCardLabels[0].textContent = "本大區總閱讀章數";
       miniCardLabels[1].textContent = "本大區參與人數";
@@ -93,41 +117,28 @@ async function updateStatsView() {
       miniCardLabels[0].textContent = "本牧區總閱讀章數";
       miniCardLabels[1].textContent = "本牧區參與人數";
       miniCardLabels[2].textContent = "本牧區本週活躍人數";
-    } else if (role === "group_leader") {
+    } else { // group_leader or member
       miniCardLabels[0].textContent = "本小組總閱讀章數";
       miniCardLabels[1].textContent = "本小組參與人數";
       miniCardLabels[2].textContent = "本小組本週活躍人數";
-    } else {
-      miniCardLabels[0].textContent = "個人總閱讀章數";
-      miniCardLabels[1].textContent = "個人全教會排名";
-      miniCardLabels[2].textContent = "個人連續讀經天數";
     }
   }
 
-  // 2. Render Mini Card values
-  if (role === "member") {
-    const rankings = await db.getUserRankings();
-    const myRankStr = (rankings && rankings.churchRank > 0) ? `第 ${rankings.churchRank} / ${rankings.churchTotal} 名` : "尚無資料";
+  // 3. Render Mini Card values
+  const totalChaptersAll = statsUsers.reduce((sum, item) => sum + (item.chapters_read || 0), 0);
+  const totalMembers = statsUsers.length;
+  const totalActive = statsUsers.filter(u => {
+    if (!u.last_read) return false;
+    const lastReadDate = new Date(u.last_read);
+    const today = new Date();
+    const diffTime = Math.abs(today - lastReadDate);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays <= 2;
+  }).length;
 
-    document.getElementById("stats-total-read").textContent = (state.currentUser.chapters_read || 0) + " 章";
-    document.getElementById("stats-total-members").textContent = myRankStr;
-    document.getElementById("stats-active-members").textContent = (state.currentUser.streak || 0) + " 天";
-  } else {
-    const totalChaptersAll = pastoralStats.reduce((sum, item) => sum + (item.total_chapters || 0), 0);
-    const totalMembers = rawAllUsers.length;
-    const totalActive = rawAllUsers.filter(u => {
-      if (!u.last_read) return false;
-      const lastReadDate = new Date(u.last_read);
-      const today = new Date();
-      const diffTime = Math.abs(today - lastReadDate);
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      return diffDays <= 2;
-    }).length;
-
-    document.getElementById("stats-total-read").textContent = totalChaptersAll + " 章";
-    document.getElementById("stats-total-members").textContent = totalMembers + " 人";
-    document.getElementById("stats-active-members").textContent = totalActive + " 人";
-  }
+  document.getElementById("stats-total-read").textContent = totalChaptersAll + " 章";
+  document.getElementById("stats-total-members").textContent = totalMembers + " 人";
+  document.getElementById("stats-active-members").textContent = totalActive + " 人";
 
   // 3. Render Roster Details Table
   renderRosterTable(rawAllUsers);
@@ -159,7 +170,7 @@ async function updateStatsView() {
   renderMonthlyHallOfFame();
 
   // Render Heatmap and Badges Wall
-  renderHeatmap();
+  renderHeatmap(statsUsers);
   if (typeof renderUnlockedBadgesWall !== 'undefined') {
     renderUnlockedBadgesWall();
   }
@@ -440,15 +451,84 @@ function renderMonthlyHallOfFame() {
 }
 
 // ==========================================
-// PERSONAL BIBLE READING HEATMAP
+// TEAM BIBLE READING HEATMAP
 // ==========================================
 
-function renderHeatmap() {
+function getTeamLogs(teamUsers) {
+  if (state.isSupabaseMode && state.allLogsCache) {
+    const userIds = new Set(teamUsers.map(u => u.id));
+    return state.allLogsCache.filter(l => userIds.has(l.user_id));
+  } else {
+    // Generate mock logs for team users based on their chapters_read and last_read
+    const logs = [];
+    
+    // Include current user's real logs
+    const currentUserRealLogs = state.readingLogs.map(l => ({
+      user_id: state.currentUser.id || state.currentUser.name,
+      read_at: l.read_at
+    }));
+    logs.push(...currentUserRealLogs);
+
+    const otherUsers = teamUsers.filter(u => u.name !== state.currentUser.name);
+    otherUsers.forEach(u => {
+      if (!u.chapters_read) return;
+      
+      const lastReadDateStr = u.last_read || new Date().toISOString().substring(0, 10);
+      const lastReadDate = new Date(lastReadDateStr);
+      lastReadDate.setHours(12, 0, 0, 0);
+
+      let chaptersRemaining = u.chapters_read;
+      // We will distribute the check-ins backwards from lastReadDate
+      let currentDate = new Date(lastReadDate);
+      
+      // Let's generate daily check-ins
+      for (let i = 0; i < 365 && chaptersRemaining > 0; i++) {
+        const seed = Math.sin(u.name.charCodeAt(0) + i) * 10000;
+        const rand = seed - Math.floor(seed);
+        
+        if (rand < 0.35) {
+          const count = Math.min(chaptersRemaining, Math.floor(rand * 5) + 1);
+          const dateStr = currentDate.toISOString().substring(0, 10);
+          for (let c = 0; c < count; c++) {
+            logs.push({
+              user_id: u.id || u.name,
+              read_at: dateStr
+            });
+          }
+          chaptersRemaining -= count;
+        }
+        currentDate.setDate(currentDate.getDate() - 1);
+      }
+    });
+    return logs;
+  }
+}
+
+function renderHeatmap(teamUsers = []) {
   const container = document.getElementById("bible-heatmap-container");
   if (!container) return;
   
   container.innerHTML = "";
   
+  // Title update based on scope
+  const titleEl = document.getElementById("heatmap-card-title");
+  if (titleEl) {
+    const role = state.currentUser.role || "member";
+    if (role === "senior_pastor" || role === "admin") {
+      const zoneSelectGroup = document.getElementById("stats-zone-selector");
+      const selectedZone = zoneSelectGroup ? zoneSelectGroup.value : "";
+      titleEl.textContent = selectedZone 
+        ? `「${selectedZone}」團隊讀經熱點地圖 (365天打卡活躍度)`
+        : "全教會團隊讀經熱點地圖 (365天打卡活躍度)";
+    } else if (role === "great_zone_leader") {
+      titleEl.textContent = `「${state.currentUser.great_region}」團隊讀經熱點地圖 (365天打卡活躍度)`;
+    } else if (role === "zone_leader") {
+      titleEl.textContent = `「${state.currentUser.pastoral_zone}」團隊讀經熱點地圖 (365天打卡活躍度)`;
+    } else {
+      titleEl.textContent = `「${state.currentUser.small_group}」小組讀經熱點地圖 (365天打卡活躍度)`;
+    }
+  }
+
   const grid = document.createElement("div");
   grid.className = "heatmap-grid";
   
@@ -463,8 +543,9 @@ function renderHeatmap() {
   const oneDayMs = 24 * 60 * 60 * 1000;
   const daysDiff = Math.ceil((today.getTime() - startDate.getTime()) / oneDayMs);
   
+  const teamLogs = getTeamLogs(teamUsers);
   const logsByDate = {};
-  state.readingLogs.forEach(log => {
+  teamLogs.forEach(log => {
     if (log.read_at) {
       const dStr = log.read_at.substring(0, 10);
       logsByDate[dStr] = (logsByDate[dStr] || 0) + 1;
@@ -485,16 +566,19 @@ function renderHeatmap() {
     let opacity = "0.4";
     if (count > 0) {
       opacity = "1";
-      if (count <= 2) background = "rgba(99, 102, 241, 0.25)";
-      else if (count <= 4) background = "rgba(99, 102, 241, 0.5)";
-      else if (count <= 8) background = "rgba(99, 102, 241, 0.75)";
+      // Scale count range dynamically based on team size
+      const maxCount = Math.max(2, Math.round(teamUsers.length * 1.5));
+      const ratio = count / maxCount;
+      if (ratio <= 0.1) background = "rgba(99, 102, 241, 0.25)";
+      else if (ratio <= 0.3) background = "rgba(99, 102, 241, 0.5)";
+      else if (ratio <= 0.6) background = "rgba(99, 102, 241, 0.75)";
       else background = "rgba(99, 102, 241, 1)";
     }
     
     cell.style.backgroundColor = background;
     cell.style.opacity = opacity;
     
-    cell.title = `${dateStr}: 已打卡 ${count} 章`;
+    cell.title = `${dateStr}: 團隊打卡 ${count} 章`;
     grid.appendChild(cell);
   }
   
@@ -645,6 +729,9 @@ function renderTeamStatsAnalysisDashboard(unfilteredAllUsers, mockUser) {
 
   // Render personal stats card
   renderProfileReadingStats();
+
+  // Render team heatmap
+  renderHeatmap(teamUsers);
 }
 
 // ─────────────────────────────────────────────

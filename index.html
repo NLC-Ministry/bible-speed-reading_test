@@ -475,7 +475,7 @@
             <div class="glass-card" style="display: flex; flex-direction: column; height: 100%;">
               <h3 class="card-title" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
                 <svg viewBox="0 0 24 24" width="20" height="20" stroke="var(--primary-color)" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                個人讀經熱點地圖 (365天打卡活躍度)
+                <span id="heatmap-card-title">個人讀經熱點地圖 (365天打卡活躍度)</span>
               </h3>
               <div id="bible-heatmap-container" style="overflow-x: auto; background: var(--bg-input); border-radius: var(--radius-sm); padding: 1.2rem; border: 1px solid var(--border-card); flex: 1; display: flex; align-items: center;">
                 <!-- Dynamically generated Git-style calendar grid -->
@@ -571,7 +571,7 @@
                 <!-- Ahead -->
                 <div>
                   <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 0.25rem;">
-                    <span style="font-weight: 600; color: #10b981;">🚀 超前進度</span>
+                    <span style="font-weight: 600; color: #10b981;">🚀 超前進度比率</span>
                     <span style="font-weight: 700; color: var(--text-primary);" id="team-stat-ahead-label">0 人 (0%)</span>
                   </div>
                   <div style="width: 100%; height: 8px; background: rgba(0,0,0,0.06); border-radius: 4px; overflow: hidden;">
@@ -582,7 +582,7 @@
                 <!-- On Schedule -->
                 <div>
                   <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 0.25rem;">
-                    <span style="font-weight: 600; color: var(--primary-color);">✅ 進度上</span>
+                    <span style="font-weight: 600; color: var(--primary-color);">✅ 進度上人數比率</span>
                     <span style="font-weight: 700; color: var(--text-primary);" id="team-stat-on-schedule-label">0 人 (0%)</span>
                   </div>
                   <div style="width: 100%; height: 8px; background: rgba(0,0,0,0.06); border-radius: 4px; overflow: hidden;">
@@ -593,7 +593,7 @@
                 <!-- Behind -->
                 <div>
                   <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 0.25rem;">
-                    <span style="font-weight: 600; color: #ef4444;">⚠️ 落後進度</span>
+                    <span style="font-weight: 600; color: #ef4444;">⚠️ 落後人數比率</span>
                     <span style="font-weight: 700; color: var(--text-primary);" id="team-stat-behind-label">0 人 (0%)</span>
                   </div>
                   <div style="width: 100%; height: 8px; background: rgba(0,0,0,0.06); border-radius: 4px; overflow: hidden;">
@@ -604,7 +604,7 @@
                 <!-- Round 2+ -->
                 <div>
                   <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 0.25rem;">
-                    <span style="font-weight: 600; color: #eab308;">🔥 重複第二遍以上</span>
+                    <span style="font-weight: 600; color: #eab308;">🔥 重複讀人數比率</span>
                     <span style="font-weight: 700; color: var(--text-primary);" id="team-stat-round2-label">0 人 (0%)</span>
                   </div>
                   <div style="width: 100%; height: 8px; background: rgba(0,0,0,0.06); border-radius: 4px; overflow: hidden;">

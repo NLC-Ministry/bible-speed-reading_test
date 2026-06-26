@@ -221,7 +221,7 @@ CREATE POLICY "根據角色限制 Profiles 讀取權限"
     (SELECT my_role FROM public.get_my_profile()) IN ('admin', 'senior_pastor') OR -- admin & 主任牧師可讀全部
     ((SELECT my_role FROM public.get_my_profile()) = 'great_zone_leader' AND (SELECT my_great_region FROM public.get_my_profile()) = great_region) OR -- 大區長可讀自己大區
     ((SELECT my_role FROM public.get_my_profile()) = 'zone_leader' AND (SELECT my_pastoral_zone FROM public.get_my_profile()) = pastoral_zone) OR -- 區長可讀自己牧區
-    ((SELECT my_role FROM public.get_my_profile()) = 'group_leader' AND (SELECT my_pastoral_zone FROM public.get_my_profile()) = pastoral_zone AND (SELECT my_small_group FROM public.get_my_profile()) = small_group) -- 小組長可讀自己小組
+    ((SELECT my_role FROM public.get_my_profile()) IN ('group_leader', 'member') AND (SELECT my_pastoral_zone FROM public.get_my_profile()) = pastoral_zone AND (SELECT my_small_group FROM public.get_my_profile()) = small_group) -- 小組長/會友可讀自己小組
   );
 
 -- --- Reading Plans 權限策略 ---
@@ -242,7 +242,7 @@ CREATE POLICY "根據角色限制 Reading Plans 讀取權限"
       WHERE p.id = user_id AND (
         (SELECT my_role FROM public.get_my_profile()) = 'great_zone_leader' AND (SELECT my_great_region FROM public.get_my_profile()) = p.great_region OR
         (SELECT my_role FROM public.get_my_profile()) = 'zone_leader' AND (SELECT my_pastoral_zone FROM public.get_my_profile()) = p.pastoral_zone OR
-        (SELECT my_role FROM public.get_my_profile()) = 'group_leader' AND (SELECT my_pastoral_zone FROM public.get_my_profile()) = p.pastoral_zone AND (SELECT my_small_group FROM public.get_my_profile()) = p.small_group
+        (SELECT my_role FROM public.get_my_profile()) IN ('group_leader', 'member') AND (SELECT my_pastoral_zone FROM public.get_my_profile()) = p.pastoral_zone AND (SELECT my_small_group FROM public.get_my_profile()) = p.small_group
       )
     )
   );
@@ -265,7 +265,7 @@ CREATE POLICY "根據角色限制 Reading Logs 讀取權限"
       WHERE p.id = user_id AND (
         (SELECT my_role FROM public.get_my_profile()) = 'great_zone_leader' AND (SELECT my_great_region FROM public.get_my_profile()) = p.great_region OR
         (SELECT my_role FROM public.get_my_profile()) = 'zone_leader' AND (SELECT my_pastoral_zone FROM public.get_my_profile()) = p.pastoral_zone OR
-        (SELECT my_role FROM public.get_my_profile()) = 'group_leader' AND (SELECT my_pastoral_zone FROM public.get_my_profile()) = p.pastoral_zone AND (SELECT my_small_group FROM public.get_my_profile()) = p.small_group
+        (SELECT my_role FROM public.get_my_profile()) IN ('group_leader', 'member') AND (SELECT my_pastoral_zone FROM public.get_my_profile()) = p.pastoral_zone AND (SELECT my_small_group FROM public.get_my_profile()) = p.small_group
       )
     )
   );

@@ -560,6 +560,7 @@ const db = {
       try {
         const { data: usersProfiles } = await state.supabase.from("profiles").select("*").eq("is_demo", false);
         const { data: allLogs } = await state.supabase.from("reading_logs").select("user_id, book, chapter, read_at");
+        state.allLogsCache = allLogs || [];
         const { data: allPlans } = await state.supabase.from("reading_plans").select("user_id, target_books, current_round, level");
 
         if (usersProfiles) {
