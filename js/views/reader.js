@@ -103,6 +103,11 @@ function populateChapterSelector() {
   state.readerState.bookId = bookId;
   
   const book = BIBLE_BOOKS.find(b => b.id === bookId);
+  if (!book) {
+    console.error("Book not found for ID:", bookId);
+    return;
+  }
+  
   chapterSelect.innerHTML = "";
 
   for (let i = 1; i <= book.chapters; i++) {

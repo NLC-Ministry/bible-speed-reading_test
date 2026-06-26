@@ -171,6 +171,9 @@ function initProfileControls() {
       e.preventDefault();
       loader.show("開啟 Google 登入中...");
       try {
+        if (!state.supabase) {
+          throw new Error("Supabase 未初始化。請確認已設定連線資訊或檢查網路狀態！");
+        }
         const { error } = await state.supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
@@ -194,6 +197,9 @@ function initProfileControls() {
       e.preventDefault();
       loader.show("開啟 Google 登入中...");
       try {
+        if (!state.supabase) {
+          throw new Error("Supabase 未初始化。請確認已設定連線資訊或檢查網路狀態！");
+        }
         const { error } = await state.supabase.auth.signInWithOAuth({
           provider: 'google',
           options: {
