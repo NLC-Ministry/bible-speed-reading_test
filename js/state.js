@@ -33,6 +33,7 @@ const state = {
   theme: "light",
   isSupabaseMode: false,
   supabase: null,
+  realRole: null, // Authentic user role from DB
   currentUser: {
     name: "系統管理員",
     great_region: "東區",

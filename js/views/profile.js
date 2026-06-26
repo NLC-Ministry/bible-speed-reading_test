@@ -153,8 +153,7 @@ function renderProfileView() {
   };
 
   // Demo Switcher Listener
-  const realUserRole = localStorage.getItem("real_user_role");
-  const isRealAdmin = realUserRole === "admin" || realUserRole === "senior_pastor";
+  const isRealAdmin = !state.isSupabaseMode || (state.realRole === "admin" || state.realRole === "senior_pastor");
   
   const demoRoleCard = document.querySelector(".demo-role-card");
   if (demoRoleCard) {
@@ -285,7 +284,7 @@ function initProfileControls() {
       loader.show("登出中...");
       try {
         await state.supabase.auth.signOut();
-        localStorage.removeItem("real_user_role");
+        state.realRole = null;
         db.updateAuthUI(null);
         await db.loadUserData();
         alert("已成功登出。");
@@ -539,8 +538,7 @@ function populateProfileGroupSelector() {
 }
 
 function updateAdminNavVisibility() {
-  const realUserRole = localStorage.getItem("real_user_role");
-  const isRealAdmin = realUserRole === "admin" || realUserRole === "senior_pastor";
+  const isRealAdmin = !state.isSupabaseMode || (state.realRole === "admin" || state.realRole === "senior_pastor");
   
   const isSimulatedAdmin = state.currentUser && (state.currentUser.role === "admin" || state.currentUser.role === "senior_pastor");
   const shouldShowNav = isRealAdmin && isSimulatedAdmin;
