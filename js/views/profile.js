@@ -174,14 +174,8 @@ function renderProfileView() {
   }
 
   // Admin User Management Section Visibility and Rendering
-  const adminSection = document.getElementById("admin-user-management-section");
-  if (adminSection) {
-    if (isAdmin) {
-      adminSection.classList.remove("hidden");
-      renderAdminUserManagement();
-    } else {
-      adminSection.classList.add("hidden");
-    }
+  if (typeof updateAdminNavVisibility === 'function') {
+    updateAdminNavVisibility();
   }
 }
 
@@ -542,4 +536,20 @@ function populateProfileGroupSelector() {
       }
     }
   }
+}
+
+function updateAdminNavVisibility() {
+  const realUserRole = localStorage.getItem("real_user_role");
+  const isRealAdmin = realUserRole === "admin" || realUserRole === "senior_pastor";
+  
+  const isSimulatedAdmin = state.currentUser && (state.currentUser.role === "admin" || state.currentUser.role === "senior_pastor");
+  const shouldShowNav = isRealAdmin && isSimulatedAdmin;
+
+  document.querySelectorAll(".admin-only-nav").forEach(btn => {
+    if (shouldShowNav) {
+      btn.classList.remove("hidden");
+    } else {
+      btn.classList.add("hidden");
+    }
+  });
 }

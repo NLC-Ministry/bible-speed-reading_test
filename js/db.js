@@ -193,6 +193,12 @@ const db = {
         }
         
         this.calculateStreak();
+        if (typeof checkAchievements !== 'undefined') {
+          await checkAchievements();
+        }
+        if (typeof updateAdminNavVisibility === 'function') {
+          updateAdminNavVisibility();
+        }
         return;
       }
     }
@@ -280,6 +286,9 @@ const db = {
     this.calculateStreak();
     if (typeof checkAchievements !== 'undefined') {
       await checkAchievements();
+    }
+    if (typeof updateAdminNavVisibility === 'function') {
+      updateAdminNavVisibility();
     }
   },
 
@@ -614,12 +623,23 @@ const db = {
 
     this.saveLocalUserStats();
     
+    if (typeof updateAdminNavVisibility === 'function') {
+      updateAdminNavVisibility();
+    }
+    
     // Refresh views
     updateDashboardView();
     if (appRouter.currentTab === "stats-view") {
       await updateStatsView();
     } else if (appRouter.currentTab === "profile-view") {
       renderProfileView();
+    } else if (appRouter.currentTab === "admin-view") {
+      const isSimulatedAdmin = state.currentUser.role === "admin" || state.currentUser.role === "senior_pastor";
+      if (!isSimulatedAdmin) {
+        appRouter.switchTab("profile-view");
+      } else {
+        renderAdminUserManagement();
+      }
     }
     
     loader.hide();

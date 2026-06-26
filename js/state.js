@@ -114,6 +114,10 @@ const appRouter = {
       updateStatsView();
     } else if (tabId === "profile-view") {
       renderProfileView();
+    } else if (tabId === "admin-view") {
+      if (typeof renderAdminUserManagement !== 'undefined') {
+        renderAdminUserManagement();
+      }
     }
   }
 };
