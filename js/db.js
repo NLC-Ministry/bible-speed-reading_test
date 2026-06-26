@@ -272,6 +272,9 @@ const db = {
     }
 
     this.calculateStreak();
+    if (typeof checkAchievements !== 'undefined') {
+      await checkAchievements();
+    }
   },
 
   // Load Church Organization Structure (from Supabase or Local Mock)
@@ -391,6 +394,9 @@ const db = {
 
     if (state.isSupabaseMode && state.supabase) {
       await this.syncProfileStatsToSupabase();
+    }
+    if (typeof checkAchievements !== 'undefined') {
+      await checkAchievements();
     }
   },
 

@@ -54,6 +54,13 @@ function updateDashboardView() {
   // Load Devotional Notes & Group Progress
   loadTodayDevotional();
   renderTodayGroupProgress();
+
+  // Render Pilgrimage Trail & controls
+  renderPilgrimageTrail();
+  if (!state.pilgrimageControlsInit) {
+    initPilgrimageControls();
+    state.pilgrimageControlsInit = true;
+  }
 }
 
 async function renderPastoralZoneRankingList() {
@@ -304,3 +311,246 @@ function renderProgressListFiltered(searchText) {
     listEl.appendChild(item);
   });
 }
+
+// ==========================================
+// PILGRIMAGE TRAIL BOARD RENDER LOGIC
+// ==========================================
+
+state.pilgrimageZoom = 1.0;
+state.pilgrimageControlsInit = false;
+
+function getBookCoords(index) {
+  const cols = 8;
+  const spacingX = 110;
+  const spacingY = 90;
+  const startX = 65;
+  const startY = 65;
+  
+  const row = Math.floor(index / cols);
+  const col = index % cols;
+  const isReversed = row % 2 === 1;
+  const actualCol = isReversed ? (cols - 1 - col) : col;
+  
+  return {
+    x: startX + actualCol * spacingX,
+    y: startY + row * spacingY
+  };
+}
+
+async function renderPilgrimageTrail() {
+  const canvas = document.getElementById("pilgrimage-canvas");
+  if (!canvas) return;
+  
+  const ctx = canvas.getContext("2d");
+  
+  const width = 900;
+  const height = 900;
+  canvas.width = width;
+  canvas.height = height;
+  
+  ctx.clearRect(0, 0, width, height);
+  
+  // Calculate completed chapters per book
+  const bookCompletion = BIBLE_BOOKS.map(book => {
+    const readChapters = state.readingLogs.filter(l => l.book === book.name);
+    const count = readChapters.length;
+    return {
+      name: book.name,
+      abbrev: book.abbrev,
+      chapters: book.chapters,
+      readCount: count,
+      isCompleted: count >= book.chapters,
+      isStarted: count > 0
+    };
+  });
+  
+  // 1. Draw Winding Path Background
+  ctx.beginPath();
+  ctx.strokeStyle = "var(--border-card)"; // themed grey/border color
+  ctx.lineWidth = 10;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  
+  for (let i = 0; i < 66; i++) {
+    const coords = getBookCoords(i);
+    if (i === 0) ctx.moveTo(coords.x, coords.y);
+    else ctx.lineTo(coords.x, coords.y);
+  }
+  ctx.stroke();
+  
+  // 2. Draw Active/Completed Path Progress
+  let lastCompletedIndex = -1;
+  for (let i = 0; i < 66; i++) {
+    if (bookCompletion[i].isStarted || bookCompletion[i].isCompleted) {
+      lastCompletedIndex = i;
+    }
+  }
+  
+  if (lastCompletedIndex >= 0) {
+    ctx.beginPath();
+    ctx.strokeStyle = "rgba(99, 102, 241, 0.4)"; // Translucent Indigo
+    ctx.lineWidth = 10;
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    
+    for (let i = 0; i <= lastCompletedIndex; i++) {
+      const coords = getBookCoords(i);
+      if (i === 0) ctx.moveTo(coords.x, coords.y);
+      else ctx.lineTo(coords.x, coords.y);
+    }
+    ctx.stroke();
+  }
+
+  // 3. Draw Book Stepping Stones (Nodes)
+  for (let i = 0; i < 66; i++) {
+    const coords = getBookCoords(i);
+    const status = bookCompletion[i];
+    
+    const isActive = i === lastCompletedIndex;
+    
+    ctx.beginPath();
+    ctx.arc(coords.x, coords.y, 16, 0, Math.PI * 2);
+    
+    let fillStyle = "var(--border-card)"; // Locked/Gray
+    if (status.isCompleted) {
+      fillStyle = "#10b981"; // Completed/Green
+    } else if (status.isStarted) {
+      fillStyle = "#3b82f6"; // In progress/Blue
+    }
+    
+    ctx.fillStyle = fillStyle;
+    ctx.fill();
+    
+    // Draw active glow
+    if (isActive) {
+      ctx.beginPath();
+      ctx.arc(coords.x, coords.y, 22, 0, Math.PI * 2);
+      ctx.strokeStyle = "rgba(99, 102, 241, 0.6)";
+      ctx.lineWidth = 3;
+      ctx.stroke();
+    }
+    
+    // Text Abbreviation
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 10px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(status.abbrev, coords.x, coords.y);
+  }
+
+  // 4. Fetch Group Members and draw their Avatars
+  let allUsers = await db.fetchMergedUsersList();
+  
+  const mockUser = {
+    name: state.currentUser.name,
+    great_region: state.currentUser.great_region || "東區",
+    pastoral_zone: state.currentUser.pastoral_zone || "大安1",
+    small_group: state.currentUser.small_group || "馬鈴",
+    role: state.currentUser.role || "member"
+  };
+  
+  let groupMembers = allUsers.filter(u => 
+    u.pastoral_zone === mockUser.pastoral_zone && 
+    u.small_group === mockUser.small_group
+  );
+  if (groupMembers.length === 0) {
+    groupMembers = [ { name: state.currentUser.name, chapters_read: state.currentUser.chapters_read } ];
+  }
+  
+  const nodeOccupancy = {};
+  
+  groupMembers.forEach(member => {
+    let chaptersCount = member.chapters_read || 0;
+    let bookIndex = 0;
+    let sum = 0;
+    
+    for (let i = 0; i < BIBLE_BOOKS.length; i++) {
+      sum += BIBLE_BOOKS[i].chapters;
+      if (sum >= chaptersCount) {
+        bookIndex = i;
+        break;
+      }
+    }
+    if (sum < chaptersCount) {
+      bookIndex = 65;
+    }
+    
+    const baseCoords = getBookCoords(bookIndex);
+    
+    if (!nodeOccupancy[bookIndex]) {
+      nodeOccupancy[bookIndex] = 0;
+    }
+    const offsetNum = nodeOccupancy[bookIndex];
+    nodeOccupancy[bookIndex] += 1;
+    
+    // Shift slightly to avoid stacking overlapping text
+    const offsetX = offsetNum * 12;
+    const offsetY = offsetNum * -12;
+    
+    const x = baseCoords.x + offsetX;
+    const y = baseCoords.y + offsetY - 25;
+    
+    const isMe = member.name === state.currentUser.name;
+    
+    // Draw label background
+    ctx.beginPath();
+    ctx.fillStyle = isMe ? "#4f46e5" : "#475569";
+    ctx.roundRect(x - 22, y - 18, 44, 18, 5);
+    ctx.fill();
+    
+    // Little arrow pointing down
+    ctx.beginPath();
+    ctx.moveTo(x - 4, y);
+    ctx.lineTo(x, y + 4);
+    ctx.lineTo(x + 4, y);
+    ctx.fillStyle = isMe ? "#4f46e5" : "#475569";
+    ctx.fill();
+    
+    // Text Name
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 9px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    const displayName = member.name.substring(0, 3);
+    ctx.fillText(displayName, x, y - 9);
+  });
+}
+
+function initPilgrimageControls() {
+  const board = document.getElementById("pilgrimage-trail-board");
+  const zoomIn = document.getElementById("increase-trail-zoom");
+  const zoomOut = document.getElementById("decrease-trail-zoom");
+  const zoomReset = document.getElementById("reset-trail-zoom");
+  
+  if (!board) return;
+  
+  const updateZoom = () => {
+    board.style.transform = `scale(${state.pilgrimageZoom})`;
+  };
+  
+  if (zoomIn) {
+    zoomIn.onclick = () => {
+      if (state.pilgrimageZoom < 2.0) {
+        state.pilgrimageZoom += 0.15;
+        updateZoom();
+      }
+    };
+  }
+  
+  if (zoomOut) {
+    zoomOut.onclick = () => {
+      if (state.pilgrimageZoom > 0.6) {
+        state.pilgrimageZoom -= 0.15;
+        updateZoom();
+      }
+    };
+  }
+  
+  if (zoomReset) {
+    zoomReset.onclick = () => {
+      state.pilgrimageZoom = 1.0;
+      updateZoom();
+    };
+  }
+}
+

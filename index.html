@@ -171,6 +171,28 @@
                 <!-- Dynamically generated check-in list -->
               </div>
             </div>
+        </div>
+        <!-- Row 3: Pilgrimage Trail -->
+        <div class="grid-layout" style="margin-top: 1.5rem;">
+          <div class="card-col span-12">
+            <div class="glass-card pilgrimage-card" style="display: flex; flex-direction: column;">
+              <div class="card-header-flex" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem;">
+                <h3 class="card-title" style="margin-bottom: 0; display: flex; align-items: center; gap: 0.5rem;">
+                  <svg viewBox="0 0 24 24" width="20" height="20" stroke="var(--primary-color)" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                  聖經朝聖之路 (個人與團隊進度)
+                </h3>
+                <div class="zoom-controls" style="display: flex; gap: 0.5rem; align-items: center;">
+                  <button class="secondary-btn" id="decrease-trail-zoom" style="padding: 0.25rem 0.6rem; font-size: 0.8rem; font-weight: 700;">🔍-</button>
+                  <button class="secondary-btn" id="reset-trail-zoom" style="padding: 0.25rem 0.6rem; font-size: 0.8rem; font-weight: 700;">重設</button>
+                  <button class="secondary-btn" id="increase-trail-zoom" style="padding: 0.25rem 0.6rem; font-size: 0.8rem; font-weight: 700;">🔍+</button>
+                </div>
+              </div>
+              <div class="trail-scroll-wrapper" style="overflow: auto; max-height: 480px; background: var(--bg-input); border-radius: var(--radius-sm); border: 1px solid var(--border-card); padding: 1rem; position: relative;">
+                <div id="pilgrimage-trail-board" style="position: relative; width: 920px; height: 900px; transform-origin: top left; transition: transform 0.2s ease;">
+                  <canvas id="pilgrimage-canvas" style="width: 100%; height: 100%; display: block;"></canvas>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -307,6 +329,43 @@
           <div class="stats-mini-card">
             <div class="label">本週活躍速讀者</div>
             <div class="value" id="stats-active-members">0 人</div>
+          </div>
+        </div>
+
+        <!-- Row 0: Heatmap and Badge Wall -->
+        <div class="grid-layout" style="margin-top: 1.5rem; margin-bottom: 1.5rem;">
+          <!-- Bible Reading Heatmap -->
+          <div class="card-col span-8">
+            <div class="glass-card" style="display: flex; flex-direction: column; height: 100%;">
+              <h3 class="card-title" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+                <svg viewBox="0 0 24 24" width="20" height="20" stroke="var(--primary-color)" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                個人讀經熱點地圖 (365天打卡活躍度)
+              </h3>
+              <div id="bible-heatmap-container" style="overflow-x: auto; background: var(--bg-input); border-radius: var(--radius-sm); padding: 1.2rem; border: 1px solid var(--border-card); flex: 1; display: flex; align-items: center;">
+                <!-- Dynamically generated Git-style calendar grid -->
+              </div>
+              <div class="heatmap-legend" style="display: flex; justify-content: flex-end; align-items: center; gap: 0.4rem; font-size: 0.72rem; color: var(--text-muted); margin-top: 0.6rem;">
+                <span>少</span>
+                <span style="width: 10px; height: 10px; border-radius: 2px; background: var(--border-card); opacity: 0.4;"></span>
+                <span style="width: 10px; height: 10px; border-radius: 2px; background: rgba(99, 102, 241, 0.25);"></span>
+                <span style="width: 10px; height: 10px; border-radius: 2px; background: rgba(99, 102, 241, 0.5);"></span>
+                <span style="width: 10px; height: 10px; border-radius: 2px; background: rgba(99, 102, 241, 0.75);"></span>
+                <span style="width: 10px; height: 10px; border-radius: 2px; background: rgba(99, 102, 241, 1);"></span>
+                <span>多</span>
+              </div>
+            </div>
+          </div>
+          <!-- Personal Achievements Wall -->
+          <div class="card-col span-4">
+            <div class="glass-card" style="display: flex; flex-direction: column; height: 100%;">
+              <h3 class="card-title" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.2rem;">
+                <svg viewBox="0 0 24 24" width="20" height="20" stroke="var(--primary-color)" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
+                我的榮譽勳章牆
+              </h3>
+              <div id="stats-badge-wall-container" style="display: flex; flex-direction: column; gap: 0.75rem; overflow-y: auto; max-height: 185px;">
+                <!-- Dynamically populated unlocked achievements -->
+              </div>
+            </div>
           </div>
         </div>
 
@@ -593,6 +652,7 @@
   <script src="js/state.js"></script>
   <script src="js/views/plan.js"></script>
   <script src="js/db.js"></script>
+  <script src="js/gamification.js"></script>
   <script src="js/views/dashboard.js"></script>
   <script src="js/views/reader.js"></script>
   <script src="js/views/stats.js"></script>

@@ -184,6 +184,12 @@ async function updateStatsView() {
   // Render Monthly Hall of Fame
   renderMonthlyHallOfFame();
 
+  // Render Heatmap and Badges Wall
+  renderHeatmap();
+  if (typeof renderUnlockedBadgesWall !== 'undefined') {
+    renderUnlockedBadgesWall();
+  }
+
   loader.hide();
 }
 
@@ -451,4 +457,66 @@ function renderMonthlyHallOfFame() {
     
     fameList.appendChild(item);
   });
+}
+
+// ==========================================
+// PERSONAL BIBLE READING HEATMAP
+// ==========================================
+
+function renderHeatmap() {
+  const container = document.getElementById("bible-heatmap-container");
+  if (!container) return;
+  
+  container.innerHTML = "";
+  
+  const grid = document.createElement("div");
+  grid.className = "heatmap-grid";
+  
+  // Use UTC to prevent timezone offsets when converting to ISOString
+  const startDate = new Date();
+  startDate.setUTCHours(12, 0, 0, 0);
+  startDate.setUTCDate(startDate.getUTCDate() - 365);
+  const dayOfWeek = startDate.getUTCDay();
+  startDate.setUTCDate(startDate.getUTCDate() - dayOfWeek);
+  
+  const today = new Date();
+  const oneDayMs = 24 * 60 * 60 * 1000;
+  const daysDiff = Math.ceil((today.getTime() - startDate.getTime()) / oneDayMs);
+  
+  const logsByDate = {};
+  state.readingLogs.forEach(log => {
+    if (log.read_at) {
+      const dStr = log.read_at.substring(0, 10);
+      logsByDate[dStr] = (logsByDate[dStr] || 0) + 1;
+    }
+  });
+
+  for (let i = 0; i <= daysDiff; i++) {
+    const currentDate = new Date(startDate.getTime() + i * oneDayMs);
+    const dateStr = currentDate.toISOString().substring(0, 10);
+    const count = logsByDate[dateStr] || 0;
+    
+    const cell = document.createElement("div");
+    cell.className = "heatmap-cell";
+    cell.setAttribute("data-date", dateStr);
+    cell.setAttribute("data-count", count);
+    
+    let background = "var(--border-card)";
+    let opacity = "0.4";
+    if (count > 0) {
+      opacity = "1";
+      if (count <= 2) background = "rgba(99, 102, 241, 0.25)";
+      else if (count <= 4) background = "rgba(99, 102, 241, 0.5)";
+      else if (count <= 8) background = "rgba(99, 102, 241, 0.75)";
+      else background = "rgba(99, 102, 241, 1)";
+    }
+    
+    cell.style.backgroundColor = background;
+    cell.style.opacity = opacity;
+    
+    cell.title = `${dateStr}: 已打卡 ${count} 章`;
+    grid.appendChild(cell);
+  }
+  
+  container.appendChild(grid);
 }
