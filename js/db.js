@@ -4,7 +4,8 @@ const db = {
   // Initialize Supabase Connection
   async init() {
     const urlParams = new URLSearchParams(window.location.search);
-    const forceOfflineDemo = urlParams.get("demo") === "true" || urlParams.get("offline") === "true";
+    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.startsWith('192.168.');
+    const forceOfflineDemo = isLocalhost && (urlParams.get("demo") === "true" || urlParams.get("offline") === "true");
 
     const sbUrl = forceOfflineDemo ? "" : (typeof SUPABASE_CONFIG !== 'undefined' && SUPABASE_CONFIG.url ? SUPABASE_CONFIG.url.trim() : "");
     const sbKey = forceOfflineDemo ? "" : (typeof SUPABASE_CONFIG !== 'undefined' && SUPABASE_CONFIG.anonKey ? SUPABASE_CONFIG.anonKey.trim() : "");
@@ -17,12 +18,12 @@ const db = {
         // Initialize Supabase SDK
         state.supabase = supabase.createClient(sbUrl, sbKey);
         state.isSupabaseMode = true;
-        
+
         // Update Status Badge
         statusBadge.className = "status-badge online";
         statusBadge.querySelector(".status-text").textContent = "線上模式";
         if (placeholder) placeholder.classList.add("hidden");
-        
+
         // Check Auth Session
         const { data: { session } } = await state.supabase.auth.getSession();
         this.updateAuthUI(session);
@@ -33,7 +34,7 @@ const db = {
             console.log("Auth state changed:", event, !!session);
             this.updateAuthUI(session);
             await this.loadUserData();
-            
+
             if (appRouter.currentTab === "dashboard-view") {
               updateDashboardView();
             } else if (appRouter.currentTab === "profile-view") {
@@ -50,13 +51,18 @@ const db = {
         this.showConnectionError();
       }
     } else {
-      this.setDemoMode();
+      if (forceOfflineDemo) {
+        this.setDemoMode();
+      } else {
+        console.error("Supabase config is missing or invalid!");
+        this.showConnectionError();
+      }
     }
   },
 
   showConnectionError() {
     state.isSupabaseMode = true;
-    
+
     // Disable Google login gate button
     const btnGoogleGate = document.getElementById("btn-gate-google-login");
     if (btnGoogleGate) {
@@ -94,7 +100,7 @@ const db = {
       authSection.className = "card-col span-12 hidden";
     }
     if (placeholder) placeholder.classList.remove("hidden");
-    
+
     if (profileCardCol) {
       profileCardCol.className = "card-col span-12";
     }
@@ -162,7 +168,7 @@ const db = {
           state.currentUser.role = "member";
           state.currentUser.is_demo = false;
           state.realRole = "member";
-          
+
           try {
             await state.supabase.from("profiles").insert({
               id: user.id,
@@ -182,7 +188,7 @@ const db = {
           .from("reading_logs")
           .select("book, chapter, read_at, plan_id")
           .eq("user_id", user.id);
-        
+
         state.readingLogs = logs || [];
         state.currentUser.chapters_read = state.readingLogs.length;
 
@@ -230,7 +236,7 @@ const db = {
               )
             );
           }
-          
+
           const selectedKey = localStorage.getItem("selected_plan_key");
           if (selectedKey) {
             state.activePlan = state.activePlans.find(p => p.presetKey === selectedKey) || state.activePlans[0];
@@ -243,7 +249,7 @@ const db = {
           state.activePlans = [];
         }
 
-        
+
         this.calculateStreak();
         if (typeof checkAchievements !== 'undefined') {
           await checkAchievements();
@@ -293,7 +299,7 @@ const db = {
           }
         });
         calculateAllPlansProgress();
-        
+
         const selectedKey = localStorage.getItem("selected_plan_key");
         if (selectedKey) {
           state.activePlan = state.activePlans.find(p => p.presetKey === selectedKey) || state.activePlans[0] || null;
@@ -308,9 +314,9 @@ const db = {
       // First run in Demo mode: default to admin with mock logs/plan
       state.currentUser = {
         name: "系統管理員",
-        great_region: "東區",
-        pastoral_zone: "大安1",
-        small_group: "馬鈴",
+        great_region: "南區",
+        pastoral_zone: "新烏4",
+        small_group: "秀枝",
         role: "admin",
         chapters_read: 80,
         plan_progress: 72,
@@ -324,7 +330,7 @@ const db = {
       state.activePlan.progress = 72;
       state.activePlan.completedChapters = Math.round((state.activePlan.totalChapters * 72) / 100);
       state.activePlans = [state.activePlan];
-      
+
       localStorage.setItem("active_reading_plans", JSON.stringify(state.activePlans));
       localStorage.setItem("selected_plan_key", "q1");
 
@@ -349,7 +355,7 @@ const db = {
       }
       state.readingLogs = completedList;
       localStorage.setItem("reading_logs", JSON.stringify(state.readingLogs));
-      
+
       state.currentUser.chapters_read = state.readingLogs.length;
     }
 
@@ -421,17 +427,17 @@ const db = {
     const planId = state.activePlan ? state.activePlan.id : null;
     const presetKey = state.activePlan ? state.activePlan.presetKey : null;
     const round = state.activePlan ? (state.activePlan.currentRound || 1) : 1;
-    
+
     if (isChecked) {
-      const existingLog = state.readingLogs.find(l => 
-        l.book === book && 
-        l.chapter === chapter && 
+      const existingLog = state.readingLogs.find(l =>
+        l.book === book &&
+        l.chapter === chapter &&
         (l.plan_id === planId || l.presetKey === presetKey) &&
         (l.round || 1) === round
       );
       if (!existingLog) {
         state.readingLogs.push({ book, chapter, read_at: todayISO, plan_id: planId, presetKey: presetKey, round: round });
-        
+
         if (state.isSupabaseMode && state.supabase) {
           const { data: { user } } = await state.supabase.auth.getUser();
           if (user) {
@@ -462,12 +468,12 @@ const db = {
       }
     } else {
       state.readingLogs = state.readingLogs.filter(l => !(
-        l.book === book && 
-        l.chapter === chapter && 
+        l.book === book &&
+        l.chapter === chapter &&
         (l.plan_id === planId || l.presetKey === presetKey) &&
         (l.round || 1) === round
       ));
-      
+
       if (state.isSupabaseMode && state.supabase) {
         const { data: { user } } = await state.supabase.auth.getUser();
         if (user) {
@@ -550,7 +556,7 @@ const db = {
       const nextDate = new Date(dates[i]);
       const diffTime = Math.abs(currentDate - nextDate);
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
+
       if (diffDays === 1) {
         streak++;
         currentDate = nextDate;
@@ -597,7 +603,7 @@ const db = {
           return usersProfiles.map(profile => {
             const uLogs = allLogs ? allLogs.filter(l => l.user_id === profile.id) : [];
             const uPlan = allPlans ? allPlans.find(p => p.user_id === profile.id) : null;
-            
+
             let planProgress = 0;
             if (uPlan && uPlan.target_books && uPlan.target_books.length > 0) {
               let totalChapters = 0;
@@ -635,11 +641,14 @@ const db = {
           });
         }
       } catch (err) {
-        console.error("Failed to fetch merged users, falling back to mock:", err);
+        console.error("Failed to fetch merged users:", err);
       }
+      return [mockUser];
     }
 
-    return MockStatsService.getAllUsers(mockUser);
+    return (typeof MockStatsService !== 'undefined' && MockStatsService)
+      ? MockStatsService.getAllUsers(mockUser)
+      : [mockUser];
   },
 
   async getUserRankings() {
@@ -717,7 +726,7 @@ const db = {
 
   async switchDemoRole(role) {
     loader.show("切換模擬角色中...");
-    
+
     let mockUser = MOCK_USERS_DATA.find(u => u.role === role);
     if (!mockUser) {
       mockUser = {
@@ -758,7 +767,7 @@ const db = {
       state.activePlan.completedChapters = Math.round((state.activePlan.totalChapters * mockUser.plan_progress) / 100);
       state.activePlans = [state.activePlan];
       localStorage.setItem("selected_plan_key", "q1");
-      
+
       const completedList = [];
       let count = 0;
       for (const day of state.activePlan.days) {
@@ -781,11 +790,11 @@ const db = {
     }
 
     this.saveLocalUserStats();
-    
+
     if (typeof updateAdminNavVisibility === 'function') {
       updateAdminNavVisibility();
     }
-    
+
     // Refresh views
     updateDashboardView();
     if (appRouter.currentTab === "stats-view") {
@@ -800,7 +809,7 @@ const db = {
         renderAdminUserManagement();
       }
     }
-    
+
     loader.hide();
   },
 
@@ -830,7 +839,7 @@ const db = {
     if (state.isSupabaseMode && state.supabase) {
       const { data: { user } } = await state.supabase.auth.getUser();
       if (!user) return;
-      
+
       const { error } = await state.supabase
         .from("devotional_notes")
         .upsert({
@@ -838,7 +847,7 @@ const db = {
           note_date: date,
           content: content
         }, { onConflict: 'user_id,note_date' });
-        
+
       if (error) throw error;
     } else {
       const notesStr = localStorage.getItem("devotional_notes") || "{}";
@@ -909,7 +918,7 @@ const db = {
     loader.hide();
     renderPlanView();
     updateDashboardView();
-    
+
     const started = isPlanStarted(newPlanObj);
     const isAdmin = state.currentUser && state.currentUser.role === 'admin';
     if (started) {
@@ -923,7 +932,7 @@ const db = {
 
   async leavePlan(planId, presetKey) {
     loader.show("退出計畫中...");
-    
+
     if (state.isSupabaseMode && state.supabase) {
       try {
         const { error } = await state.supabase.from("reading_plans").delete().eq("id", planId);
@@ -932,15 +941,15 @@ const db = {
         console.error("Failed to delete plan from Supabase:", e);
       }
     }
-    
+
     state.activePlans = state.activePlans.filter(p => p.id !== planId && p.presetKey !== presetKey);
     state.readingLogs = state.readingLogs.filter(l => l.plan_id !== planId && l.presetKey !== presetKey);
-    
+
     if (!state.isSupabaseMode) {
       localStorage.setItem("active_reading_plans", JSON.stringify(state.activePlans));
       localStorage.setItem("reading_logs", JSON.stringify(state.readingLogs));
     }
-    
+
     if (state.activePlans.length > 0) {
       state.activePlan = state.activePlans[0];
       localStorage.setItem("selected_plan_key", state.activePlan.presetKey || "");
@@ -948,10 +957,10 @@ const db = {
       state.activePlan = null;
       localStorage.removeItem("selected_plan_key");
     }
-    
+
     calculateAllPlansProgress();
     this.saveLocalUserStats();
-    
+
     loader.hide();
     renderPlanView();
     updateDashboardView();
@@ -991,7 +1000,7 @@ const db = {
           .from("global_plans")
           .select("*")
           .order("start_date", { ascending: true });
-        
+
         if (error) {
           console.error("Failed to load global plans from Supabase:", error);
         } else if (data && data.length > 0) {
@@ -1009,7 +1018,7 @@ const db = {
         console.error("Error loading global plans from Supabase:", e);
       }
     }
-    
+
     // Fallback: load from local storage or default presets
     const localGlobal = localStorage.getItem("global_plans_presets");
     if (localGlobal) {
@@ -1036,7 +1045,7 @@ const db = {
           end_date: plan.endDate,
           target_books: plan.books
         };
-        
+
         let error;
         if (plan.id && plan.id.length > 5 && plan.id.includes('-')) {
           const res = await state.supabase
@@ -1050,7 +1059,7 @@ const db = {
             .insert(payload);
           error = res.error;
         }
-        
+
         if (error) {
           console.error("Failed to save global plan in Supabase:", error);
           alert(`儲存計畫失敗: ${error.message || error}`);
@@ -1074,7 +1083,7 @@ const db = {
       }
       localStorage.setItem("global_plans_presets", JSON.stringify(list));
     }
-    
+
     await this.loadGlobalPlans();
     return true;
   },
@@ -1086,7 +1095,7 @@ const db = {
           .from("global_plans")
           .delete()
           .eq("id", planId);
-        
+
         if (error) {
           console.error("Failed to delete global plan in Supabase:", error);
           alert(`刪除計畫失敗: ${error.message || error}`);
@@ -1106,7 +1115,7 @@ const db = {
         localStorage.setItem("global_plans_presets", JSON.stringify(list));
       }
     }
-    
+
     await this.loadGlobalPlans();
     return true;
   }

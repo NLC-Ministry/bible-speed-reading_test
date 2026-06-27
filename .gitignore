@@ -9,3 +9,9 @@ Thumbs.db
 .idea/
 .vscode/
 *.log
+
+# 測試/虛擬資料檔案 (本地隔離)
+mock_stats.js
+demo_data_seed.sql
+demo_data_seed_compact.sql
+supabase/delete_demo_data.sql

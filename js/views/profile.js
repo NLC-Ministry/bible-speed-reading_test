@@ -26,7 +26,10 @@ function renderProfileView() {
   };
   roleDisplay.textContent = roleNames[state.currentUser.role] || "一般組員";
 
-  const showDemoData = !state.isSupabaseMode || !!state.currentUser.is_demo;
+  const urlParams = new URLSearchParams(window.location.search);
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.startsWith('192.168.');
+  const forceOfflineDemo = isLocalhost && (urlParams.get("demo") === "true" || urlParams.get("offline") === "true");
+  const showDemoData = (forceOfflineDemo && typeof MockStatsService !== 'undefined' && MockStatsService !== null) || (state.currentUser && !!state.currentUser.is_demo);
 
   let greatRegionsList = (state.orgStructure && state.orgStructure.regions && state.orgStructure.regions.length > 0) 
     ? state.orgStructure.regions 
@@ -429,7 +432,10 @@ function populateProfileZones(greatRegion, autoSelect = true) {
     return;
   }
 
-  const showDemoData = !state.isSupabaseMode || !!state.currentUser.is_demo;
+  const urlParams = new URLSearchParams(window.location.search);
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.startsWith('192.168.');
+  const forceOfflineDemo = isLocalhost && (urlParams.get("demo") === "true" || urlParams.get("offline") === "true");
+  const showDemoData = (forceOfflineDemo && typeof MockStatsService !== 'undefined' && MockStatsService !== null) || (state.currentUser && !!state.currentUser.is_demo);
 
   let predefinedZones = (state.orgStructure && state.orgStructure.zones && state.orgStructure.zones[greatRegion] && state.orgStructure.zones[greatRegion].length > 0) 
     ? state.orgStructure.zones[greatRegion] 
@@ -493,7 +499,10 @@ function populateProfileGroupSelector(autoSelect = true) {
     return;
   }
 
-  const showDemoData = !state.isSupabaseMode || !!state.currentUser.is_demo;
+  const urlParams = new URLSearchParams(window.location.search);
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.startsWith('192.168.');
+  const forceOfflineDemo = isLocalhost && (urlParams.get("demo") === "true" || urlParams.get("offline") === "true");
+  const showDemoData = (forceOfflineDemo && typeof MockStatsService !== 'undefined' && MockStatsService !== null) || (state.currentUser && !!state.currentUser.is_demo);
 
   let predefinedGroups = (state.orgStructure && state.orgStructure.groups && state.orgStructure.groups[zone] && state.orgStructure.groups[zone].length > 0) 
     ? state.orgStructure.groups[zone] 

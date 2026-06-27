@@ -388,6 +388,18 @@ function renderMonthlyHallOfFame() {
   
   fameList.innerHTML = "";
   
+  const urlParams = new URLSearchParams(window.location.search);
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.startsWith('192.168.');
+  const forceOfflineDemo = isLocalhost && (urlParams.get("demo") === "true" || urlParams.get("offline") === "true");
+  const showDemoData = (forceOfflineDemo && typeof MockStatsService !== 'undefined' && MockStatsService !== null) || (state.currentUser && !!state.currentUser.is_demo);
+  if (!showDemoData) {
+    const placeholder = document.createElement("div");
+    placeholder.style.cssText = "grid-column: span 3; text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.9rem;";
+    placeholder.textContent = "正式計畫尚未結算，月度名人堂虛位以待！";
+    fameList.appendChild(placeholder);
+    return;
+  }
+  
   const winners = [
     {
       month: "2026年6月 (本月累計)",
