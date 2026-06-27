@@ -392,25 +392,25 @@ function renderMonthlyHallOfFame() {
     {
       month: "2026年6月 (本月累計)",
       top3: [
-        { rank: "gold", name: "楊俊傑", zone: "大安6", chapters: 980 },
-        { rank: "silver", name: "蕭志平", zone: "中永和", chapters: 800 },
+        { rank: "gold", name: "示範組長丁", zone: "大安6", chapters: 980 },
+        { rank: "silver", name: "示範組長戊", zone: "中永和", chapters: 800 },
         { rank: "bronze", name: "東區大區長", zone: "大安1", chapters: 750 }
       ]
     },
     {
       month: "2026年5月 (結算前三)",
       top3: [
-        { rank: "gold", name: "張明哲", zone: "大安2", chapters: 650 },
-        { rank: "silver", name: "郭家豪", zone: "文山", chapters: 620 },
+        { rank: "gold", name: "示範組長乙", zone: "大安2", chapters: 650 },
+        { rank: "silver", name: "示範組員八", zone: "文山", chapters: 620 },
         { rank: "bronze", name: "東區區長", zone: "大安1", chapters: 600 }
       ]
     },
     {
       month: "2026年4月 (結算前三)",
       top3: [
-        { rank: "gold", name: "許美惠", zone: "大安6", chapters: 540 },
-        { rank: "silver", name: "吳志明", zone: "大安1", chapters: 520 },
-        { rank: "bronze", name: "陳建國", zone: "大安1", chapters: 480 }
+        { rank: "gold", name: "示範組員五", zone: "大安6", chapters: 540 },
+        { rank: "silver", name: "示範組員二", zone: "大安1", chapters: 520 },
+        { rank: "bronze", name: "示範組長甲", zone: "大安1", chapters: 480 }
       ]
     }
   ];

@@ -41,12 +41,12 @@ INSERT INTO public.small_groups (id, name, pastoral_zone_id) VALUES
 ('da000000-0000-0000-0000-000000000111', '示範小組11', 'da000000-0000-0000-0000-000000000020')
 ON CONFLICT (name, pastoral_zone_id) DO NOTHING;
 
--- 使用者: 陳建國
+-- 使用者: 示範組長甲
 INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at, instance_id, aud, role, encrypted_password)
 VALUES (
   '3a3e9795-5c39-421f-a4c5-cd07625426ee',
   '3a3e9795@church-bible.com',
-  '{"full_name": "陳建國"}',
+  '{"full_name": "示範組長甲"}',
   NOW() - INTERVAL '81 days',
   NOW(),
   '00000000-0000-0000-0000-000000000000',
@@ -58,7 +58,7 @@ VALUES (
 INSERT INTO public.profiles (id, name, great_region, pastoral_zone, small_group, role, is_demo, updated_at)
 VALUES (
   '3a3e9795-5c39-421f-a4c5-cd07625426ee',
-  '陳建國',
+  '示範組長甲',
   '示範大區A',
   '示範牧區甲',
   '示範小組1',
@@ -562,12 +562,12 @@ VALUES
 
 --------------------------------------------------
 
--- 使用者: 林秀琴
+-- 使用者: 示範組員一
 INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at, instance_id, aud, role, encrypted_password)
 VALUES (
   '13274302-16e7-4e9f-8aeb-d104919a9c09',
   '13274302@church-bible.com',
-  '{"full_name": "林秀琴"}',
+  '{"full_name": "示範組員一"}',
   NOW() - INTERVAL '11 days',
   NOW(),
   '00000000-0000-0000-0000-000000000000',
@@ -579,7 +579,7 @@ VALUES (
 INSERT INTO public.profiles (id, name, great_region, pastoral_zone, small_group, role, is_demo, updated_at)
 VALUES (
   '13274302-16e7-4e9f-8aeb-d104919a9c09',
-  '林秀琴',
+  '示範組員一',
   '示範大區A',
   '示範牧區甲',
   '示範小組1',
@@ -813,12 +813,12 @@ VALUES
 
 --------------------------------------------------
 
--- 使用者: 吳志明
+-- 使用者: 示範組員二
 INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at, instance_id, aud, role, encrypted_password)
 VALUES (
   '5815fadf-b71f-4c8d-8d60-8b10c4b95f2f',
   '5815fadf@church-bible.com',
-  '{"full_name": "吳志明"}',
+  '{"full_name": "示範組員二"}',
   NOW() - INTERVAL '21 days',
   NOW(),
   '00000000-0000-0000-0000-000000000000',
@@ -830,7 +830,7 @@ VALUES (
 INSERT INTO public.profiles (id, name, great_region, pastoral_zone, small_group, role, is_demo, updated_at)
 VALUES (
   '5815fadf-b71f-4c8d-8d60-8b10c4b95f2f',
-  '吳志明',
+  '示範組員二',
   '示範大區A',
   '示範牧區甲',
   '示範小組2',
@@ -1374,12 +1374,12 @@ VALUES
 
 --------------------------------------------------
 
--- 使用者: 張明哲
+-- 使用者: 示範組長乙
 INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at, instance_id, aud, role, encrypted_password)
 VALUES (
   '11760382-6508-4d4a-820b-e6b1ac2d7345',
   '11760382@church-bible.com',
-  '{"full_name": "張明哲"}',
+  '{"full_name": "示範組長乙"}',
   NOW() - INTERVAL '51 days',
   NOW(),
   '00000000-0000-0000-0000-000000000000',
@@ -1391,7 +1391,7 @@ VALUES (
 INSERT INTO public.profiles (id, name, great_region, pastoral_zone, small_group, role, is_demo, updated_at)
 VALUES (
   '11760382-6508-4d4a-820b-e6b1ac2d7345',
-  '張明哲',
+  '示範組長乙',
   '示範大區A',
   '示範牧區乙',
   '示範小組3',
@@ -2065,12 +2065,12 @@ VALUES
 
 --------------------------------------------------
 
--- 使用者: 黃雅婷
+-- 使用者: 示範組員三
 INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at, instance_id, aud, role, encrypted_password)
 VALUES (
   '9202e8f8-365f-4e72-99d1-271c61bc9453',
   '9202e8f8@church-bible.com',
-  '{"full_name": "黃雅婷"}',
+  '{"full_name": "示範組員三"}',
   NOW() - INTERVAL '21 days',
   NOW(),
   '00000000-0000-0000-0000-000000000000',
@@ -2082,7 +2082,7 @@ VALUES (
 INSERT INTO public.profiles (id, name, great_region, pastoral_zone, small_group, role, is_demo, updated_at)
 VALUES (
   '9202e8f8-365f-4e72-99d1-271c61bc9453',
-  '黃雅婷',
+  '示範組員三',
   '示範大區A',
   '示範牧區乙',
   '示範小組3',
@@ -2226,12 +2226,12 @@ VALUES
 
 --------------------------------------------------
 
--- 使用者: 李冠宇
+-- 使用者: 示範組長丙
 INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at, instance_id, aud, role, encrypted_password)
 VALUES (
   '76edc864-0409-4659-bdcd-7b6176bffe9d',
   '76edc864@church-bible.com',
-  '{"full_name": "李冠宇"}',
+  '{"full_name": "示範組長丙"}',
   NOW() - INTERVAL '11 days',
   NOW(),
   '00000000-0000-0000-0000-000000000000',
@@ -2243,7 +2243,7 @@ VALUES (
 INSERT INTO public.profiles (id, name, great_region, pastoral_zone, small_group, role, is_demo, updated_at)
 VALUES (
   '76edc864-0409-4659-bdcd-7b6176bffe9d',
-  '李冠宇',
+  '示範組長丙',
   '示範大區A',
   '示範牧區丙',
   '示範小組4',
@@ -2577,12 +2577,12 @@ VALUES
 
 --------------------------------------------------
 
--- 使用者: 王淑芬
+-- 使用者: 示範組員四
 INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at, instance_id, aud, role, encrypted_password)
 VALUES (
   'bf9d1fd0-318b-4ad7-aa9b-f735b80d204c',
   'bf9d1fd0@church-bible.com',
-  '{"full_name": "王淑芬"}',
+  '{"full_name": "示範組員四"}',
   NOW() - INTERVAL '91 days',
   NOW(),
   '00000000-0000-0000-0000-000000000000',
@@ -2594,7 +2594,7 @@ VALUES (
 INSERT INTO public.profiles (id, name, great_region, pastoral_zone, small_group, role, is_demo, updated_at)
 VALUES (
   'bf9d1fd0-318b-4ad7-aa9b-f735b80d204c',
-  '王淑芬',
+  '示範組員四',
   '示範大區A',
   '示範牧區丙',
   '示範小組4',
@@ -4140,12 +4140,12 @@ VALUES
 
 --------------------------------------------------
 
--- 使用者: 楊俊傑
+-- 使用者: 示範組長丁
 INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at, instance_id, aud, role, encrypted_password)
 VALUES (
   '8c24dce7-8552-4821-932a-263c40597f87',
   '8c24dce7@church-bible.com',
-  '{"full_name": "楊俊傑"}',
+  '{"full_name": "示範組長丁"}',
   NOW() - INTERVAL '81 days',
   NOW(),
   '00000000-0000-0000-0000-000000000000',
@@ -4157,7 +4157,7 @@ VALUES (
 INSERT INTO public.profiles (id, name, great_region, pastoral_zone, small_group, role, is_demo, updated_at)
 VALUES (
   '8c24dce7-8552-4821-932a-263c40597f87',
-  '楊俊傑',
+  '示範組長丁',
   '示範大區B',
   '示範牧區丁',
   '示範小組5',
@@ -5161,12 +5161,12 @@ VALUES
 
 --------------------------------------------------
 
--- 使用者: 許美惠
+-- 使用者: 示範組員五
 INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at, instance_id, aud, role, encrypted_password)
 VALUES (
   '77685454-f3c7-40f6-803f-b597205ec45d',
   '77685454@church-bible.com',
-  '{"full_name": "許美惠"}',
+  '{"full_name": "示範組員五"}',
   NOW() - INTERVAL '41 days',
   NOW(),
   '00000000-0000-0000-0000-000000000000',
@@ -5178,7 +5178,7 @@ VALUES (
 INSERT INTO public.profiles (id, name, great_region, pastoral_zone, small_group, role, is_demo, updated_at)
 VALUES (
   '77685454-f3c7-40f6-803f-b597205ec45d',
-  '許美惠',
+  '示範組員五',
   '示範大區B',
   '示範牧區丁',
   '示範小組5',
@@ -5742,12 +5742,12 @@ VALUES
 
 --------------------------------------------------
 
--- 使用者: 鄭裕民
+-- 使用者: 示範組員六
 INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at, instance_id, aud, role, encrypted_password)
 VALUES (
   '9b9c9871-70c6-47ca-abf6-4b5e4fd82a92',
   '9b9c9871@church-bible.com',
-  '{"full_name": "鄭裕民"}',
+  '{"full_name": "示範組員六"}',
   NOW() - INTERVAL '1 days',
   NOW(),
   '00000000-0000-0000-0000-000000000000',
@@ -5759,7 +5759,7 @@ VALUES (
 INSERT INTO public.profiles (id, name, great_region, pastoral_zone, small_group, role, is_demo, updated_at)
 VALUES (
   '9b9c9871-70c6-47ca-abf6-4b5e4fd82a92',
-  '鄭裕民',
+  '示範組員六',
   '示範大區B',
   '示範牧區戊',
   '示範小組6',
@@ -6083,12 +6083,12 @@ VALUES
 
 --------------------------------------------------
 
--- 使用者: 謝佩珊
+-- 使用者: 示範組員七
 INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at, instance_id, aud, role, encrypted_password)
 VALUES (
   '0dcd771f-8cb8-45e2-a849-b60b98445975',
   '0dcd771f@church-bible.com',
-  '{"full_name": "謝佩珊"}',
+  '{"full_name": "示範組員七"}',
   NOW() - INTERVAL '51 days',
   NOW(),
   '00000000-0000-0000-0000-000000000000',
@@ -6100,7 +6100,7 @@ VALUES (
 INSERT INTO public.profiles (id, name, great_region, pastoral_zone, small_group, role, is_demo, updated_at)
 VALUES (
   '0dcd771f-8cb8-45e2-a849-b60b98445975',
-  '謝佩珊',
+  '示範組員七',
   '示範大區B',
   '示範牧區戊',
   '示範小組6',
@@ -6274,12 +6274,12 @@ VALUES
 
 --------------------------------------------------
 
--- 使用者: 郭家豪
+-- 使用者: 示範組員八
 INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at, instance_id, aud, role, encrypted_password)
 VALUES (
   '7799bc27-0d12-4e04-961f-b801c996cd9a',
   '7799bc27@church-bible.com',
-  '{"full_name": "郭家豪"}',
+  '{"full_name": "示範組員八"}',
   NOW() - INTERVAL '21 days',
   NOW(),
   '00000000-0000-0000-0000-000000000000',
@@ -6291,7 +6291,7 @@ VALUES (
 INSERT INTO public.profiles (id, name, great_region, pastoral_zone, small_group, role, is_demo, updated_at)
 VALUES (
   '7799bc27-0d12-4e04-961f-b801c996cd9a',
-  '郭家豪',
+  '示範組員八',
   '示範大區B',
   '示範牧區己',
   '示範小組7',
@@ -7586,12 +7586,12 @@ VALUES
 
 --------------------------------------------------
 
--- 使用者: 葉子毅
+-- 使用者: 示範組員九
 INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at, instance_id, aud, role, encrypted_password)
 VALUES (
   '9b1c6547-72c1-4293-bd99-5264c04ae922',
   '9b1c6547@church-bible.com',
-  '{"full_name": "葉子毅"}',
+  '{"full_name": "示範組員九"}',
   NOW() - INTERVAL '11 days',
   NOW(),
   '00000000-0000-0000-0000-000000000000',
@@ -7603,7 +7603,7 @@ VALUES (
 INSERT INTO public.profiles (id, name, great_region, pastoral_zone, small_group, role, is_demo, updated_at)
 VALUES (
   '9b1c6547-72c1-4293-bd99-5264c04ae922',
-  '葉子毅',
+  '示範組員九',
   '示範大區C',
   '示範牧區庚',
   '示範小組8',
@@ -7737,12 +7737,12 @@ VALUES
 
 --------------------------------------------------
 
--- 使用者: 周宛儒
+-- 使用者: 示範組員十
 INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at, instance_id, aud, role, encrypted_password)
 VALUES (
   'e0128d42-1980-448a-adfa-456284af2b66',
   'e0128d42@church-bible.com',
-  '{"full_name": "周宛儒"}',
+  '{"full_name": "示範組員十"}',
   NOW() - INTERVAL '41 days',
   NOW(),
   '00000000-0000-0000-0000-000000000000',
@@ -7754,7 +7754,7 @@ VALUES (
 INSERT INTO public.profiles (id, name, great_region, pastoral_zone, small_group, role, is_demo, updated_at)
 VALUES (
   'e0128d42-1980-448a-adfa-456284af2b66',
-  '周宛儒',
+  '示範組員十',
   '示範大區C',
   '示範牧區庚',
   '示範小組8',
@@ -8118,12 +8118,12 @@ VALUES
 
 --------------------------------------------------
 
--- 使用者: 蕭志平
+-- 使用者: 示範組長戊
 INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at, instance_id, aud, role, encrypted_password)
 VALUES (
   'a7f9c562-d2bc-4d75-98b1-0440b5290833',
   'a7f9c562@church-bible.com',
-  '{"full_name": "蕭志平"}',
+  '{"full_name": "示範組長戊"}',
   NOW() - INTERVAL '1 days',
   NOW(),
   '00000000-0000-0000-0000-000000000000',
@@ -8135,7 +8135,7 @@ VALUES (
 INSERT INTO public.profiles (id, name, great_region, pastoral_zone, small_group, role, is_demo, updated_at)
 VALUES (
   'a7f9c562-d2bc-4d75-98b1-0440b5290833',
-  '蕭志平',
+  '示範組長戊',
   '示範大區C',
   '示範牧區辛',
   '示範小組9',
@@ -8959,12 +8959,12 @@ VALUES
 
 --------------------------------------------------
 
--- 使用者: 莊雅雯
+-- 使用者: 示範組員十一
 INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at, instance_id, aud, role, encrypted_password)
 VALUES (
   '08e5fcec-a9c1-4a28-a7c0-5399d09a016c',
   '08e5fcec@church-bible.com',
-  '{"full_name": "莊雅雯"}',
+  '{"full_name": "示範組員十一"}',
   NOW() - INTERVAL '51 days',
   NOW(),
   '00000000-0000-0000-0000-000000000000',
@@ -8976,7 +8976,7 @@ VALUES (
 INSERT INTO public.profiles (id, name, great_region, pastoral_zone, small_group, role, is_demo, updated_at)
 VALUES (
   '08e5fcec-a9c1-4a28-a7c0-5399d09a016c',
-  '莊雅雯',
+  '示範組員十一',
   '示範大區C',
   '示範牧區辛',
   '示範小組9',
@@ -9931,12 +9931,12 @@ VALUES
 
 --------------------------------------------------
 
--- 使用者: 梁哲瑋
+-- 使用者: 示範組長己
 INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at, instance_id, aud, role, encrypted_password)
 VALUES (
   'b524c748-3416-44ca-9c4d-7148a3f12190',
   'b524c748@church-bible.com',
-  '{"full_name": "梁哲瑋"}',
+  '{"full_name": "示範組長己"}',
   NOW() - INTERVAL '71 days',
   NOW(),
   '00000000-0000-0000-0000-000000000000',
@@ -9948,7 +9948,7 @@ VALUES (
 INSERT INTO public.profiles (id, name, great_region, pastoral_zone, small_group, role, is_demo, updated_at)
 VALUES (
   'b524c748-3416-44ca-9c4d-7148a3f12190',
-  '梁哲瑋',
+  '示範組長己',
   '示範大區D',
   '示範牧區壬',
   '示範小組10',
@@ -10642,12 +10642,12 @@ VALUES
 
 --------------------------------------------------
 
--- 使用者: 徐淑貞
+-- 使用者: 示範組員十二
 INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at, instance_id, aud, role, encrypted_password)
 VALUES (
   '63c4c569-5eee-4784-a639-178ba7cc4dbf',
   '63c4c569@church-bible.com',
-  '{"full_name": "徐淑貞"}',
+  '{"full_name": "示範組員十二"}',
   NOW() - INTERVAL '91 days',
   NOW(),
   '00000000-0000-0000-0000-000000000000',
@@ -10659,7 +10659,7 @@ VALUES (
 INSERT INTO public.profiles (id, name, great_region, pastoral_zone, small_group, role, is_demo, updated_at)
 VALUES (
   '63c4c569-5eee-4784-a639-178ba7cc4dbf',
-  '徐淑貞',
+  '示範組員十二',
   '示範大區D',
   '示範牧區壬',
   '示範小組10',
@@ -10973,12 +10973,12 @@ VALUES
 
 --------------------------------------------------
 
--- 使用者: 孫啟宏
+-- 使用者: 示範組員十三
 INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at, instance_id, aud, role, encrypted_password)
 VALUES (
   'e5ed5aea-a74c-4025-9824-16bd5073f132',
   'e5ed5aea@church-bible.com',
-  '{"full_name": "孫啟宏"}',
+  '{"full_name": "示範組員十三"}',
   NOW() - INTERVAL '31 days',
   NOW(),
   '00000000-0000-0000-0000-000000000000',
@@ -10990,7 +10990,7 @@ VALUES (
 INSERT INTO public.profiles (id, name, great_region, pastoral_zone, small_group, role, is_demo, updated_at)
 VALUES (
   'e5ed5aea-a74c-4025-9824-16bd5073f132',
-  '孫啟宏',
+  '示範組員十三',
   '示範大區D',
   '示範牧區癸',
   '示範小組11',
@@ -11444,12 +11444,12 @@ VALUES
 
 --------------------------------------------------
 
--- 使用者: 傅小敏
+-- 使用者: 示範組員十四
 INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at, instance_id, aud, role, encrypted_password)
 VALUES (
   '299a535b-4911-4ff2-b19b-cd379cb6b577',
   '299a535b@church-bible.com',
-  '{"full_name": "傅小敏"}',
+  '{"full_name": "示範組員十四"}',
   NOW() - INTERVAL '51 days',
   NOW(),
   '00000000-0000-0000-0000-000000000000',
@@ -11461,7 +11461,7 @@ VALUES (
 INSERT INTO public.profiles (id, name, great_region, pastoral_zone, small_group, role, is_demo, updated_at)
 VALUES (
   '299a535b-4911-4ff2-b19b-cd379cb6b577',
-  '傅小敏',
+  '示範組員十四',
   '示範大區D',
   '示範牧區癸',
   '示範小組11',
@@ -12306,12 +12306,12 @@ VALUES
 
 --------------------------------------------------
 
--- 使用者: 張主任牧師
+-- 使用者: 示範主任牧師
 INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at, instance_id, aud, role, encrypted_password)
 VALUES (
   '2762b95a-92db-43dd-b080-583a9d6e2a12',
   '2762b95a@church-bible.com',
-  '{"full_name": "張主任牧師"}',
+  '{"full_name": "示範主任牧師"}',
   NOW() - INTERVAL '51 days',
   NOW(),
   '00000000-0000-0000-0000-000000000000',
@@ -12323,7 +12323,7 @@ VALUES (
 INSERT INTO public.profiles (id, name, great_region, pastoral_zone, small_group, role, is_demo, updated_at)
 VALUES (
   '2762b95a-92db-43dd-b080-583a9d6e2a12',
-  '張主任牧師',
+  '示範主任牧師',
   '示範大區A',
   '示範牧區甲',
   '示範小組1',

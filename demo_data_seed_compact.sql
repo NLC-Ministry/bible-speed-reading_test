@@ -82,12 +82,12 @@ BEGIN
   ('da000000-0000-0000-0000-000000000111', '示範小組11', 'da000000-0000-0000-0000-000000000020')
   ON CONFLICT (name, pastoral_zone_id) DO NOTHING;
 
-  -- [陳建國] --------------------
+  -- [示範組長甲] --------------------
   INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at, instance_id, aud, role, encrypted_password)
   VALUES (
     'ba7e5f7a-93c9-4b3f-b3d2-ede41124ba34',
     'ba7e5f7a@church-bible.com',
-    '{"full_name": "陳建國"}',
+    '{"full_name": "示範組長甲"}',
     NOW() - INTERVAL '60 days',
     NOW(),
     '00000000-0000-0000-0000-000000000000',
@@ -99,7 +99,7 @@ BEGIN
   INSERT INTO public.profiles (id, name, great_region, pastoral_zone, small_group, role, is_demo, updated_at)
   VALUES (
     'ba7e5f7a-93c9-4b3f-b3d2-ede41124ba34',
-    '陳建國',
+    '示範組長甲',
     '示範大區A',
     '示範牧區甲',
     '示範小組1',
@@ -129,12 +129,12 @@ BEGIN
   FROM temp_chapters
   WHERE idx <= 280;
 
-  -- [林秀琴] --------------------
+  -- [示範組員一] --------------------
   INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at, instance_id, aud, role, encrypted_password)
   VALUES (
     'e41c09cd-3694-4f7e-b393-4adcda0acc69',
     'e41c09cd@church-bible.com',
-    '{"full_name": "林秀琴"}',
+    '{"full_name": "示範組員一"}',
     NOW() - INTERVAL '60 days',
     NOW(),
     '00000000-0000-0000-0000-000000000000',
@@ -146,7 +146,7 @@ BEGIN
   INSERT INTO public.profiles (id, name, great_region, pastoral_zone, small_group, role, is_demo, updated_at)
   VALUES (
     'e41c09cd-3694-4f7e-b393-4adcda0acc69',
-    '林秀琴',
+    '示範組員一',
     '示範大區A',
     '示範牧區甲',
     '示範小組1',
@@ -176,12 +176,12 @@ BEGIN
   FROM temp_chapters
   WHERE idx <= 110;
 
-  -- [吳志明] --------------------
+  -- [示範組員二] --------------------
   INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at, instance_id, aud, role, encrypted_password)
   VALUES (
     'f6364874-5c3e-4c34-8ab4-4f58806edc26',
     'f6364874@church-bible.com',
-    '{"full_name": "吳志明"}',
+    '{"full_name": "示範組員二"}',
     NOW() - INTERVAL '60 days',
     NOW(),
     '00000000-0000-0000-0000-000000000000',
@@ -193,7 +193,7 @@ BEGIN
   INSERT INTO public.profiles (id, name, great_region, pastoral_zone, small_group, role, is_demo, updated_at)
   VALUES (
     'f6364874-5c3e-4c34-8ab4-4f58806edc26',
-    '吳志明',
+    '示範組員二',
     '示範大區A',
     '示範牧區甲',
     '示範小組2',
@@ -223,12 +223,12 @@ BEGIN
   FROM temp_chapters
   WHERE idx <= 290;
 
-  -- [張明哲] --------------------
+  -- [示範組長乙] --------------------
   INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at, instance_id, aud, role, encrypted_password)
   VALUES (
     'd04051db-87ef-4d6c-abb2-a1526438ebee',
     'd04051db@church-bible.com',
-    '{"full_name": "張明哲"}',
+    '{"full_name": "示範組長乙"}',
     NOW() - INTERVAL '60 days',
     NOW(),
     '00000000-0000-0000-0000-000000000000',
@@ -240,7 +240,7 @@ BEGIN
   INSERT INTO public.profiles (id, name, great_region, pastoral_zone, small_group, role, is_demo, updated_at)
   VALUES (
     'd04051db-87ef-4d6c-abb2-a1526438ebee',
-    '張明哲',
+    '示範組長乙',
     '示範大區A',
     '示範牧區乙',
     '示範小組3',
@@ -270,12 +270,12 @@ BEGIN
   FROM temp_chapters
   WHERE idx <= 310;
 
-  -- [黃雅婷] --------------------
+  -- [示範組員三] --------------------
   INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at, instance_id, aud, role, encrypted_password)
   VALUES (
     'e64b40a1-5099-4d6b-904e-87e8284c2de9',
     'e64b40a1@church-bible.com',
-    '{"full_name": "黃雅婷"}',
+    '{"full_name": "示範組員三"}',
     NOW() - INTERVAL '60 days',
     NOW(),
     '00000000-0000-0000-0000-000000000000',
@@ -287,7 +287,7 @@ BEGIN
   INSERT INTO public.profiles (id, name, great_region, pastoral_zone, small_group, role, is_demo, updated_at)
   VALUES (
     'e64b40a1-5099-4d6b-904e-87e8284c2de9',
-    '黃雅婷',
+    '示範組員三',
     '示範大區A',
     '示範牧區乙',
     '示範小組3',
@@ -317,12 +317,12 @@ BEGIN
   FROM temp_chapters
   WHERE idx <= 60;
 
-  -- [李冠宇] --------------------
+  -- [示範組長丙] --------------------
   INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at, instance_id, aud, role, encrypted_password)
   VALUES (
     'b02367b0-e5d7-42e5-8197-eafe8a553f86',
     'b02367b0@church-bible.com',
-    '{"full_name": "李冠宇"}',
+    '{"full_name": "示範組長丙"}',
     NOW() - INTERVAL '60 days',
     NOW(),
     '00000000-0000-0000-0000-000000000000',
@@ -334,7 +334,7 @@ BEGIN
   INSERT INTO public.profiles (id, name, great_region, pastoral_zone, small_group, role, is_demo, updated_at)
   VALUES (
     'b02367b0-e5d7-42e5-8197-eafe8a553f86',
-    '李冠宇',
+    '示範組長丙',
     '示範大區A',
     '示範牧區丙',
     '示範小組4',
@@ -364,12 +364,12 @@ BEGIN
   FROM temp_chapters
   WHERE idx <= 170;
 
-  -- [王淑芬] --------------------
+  -- [示範組員四] --------------------
   INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at, instance_id, aud, role, encrypted_password)
   VALUES (
     'f071b619-e040-4676-9116-d582052aa17f',
     'f071b619@church-bible.com',
-    '{"full_name": "王淑芬"}',
+    '{"full_name": "示範組員四"}',
     NOW() - INTERVAL '60 days',
     NOW(),
     '00000000-0000-0000-0000-000000000000',
@@ -381,7 +381,7 @@ BEGIN
   INSERT INTO public.profiles (id, name, great_region, pastoral_zone, small_group, role, is_demo, updated_at)
   VALUES (
     'f071b619-e040-4676-9116-d582052aa17f',
-    '王淑芬',
+    '示範組員四',
     '示範大區A',
     '示範牧區丙',
     '示範小組4',
@@ -505,12 +505,12 @@ BEGIN
   FROM temp_chapters
   WHERE idx <= 300;
 
-  -- [楊俊傑] --------------------
+  -- [示範組長丁] --------------------
   INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at, instance_id, aud, role, encrypted_password)
   VALUES (
     '2fd3cc45-7e0c-4653-ace0-9a44f77d53ce',
     '2fd3cc45@church-bible.com',
-    '{"full_name": "楊俊傑"}',
+    '{"full_name": "示範組長丁"}',
     NOW() - INTERVAL '60 days',
     NOW(),
     '00000000-0000-0000-0000-000000000000',
@@ -522,7 +522,7 @@ BEGIN
   INSERT INTO public.profiles (id, name, great_region, pastoral_zone, small_group, role, is_demo, updated_at)
   VALUES (
     '2fd3cc45-7e0c-4653-ace0-9a44f77d53ce',
-    '楊俊傑',
+    '示範組長丁',
     '示範大區B',
     '示範牧區丁',
     '示範小組5',
@@ -552,12 +552,12 @@ BEGIN
   FROM temp_chapters
   WHERE idx <= 315;
 
-  -- [許美惠] --------------------
+  -- [示範組員五] --------------------
   INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at, instance_id, aud, role, encrypted_password)
   VALUES (
     '74c4beb3-4bd6-498f-adca-3e1a3619761e',
     '74c4beb3@church-bible.com',
-    '{"full_name": "許美惠"}',
+    '{"full_name": "示範組員五"}',
     NOW() - INTERVAL '60 days',
     NOW(),
     '00000000-0000-0000-0000-000000000000',
@@ -569,7 +569,7 @@ BEGIN
   INSERT INTO public.profiles (id, name, great_region, pastoral_zone, small_group, role, is_demo, updated_at)
   VALUES (
     '74c4beb3-4bd6-498f-adca-3e1a3619761e',
-    '許美惠',
+    '示範組員五',
     '示範大區B',
     '示範牧區丁',
     '示範小組5',
@@ -599,12 +599,12 @@ BEGIN
   FROM temp_chapters
   WHERE idx <= 250;
 
-  -- [鄭裕民] --------------------
+  -- [示範組員六] --------------------
   INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at, instance_id, aud, role, encrypted_password)
   VALUES (
     '0c905bf0-567c-4034-8ac7-8f52f1478690',
     '0c905bf0@church-bible.com',
-    '{"full_name": "鄭裕民"}',
+    '{"full_name": "示範組員六"}',
     NOW() - INTERVAL '60 days',
     NOW(),
     '00000000-0000-0000-0000-000000000000',
@@ -616,7 +616,7 @@ BEGIN
   INSERT INTO public.profiles (id, name, great_region, pastoral_zone, small_group, role, is_demo, updated_at)
   VALUES (
     '0c905bf0-567c-4034-8ac7-8f52f1478690',
-    '鄭裕民',
+    '示範組員六',
     '示範大區B',
     '示範牧區戊',
     '示範小組6',
@@ -646,12 +646,12 @@ BEGIN
   FROM temp_chapters
   WHERE idx <= 150;
 
-  -- [謝佩珊] --------------------
+  -- [示範組員七] --------------------
   INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at, instance_id, aud, role, encrypted_password)
   VALUES (
     '29c9bdc5-2696-4473-8c35-12b571ca9982',
     '29c9bdc5@church-bible.com',
-    '{"full_name": "謝佩珊"}',
+    '{"full_name": "示範組員七"}',
     NOW() - INTERVAL '60 days',
     NOW(),
     '00000000-0000-0000-0000-000000000000',
@@ -663,7 +663,7 @@ BEGIN
   INSERT INTO public.profiles (id, name, great_region, pastoral_zone, small_group, role, is_demo, updated_at)
   VALUES (
     '29c9bdc5-2696-4473-8c35-12b571ca9982',
-    '謝佩珊',
+    '示範組員七',
     '示範大區B',
     '示範牧區戊',
     '示範小組6',
@@ -693,12 +693,12 @@ BEGIN
   FROM temp_chapters
   WHERE idx <= 80;
 
-  -- [郭家豪] --------------------
+  -- [示範組員八] --------------------
   INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at, instance_id, aud, role, encrypted_password)
   VALUES (
     '7635e39e-3e29-4804-894a-e7629a137393',
     '7635e39e@church-bible.com',
-    '{"full_name": "郭家豪"}',
+    '{"full_name": "示範組員八"}',
     NOW() - INTERVAL '60 days',
     NOW(),
     '00000000-0000-0000-0000-000000000000',
@@ -710,7 +710,7 @@ BEGIN
   INSERT INTO public.profiles (id, name, great_region, pastoral_zone, small_group, role, is_demo, updated_at)
   VALUES (
     '7635e39e-3e29-4804-894a-e7629a137393',
-    '郭家豪',
+    '示範組員八',
     '示範大區B',
     '示範牧區己',
     '示範小組7',
@@ -787,12 +787,12 @@ BEGIN
   FROM temp_chapters
   WHERE idx <= 280;
 
-  -- [葉子毅] --------------------
+  -- [示範組員九] --------------------
   INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at, instance_id, aud, role, encrypted_password)
   VALUES (
     '2c3f9569-c1d8-4852-8bb6-4ac2a193befc',
     '2c3f9569@church-bible.com',
-    '{"full_name": "葉子毅"}',
+    '{"full_name": "示範組員九"}',
     NOW() - INTERVAL '60 days',
     NOW(),
     '00000000-0000-0000-0000-000000000000',
@@ -804,7 +804,7 @@ BEGIN
   INSERT INTO public.profiles (id, name, great_region, pastoral_zone, small_group, role, is_demo, updated_at)
   VALUES (
     '2c3f9569-c1d8-4852-8bb6-4ac2a193befc',
-    '葉子毅',
+    '示範組員九',
     '示範大區C',
     '示範牧區庚',
     '示範小組8',
@@ -834,12 +834,12 @@ BEGIN
   FROM temp_chapters
   WHERE idx <= 90;
 
-  -- [周宛儒] --------------------
+  -- [示範組員十] --------------------
   INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at, instance_id, aud, role, encrypted_password)
   VALUES (
     '68b2e8ac-b34e-4b77-a31f-3913ab8fa08f',
     '68b2e8ac@church-bible.com',
-    '{"full_name": "周宛儒"}',
+    '{"full_name": "示範組員十"}',
     NOW() - INTERVAL '60 days',
     NOW(),
     '00000000-0000-0000-0000-000000000000',
@@ -851,7 +851,7 @@ BEGIN
   INSERT INTO public.profiles (id, name, great_region, pastoral_zone, small_group, role, is_demo, updated_at)
   VALUES (
     '68b2e8ac-b34e-4b77-a31f-3913ab8fa08f',
-    '周宛儒',
+    '示範組員十',
     '示範大區C',
     '示範牧區庚',
     '示範小組8',
@@ -881,12 +881,12 @@ BEGIN
   FROM temp_chapters
   WHERE idx <= 160;
 
-  -- [蕭志平] --------------------
+  -- [示範組長戊] --------------------
   INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at, instance_id, aud, role, encrypted_password)
   VALUES (
     '6afbf6e7-3fba-47ac-b314-889292ff69ab',
     '6afbf6e7@church-bible.com',
-    '{"full_name": "蕭志平"}',
+    '{"full_name": "示範組長戊"}',
     NOW() - INTERVAL '60 days',
     NOW(),
     '00000000-0000-0000-0000-000000000000',
@@ -898,7 +898,7 @@ BEGIN
   INSERT INTO public.profiles (id, name, great_region, pastoral_zone, small_group, role, is_demo, updated_at)
   VALUES (
     '6afbf6e7-3fba-47ac-b314-889292ff69ab',
-    '蕭志平',
+    '示範組長戊',
     '示範大區C',
     '示範牧區辛',
     '示範小組9',
@@ -928,12 +928,12 @@ BEGIN
   FROM temp_chapters
   WHERE idx <= 305;
 
-  -- [莊雅雯] --------------------
+  -- [示範組員十一] --------------------
   INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at, instance_id, aud, role, encrypted_password)
   VALUES (
     '05ee16e8-f969-44ce-b689-92feb0f30841',
     '05ee16e8@church-bible.com',
-    '{"full_name": "莊雅雯"}',
+    '{"full_name": "示範組員十一"}',
     NOW() - INTERVAL '60 days',
     NOW(),
     '00000000-0000-0000-0000-000000000000',
@@ -945,7 +945,7 @@ BEGIN
   INSERT INTO public.profiles (id, name, great_region, pastoral_zone, small_group, role, is_demo, updated_at)
   VALUES (
     '05ee16e8-f969-44ce-b689-92feb0f30841',
-    '莊雅雯',
+    '示範組員十一',
     '示範大區C',
     '示範牧區辛',
     '示範小組9',
@@ -1022,12 +1022,12 @@ BEGIN
   FROM temp_chapters
   WHERE idx <= 290;
 
-  -- [梁哲瑋] --------------------
+  -- [示範組長己] --------------------
   INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at, instance_id, aud, role, encrypted_password)
   VALUES (
     '696dd6fe-e56b-40a8-8625-010e0fd3f5c3',
     '696dd6fe@church-bible.com',
-    '{"full_name": "梁哲瑋"}',
+    '{"full_name": "示範組長己"}',
     NOW() - INTERVAL '60 days',
     NOW(),
     '00000000-0000-0000-0000-000000000000',
@@ -1039,7 +1039,7 @@ BEGIN
   INSERT INTO public.profiles (id, name, great_region, pastoral_zone, small_group, role, is_demo, updated_at)
   VALUES (
     '696dd6fe-e56b-40a8-8625-010e0fd3f5c3',
-    '梁哲瑋',
+    '示範組長己',
     '示範大區D',
     '示範牧區壬',
     '示範小組10',
@@ -1069,12 +1069,12 @@ BEGIN
   FROM temp_chapters
   WHERE idx <= 300;
 
-  -- [徐淑貞] --------------------
+  -- [示範組員十二] --------------------
   INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at, instance_id, aud, role, encrypted_password)
   VALUES (
     '00ac5c24-7d52-4a17-8b05-763821b95039',
     '00ac5c24@church-bible.com',
-    '{"full_name": "徐淑貞"}',
+    '{"full_name": "示範組員十二"}',
     NOW() - INTERVAL '60 days',
     NOW(),
     '00000000-0000-0000-0000-000000000000',
@@ -1086,7 +1086,7 @@ BEGIN
   INSERT INTO public.profiles (id, name, great_region, pastoral_zone, small_group, role, is_demo, updated_at)
   VALUES (
     '00ac5c24-7d52-4a17-8b05-763821b95039',
-    '徐淑貞',
+    '示範組員十二',
     '示範大區D',
     '示範牧區壬',
     '示範小組10',
@@ -1116,12 +1116,12 @@ BEGIN
   FROM temp_chapters
   WHERE idx <= 140;
 
-  -- [孫啟宏] --------------------
+  -- [示範組員十三] --------------------
   INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at, instance_id, aud, role, encrypted_password)
   VALUES (
     'cef53f07-37c0-4e4a-95b2-67ec44b60926',
     'cef53f07@church-bible.com',
-    '{"full_name": "孫啟宏"}',
+    '{"full_name": "示範組員十三"}',
     NOW() - INTERVAL '60 days',
     NOW(),
     '00000000-0000-0000-0000-000000000000',
@@ -1133,7 +1133,7 @@ BEGIN
   INSERT INTO public.profiles (id, name, great_region, pastoral_zone, small_group, role, is_demo, updated_at)
   VALUES (
     'cef53f07-37c0-4e4a-95b2-67ec44b60926',
-    '孫啟宏',
+    '示範組員十三',
     '示範大區D',
     '示範牧區癸',
     '示範小組11',
@@ -1163,12 +1163,12 @@ BEGIN
   FROM temp_chapters
   WHERE idx <= 220;
 
-  -- [傅小敏] --------------------
+  -- [示範組員十四] --------------------
   INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at, instance_id, aud, role, encrypted_password)
   VALUES (
     '3a30651e-4590-48e0-b677-ee68e6cc061d',
     '3a30651e@church-bible.com',
-    '{"full_name": "傅小敏"}',
+    '{"full_name": "示範組員十四"}',
     NOW() - INTERVAL '60 days',
     NOW(),
     '00000000-0000-0000-0000-000000000000',
@@ -1180,7 +1180,7 @@ BEGIN
   INSERT INTO public.profiles (id, name, great_region, pastoral_zone, small_group, role, is_demo, updated_at)
   VALUES (
     '3a30651e-4590-48e0-b677-ee68e6cc061d',
-    '傅小敏',
+    '示範組員十四',
     '示範大區D',
     '示範牧區癸',
     '示範小組11',
@@ -1445,12 +1445,12 @@ BEGIN
   FROM temp_chapters
   WHERE idx <= 215;
 
-  -- [張主任牧師] --------------------
+  -- [示範主任牧師] --------------------
   INSERT INTO auth.users (id, email, raw_user_meta_data, created_at, updated_at, instance_id, aud, role, encrypted_password)
   VALUES (
     '934334bb-38fd-4c60-9681-e1d6e873bd34',
     '934334bb@church-bible.com',
-    '{"full_name": "張主任牧師"}',
+    '{"full_name": "示範主任牧師"}',
     NOW() - INTERVAL '60 days',
     NOW(),
     '00000000-0000-0000-0000-000000000000',
@@ -1462,7 +1462,7 @@ BEGIN
   INSERT INTO public.profiles (id, name, great_region, pastoral_zone, small_group, role, is_demo, updated_at)
   VALUES (
     '934334bb-38fd-4c60-9681-e1d6e873bd34',
-    '張主任牧師',
+    '示範主任牧師',
     '示範大區A',
     '示範牧區甲',
     '示範小組1',
