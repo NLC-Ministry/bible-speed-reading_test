@@ -1,5 +1,5 @@
-const CACHE_NAME = 'church-bible-reading-v13';
-const DYNAMIC_CACHE_NAME = 'church-bible-dynamic-v13';
+const CACHE_NAME = 'church-bible-reading-v14';
+const DYNAMIC_CACHE_NAME = 'church-bible-dynamic-v14';
 
 // Static resources to precache
 const PRECACHE_ASSETS = [

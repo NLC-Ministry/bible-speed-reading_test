@@ -74,6 +74,15 @@ async function calculateAndRenderPersonalRankings() {
 
   if (!rankGroupEl || !rankZoneEl || !rankRegionEl || !rankChurchEl) return;
 
+  const hasPlan = state.activePlans && state.activePlans.length > 0;
+  if (!hasPlan) {
+    rankGroupEl.textContent = "未加入計畫";
+    rankZoneEl.textContent = "未加入計畫";
+    rankRegionEl.textContent = "未加入計畫";
+    rankChurchEl.textContent = "未加入計畫";
+    return;
+  }
+
   try {
     const rankings = await db.getUserRankings();
     if (rankings) {
@@ -98,6 +107,14 @@ async function calculateAndRenderPersonalRankings() {
 
 async function renderPastoralZoneRankingList() {
   const rankingContainer = document.getElementById("dashboard-pastoral-ranking");
+  if (!rankingContainer) return;
+
+  const hasPlan = state.activePlans && state.activePlans.length > 0;
+  if (!hasPlan) {
+    rankingContainer.innerHTML = `<div class="empty-state">請先加入計畫以查看排名</div>`;
+    return;
+  }
+
   rankingContainer.innerHTML = `<div class="empty-state">載入排行中...</div>`;
 
   let pastoralStats = [];
@@ -258,6 +275,12 @@ function showSaveSuccess(isAuto) {
 async function renderTodayGroupProgress() {
   const listEl = document.getElementById("member-today-list");
   if (!listEl) return;
+  
+  const hasPlan = state.activePlans && state.activePlans.length > 0;
+  if (!hasPlan) {
+    listEl.innerHTML = '<div style="font-size: 0.88rem; color: var(--text-muted); text-align: center; padding: 2rem 0;">請先至「讀經計畫」加入計畫，以查看今日進度！</div>';
+    return;
+  }
   
   listEl.innerHTML = '<div style="font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 1rem;">載入中...</div>';
   

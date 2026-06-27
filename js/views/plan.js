@@ -15,6 +15,46 @@ function initPlanControls() {
     });
   }
 
+  // Back Button
+  const backBtn = document.getElementById("btn-back-to-plans");
+  if (backBtn) {
+    backBtn.addEventListener("click", () => {
+      state.activePlan = null;
+      localStorage.removeItem("selected_plan_key");
+      const listSubview = document.getElementById("plan-list-subview");
+      const detailSubview = document.getElementById("plan-detail-subview");
+      if (listSubview) listSubview.classList.remove("hidden");
+      if (detailSubview) detailSubview.classList.add("hidden");
+      renderPlanView();
+    });
+  }
+
+  // Sub-tabs
+  const tabSchedule = document.getElementById("tab-plan-schedule");
+  const tabStats = document.getElementById("tab-plan-stats");
+  const subviewSchedule = document.getElementById("subview-plan-schedule");
+  const subviewPlanStats = document.getElementById("subview-plan-stats");
+
+  if (tabSchedule && tabStats) {
+    tabSchedule.addEventListener("click", () => {
+      tabSchedule.classList.add("active-tab-btn");
+      tabStats.classList.remove("active-tab-btn");
+      if (subviewSchedule) subviewSchedule.classList.remove("hidden");
+      if (subviewPlanStats) subviewPlanStats.classList.add("hidden");
+      renderPlanScheduleTracker();
+    });
+
+    tabStats.addEventListener("click", async () => {
+      tabStats.classList.add("active-tab-btn");
+      tabSchedule.classList.remove("active-tab-btn");
+      if (subviewSchedule) subviewSchedule.classList.add("hidden");
+      if (subviewPlanStats) subviewPlanStats.classList.remove("hidden");
+      if (state.activePlan) {
+        await updateStatsView(state.activePlan.presetKey);
+      }
+    });
+  }
+
   // Initialize Global Plans Admin Controls
   if (typeof initAdminPlanManagement === 'function') {
     initAdminPlanManagement();
@@ -347,46 +387,129 @@ function calculateAllPlansProgress() {
 }
 
 async function renderPlanView() {
+  renderJoinedPlansList();
+  renderPresetPlansList();
+
+  const listSubview = document.getElementById("plan-list-subview");
+  const detailSubview = document.getElementById("plan-detail-subview");
+
+  if (state.activePlan) {
+    if (listSubview) listSubview.classList.add("hidden");
+    if (detailSubview) detailSubview.classList.remove("hidden");
+    renderPlanDetailView();
+  } else {
+    if (listSubview) listSubview.classList.remove("hidden");
+    if (detailSubview) detailSubview.classList.add("hidden");
+  }
+
+  // If user is admin/senior pastor and in simulated admin mode, render global plan management list
+  const isRealAdmin = !state.isSupabaseMode || (state.realRole === "admin" || state.realRole === "senior_pastor");
+  const isSimulatedAdmin = state.currentUser && (state.currentUser.role === "admin" || state.currentUser.role === "senior_pastor");
+  if (isRealAdmin && isSimulatedAdmin && typeof renderAdminPlanManagement === 'function') {
+    renderAdminPlanManagement();
+  }
+}
+
+function renderJoinedPlansList() {
+  const container = document.getElementById("joined-plans-list");
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  if (!state.activePlans || state.activePlans.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state" style="text-align: center; padding: 3rem 0;">
+        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">您目前沒有加入任何讀經計畫。</p>
+        <p style="font-size: 0.88rem; color: var(--text-muted);">請在右側清單選擇欲加入的季計畫！</p>
+      </div>
+    `;
+    return;
+  }
+
+  state.activePlans.forEach(plan => {
+    const card = document.createElement("div");
+    card.className = "joined-plan-item-card";
+    card.style = `
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-sm);
+      padding: 1.2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    `;
+    card.onclick = () => {
+      state.activePlan = plan;
+      localStorage.setItem("selected_plan_key", plan.presetKey || "");
+      renderPlanView();
+    };
+
+    const progress = plan.progress || 0;
+    card.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;">
+        <h4 style="margin: 0; font-size: 1rem; font-weight: 700; color: var(--text-primary);">${plan.name}</h4>
+        <span style="font-size: 0.72rem; background: var(--primary-color); color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-weight: 700; white-space: nowrap;">查看詳情 & 統計</span>
+      </div>
+      <div style="font-size: 0.8rem; color: var(--text-secondary);">
+        📅 範圍：${plan.startDate} ~ ${plan.endDate}
+      </div>
+      <div class="plan-progress-wrapper" style="margin-top: 0.4rem; height: 8px;">
+        <div class="plan-progress-bar" style="width: ${progress}%;"></div>
+      </div>
+      <div style="font-size: 0.8rem; font-weight: 600; text-align: right; color: var(--text-secondary);">
+        已讀 ${progress}% (${plan.completedChapters} / ${plan.totalChapters} 章)
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+async function renderPlanDetailView() {
+  if (!state.activePlan) return;
+
+  // Set Title
+  const titleEl = document.getElementById("plan-detail-title");
+  if (titleEl) titleEl.textContent = state.activePlan.name;
+
+  // Render current selected tab content
+  const tabSchedule = document.getElementById("tab-plan-schedule");
+  const tabStats = document.getElementById("tab-plan-stats");
+
+  if (tabStats && tabStats.classList.contains("active-tab-btn")) {
+    await updateStatsView(state.activePlan.presetKey);
+  } else {
+    // Default to Schedule Tab
+    if (tabSchedule) tabSchedule.classList.add("active-tab-btn");
+    if (tabStats) tabStats.classList.remove("active-tab-btn");
+    renderPlanScheduleTracker();
+  }
+}
+
+async function renderPlanScheduleTracker() {
   const container = document.getElementById("plan-tracker-container");
   const deleteBtn = document.getElementById("delete-plan-btn");
 
   if (!state.activePlan) {
-    container.innerHTML = `
-      <div class="empty-state" style="text-align: center; padding: 3rem 0;">
-        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">您目前沒有進行中的讀經計畫。</p>
-        <p style="font-size: 0.9rem; color: var(--text-muted);">請在右側欄位選擇欲加入的教會季度計畫！</p>
-      </div>
-    `;
-    deleteBtn.classList.add("hidden");
-    renderPresetPlansList();
+    if (container) {
+      container.innerHTML = `
+        <div class="empty-state" style="text-align: center; padding: 3rem 0;">
+          <p style="color: var(--text-secondary);">請選擇一個讀經計畫查看詳情。</p>
+        </div>
+      `;
+    }
     return;
   }
 
   // Check plan schedule alignment (downgrade check)
   await checkPlanSchedule(state.activePlan);
 
-  deleteBtn.classList.remove("hidden");
+  if (deleteBtn) deleteBtn.classList.remove("hidden");
   
   const isAdmin = state.currentUser && state.currentUser.role === 'admin';
   const started = isPlanStarted(state.activePlan) || isAdmin;
   const isActuallyStarted = isPlanStarted(state.activePlan);
-  
-  let selectHtml = "";
-  if (state.activePlans && state.activePlans.length > 1) {
-    selectHtml = `
-      <div class="plan-selector-bar" style="margin-bottom: 1.2rem; display: flex; align-items: center; gap: 0.5rem; background: rgba(255,255,255,0.3); padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-card);">
-        <label style="font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); white-space: nowrap;">切換計畫：</label>
-        <select id="active-plan-select" style="flex: 1; font-size: 0.85rem; padding: 0.35rem 0.5rem; border-radius: 4px; border: 1px solid var(--border-card); background: var(--bg-card); color: var(--text-primary); cursor: pointer;" onchange="window.changeActivePlan(this.value)">
-          ${state.activePlans.map(plan => {
-            const planStarted = isPlanStarted(plan);
-            const statusLabel = planStarted ? "進行中" : "等待開始";
-            const selected = plan.presetKey === state.activePlan.presetKey ? "selected" : "";
-            return `<option value="${plan.presetKey}" ${selected}>${plan.name} (${statusLabel})</option>`;
-          }).join("")}
-        </select>
-      </div>
-    `;
-  }
 
   let warningBanner = "";
   if (!isActuallyStarted) {
@@ -443,15 +566,8 @@ async function renderPlanView() {
     roundLabel = `第 ${currentRound} 遍 (自主掌控)`;
   }
 
-  let html = selectHtml + levelSelectorHtml + `
+  let html = levelSelectorHtml + `
     <div class="plan-progress-header">
-      <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;">
-        <h4 style="font-size: 1.3rem; font-weight: 800; color: var(--text-primary); margin: 0;">${state.activePlan.name}</h4>
-        ${isActuallyStarted
-          ? '<span style="font-size: 0.75rem; background: #10b981; color: white; padding: 0.15rem 0.5rem; border-radius: 4px; font-weight: 700; white-space: nowrap;">進行中</span>'
-          : '<span style="font-size: 0.75rem; background: #3b82f6; color: white; padding: 0.15rem 0.5rem; border-radius: 4px; font-weight: 700; white-space: nowrap;">等待開始</span>'
-        }
-      </div>
       <div class="plan-progress-wrapper" style="margin-top: 1rem;">
         <div class="plan-progress-bar ${roundClass}" style="width: ${state.activePlan.progress}%;"></div>
       </div>
@@ -478,21 +594,19 @@ async function renderPlanView() {
   });
 
   Object.entries(groups).forEach(([monthName, monthDays]) => {
-    // Clean identifier for HTML ID
     const monthId = `month-${monthName.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '')}`;
 
     html += `
       <div class="month-section" style="margin-bottom: 1.2rem;">
         <div class="month-header" onclick="window.toggleMonthSection('${monthId}')" style="font-size: 0.98rem; font-weight: 800; color: var(--primary-color); padding: 0.65rem 0.9rem; cursor: pointer; display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid var(--border-card); background: rgba(99,102,241,0.07); border-radius: 8px; transition: background 0.2s ease; user-select: none;">
           <span style="display: flex; align-items: center; gap: 0.4rem;">📅 ${monthName}</span>
-          <svg class="month-toggle-icon" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" style="transition: transform 0.2s ease; transform: rotate(0deg);"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          <svg class="month-toggle-icon" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" style="transition: transform 0.2s ease; transform: rotate(-90deg);"><polyline points="6 9 12 15 18 9"></polyline></svg>
         </div>
-        <div class="month-days-list" id="${monthId}" style="margin-top: 0.6rem; display: flex; flex-direction: column; gap: 0.5rem; transition: all 0.3s ease;">
+        <div class="month-days-list hidden" id="${monthId}" style="margin-top: 0.6rem; display: flex; flex-direction: column; gap: 0.5rem; transition: all 0.3s ease;">
     `;
 
     monthDays.forEach(day => {
       if (!day.chapters || day.chapters.length === 0) {
-        // Rest Day card (catch-up / rest day)
         html += `
           <div class="rest-day-item" style="padding: 0.65rem 0.9rem; border: 1px dashed var(--border-card, rgba(0,0,0,0.12)); border-radius: 8px; background: rgba(255, 255, 255, 0.22); display: flex; align-items: center; justify-content: space-between; font-size: 0.82rem; color: var(--text-muted);">
             <span style="font-weight: 600;">Day ${day.dayNum} (${day.date})</span>
@@ -502,7 +616,6 @@ async function renderPlanView() {
           </div>
         `;
       } else {
-        // Regular Day row
         const allDone = day.chapters.every(ch => ch.isRead);
         const badgeClass = allDone ? "day-badge complete" : "day-badge";
         const badgeText = allDone ? "已完成" : "未完";
@@ -513,7 +626,7 @@ async function renderPlanView() {
               <div class="day-title" style="font-size: 0.88rem; font-weight: 700; color: var(--text-primary);">Day ${day.dayNum} <span style="font-size: 0.8rem; font-weight: 500; color: var(--text-muted); margin-left: 0.5rem;">(${day.date})</span></div>
               <span class="${badgeClass}">${badgeText}</span>
             </div>
-            <div class="day-chapters-list" style="padding: 0.6rem 0.8rem; display: flex; flex-direction: column; gap: 0.45rem;">
+            <div class="day-chapters-list hidden" style="padding: 0.6rem 0.8rem; display: flex; flex-direction: column; gap: 0.45rem;">
         `;
 
         day.chapters.forEach(ch => {
@@ -543,15 +656,7 @@ async function renderPlanView() {
     `;
   });
   html += `</div>`;
-  container.innerHTML = html;
-  renderPresetPlansList();
-
-  // If user is admin/senior pastor and in simulated admin mode, render global plan management list
-  const isRealAdmin = !state.isSupabaseMode || (state.realRole === "admin" || state.realRole === "senior_pastor");
-  const isSimulatedAdmin = state.currentUser && (state.currentUser.role === "admin" || state.currentUser.role === "senior_pastor");
-  if (isRealAdmin && isSimulatedAdmin && typeof renderAdminPlanManagement === 'function') {
-    renderAdminPlanManagement();
-  }
+  if (container) container.innerHTML = html;
 }
 
 function toggleDaySection(headerEl) {

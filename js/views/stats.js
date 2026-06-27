@@ -24,54 +24,70 @@ function filterUsersByRole(users, currentUser) {
   return users.filter(u => u.name === currentUser.name);
 }
 
-async function updateStatsView() {
+async function updateStatsView(filterPresetKey = null) {
+  // If no filterPresetKey is provided, fallback to current activePlan's key
+  if (!filterPresetKey && state.activePlan) {
+    filterPresetKey = state.activePlan.presetKey;
+  }
+  window.currentStatsFilterPresetKey = filterPresetKey;
+
   loader.show("載入統計數據中...");
   
   let pastoralStats = [];
   let rawAllUsers = [];
 
-  const mockUser = {
+  // Pass filterPresetKey to fetchMergedUsersList so stats are plan-specific!
+  const unfilteredAllUsers = await db.fetchMergedUsersList(filterPresetKey);
+  window.unfilteredAllUsersCache = unfilteredAllUsers;
+
+  const mockUser = unfilteredAllUsers.find(u => u.name === state.currentUser.name) || {
     name: state.currentUser.name,
     great_region: state.currentUser.great_region || "東區",
     pastoral_zone: state.currentUser.pastoral_zone || "大安1",
     small_group: state.currentUser.small_group || "馬鈴",
     role: state.currentUser.role || "member",
-    chapters_read: state.currentUser.chapters_read,
-    plan_progress: state.currentUser.plan_progress,
-    last_read: state.currentUser.last_read
+    chapters_read: 0,
+    plan_progress: 0,
+    last_read: null
   };
-
-  const role = mockUser.role;
-
-  // Use the unified db service to get all merged users (eliminates redundant DB queries)
-  const unfilteredAllUsers = await db.fetchMergedUsersList();
-  window.unfilteredAllUsersCache = unfilteredAllUsers;
   window.mockUserCache = mockUser;
   rawAllUsers = [...unfilteredAllUsers];
 
-  if (state.isSupabaseMode && state.supabase) {
-    try {
-      const { data } = await state.supabase.from("view_pastoral_zone_stats").select("*");
-      if (data) {
-        pastoralStats = data.map(item => ({
-          name: item.pastoral_zone,
-          great_region: item.great_region,
-          member_count: item.member_count,
-          total_chapters: item.total_chapters_read,
-          avg_progress: item.avg_progress || 0,
-          active_count: item.active_member_count
-        })).sort((a, b) => b.total_chapters - a.total_chapters);
-      }
-    } catch (e) {
-      console.error("Failed to load pastoral zone stats from views:", e);
+  const role = mockUser.role;
+
+  // Dynamically calculate pastoralStats in frontend from the filtered users list!
+  const zoneMap = {};
+  unfilteredAllUsers.forEach(u => {
+    const zone = u.pastoral_zone || "未知";
+    const region = u.great_region || "未知";
+    if (!zoneMap[zone]) {
+      zoneMap[zone] = {
+        name: zone,
+        great_region: region,
+        member_count: 0,
+        total_chapters: 0,
+        total_progress: 0,
+        active_count: 0
+      };
     }
-    // Apply RBAC filtering on the fetched roster dataset
-    rawAllUsers = filterUsersByRole(rawAllUsers, mockUser);
-  } else {
-    // Demo Mode
-    pastoralStats = MockStatsService.getPastoralZoneStats(mockUser);
-    rawAllUsers = filterUsersByRole(rawAllUsers, mockUser);
-  }
+    zoneMap[zone].member_count++;
+    zoneMap[zone].total_chapters += u.chapters_read || 0;
+    zoneMap[zone].total_progress += u.plan_progress || 0;
+    if (u.chapters_read > 0) {
+      zoneMap[zone].active_count++;
+    }
+  });
+
+  pastoralStats = Object.values(zoneMap).map(item => ({
+    name: item.name,
+    great_region: item.great_region,
+    member_count: item.member_count,
+    total_chapters: item.total_chapters,
+    avg_progress: Math.round(item.total_progress / item.member_count) || 0,
+    active_count: item.active_count
+  })).sort((a, b) => b.total_chapters - a.total_chapters);
+
+  rawAllUsers = filterUsersByRole(rawAllUsers, mockUser);
 
   // Filter pastoralStats based on Great Region for non-admin roles
   if (role !== "admin" && role !== "senior_pastor") {
@@ -467,15 +483,34 @@ function renderMonthlyHallOfFame() {
 // ==========================================
 
 function getTeamLogs(teamUsers) {
+  const filterPresetKey = window.currentStatsFilterPresetKey;
   if (state.isSupabaseMode && state.allLogsCache) {
     const userIds = new Set(teamUsers.map(u => u.id));
-    return state.allLogsCache.filter(l => userIds.has(l.user_id));
+    return state.allLogsCache.filter(l => {
+      if (!userIds.has(l.user_id)) return false;
+      if (filterPresetKey) {
+        const cacheKey = l.user_id + '_' + filterPresetKey;
+        if (window.userPlanIdCache && window.userPlanIdCache[cacheKey]) {
+          return l.plan_id === window.userPlanIdCache[cacheKey];
+        }
+        if (l.user_id === state.currentUser.id && state.activePlan) {
+          return l.plan_id === state.activePlan.id;
+        }
+        return false;
+      }
+      return true;
+    });
   } else {
     // Generate mock logs for team users based on their chapters_read and last_read
     const logs = [];
     
     // Include current user's real logs
-    const currentUserRealLogs = state.readingLogs.map(l => ({
+    const currentUserRealLogs = state.readingLogs.filter(l => {
+      if (filterPresetKey) {
+        return l.presetKey === filterPresetKey || (state.activePlan && l.plan_id === state.activePlan.id);
+      }
+      return true;
+    }).map(l => ({
       user_id: state.currentUser.id || state.currentUser.name,
       read_at: l.read_at
     }));

@@ -580,7 +580,7 @@ const db = {
     }
   },
 
-  async fetchMergedUsersList() {
+  async fetchMergedUsersList(filterPresetKey = null) {
     const mockUser = {
       name: state.currentUser.name,
       great_region: state.currentUser.great_region || "東區",
@@ -595,14 +595,37 @@ const db = {
     if (state.isSupabaseMode && state.supabase) {
       try {
         const { data: usersProfiles } = await state.supabase.from("profiles").select("*").eq("is_demo", false);
-        const { data: allLogs } = await state.supabase.from("reading_logs").select("user_id, book, chapter, read_at");
+        const { data: allLogs } = await state.supabase.from("reading_logs").select("user_id, book, chapter, read_at, plan_id");
         state.allLogsCache = allLogs || [];
-        const { data: allPlans } = await state.supabase.from("reading_plans").select("user_id, target_books, current_round, level");
+        const { data: allPlans } = await state.supabase.from("reading_plans").select("id, user_id, name, preset_key, target_books, current_round, level");
+
+        window.userPlanIdCache = {};
+        if (allPlans) {
+          allPlans.forEach(p => {
+            if (p.user_id && p.preset_key) {
+              window.userPlanIdCache[p.user_id + '_' + p.preset_key] = p.id;
+            }
+            if (p.user_id && p.name) {
+              window.userPlanIdCache[p.user_id + '_' + p.name] = p.id;
+            }
+          });
+        }
 
         if (usersProfiles) {
           return usersProfiles.map(profile => {
-            const uLogs = allLogs ? allLogs.filter(l => l.user_id === profile.id) : [];
-            const uPlan = allPlans ? allPlans.find(p => p.user_id === profile.id) : null;
+            const uPlan = allPlans ? (
+              filterPresetKey
+                ? allPlans.find(p => p.user_id === profile.id && (p.preset_key === filterPresetKey || p.name === filterPresetKey))
+                : allPlans.find(p => p.user_id === profile.id)
+            ) : null;
+
+            const uLogs = allLogs ? allLogs.filter(l => {
+              if (l.user_id !== profile.id) return false;
+              if (filterPresetKey) {
+                return uPlan ? l.plan_id === uPlan.id : false;
+              }
+              return true;
+            }) : [];
 
             let planProgress = 0;
             if (uPlan && uPlan.target_books && uPlan.target_books.length > 0) {
@@ -646,9 +669,40 @@ const db = {
       return [mockUser];
     }
 
-    return (typeof MockStatsService !== 'undefined' && MockStatsService)
-      ? MockStatsService.getAllUsers(mockUser)
-      : [mockUser];
+    // Offline / Local Storage mode
+    let localUsers = [];
+    if (typeof MockStatsService !== 'undefined') {
+      localUsers = MockStatsService.getAllUsers(mockUser);
+    } else {
+      localUsers = [mockUser];
+    }
+
+    if (filterPresetKey) {
+      const plan = state.activePlans ? state.activePlans.find(p => p.presetKey === filterPresetKey) : null;
+      if (plan) {
+        mockUser.chapters_read = plan.completedChapters;
+        mockUser.plan_progress = plan.progress;
+      }
+      localUsers = localUsers.map(u => {
+        if (u.name === mockUser.name) {
+          return {
+            ...u,
+            chapters_read: mockUser.chapters_read,
+            plan_progress: mockUser.plan_progress
+          };
+        }
+        const seed = u.name.charCodeAt(0) || 10;
+        const totalCh = plan ? plan.totalChapters : 100;
+        const mockChapters = Math.round(((seed * 7) % 50) / 50 * totalCh);
+        const mockProgress = Math.round((mockChapters / totalCh) * 100);
+        return {
+          ...u,
+          chapters_read: mockChapters,
+          plan_progress: mockProgress
+        };
+      });
+    }
+    return localUsers;
   },
 
   async getUserRankings() {
