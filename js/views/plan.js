@@ -3,18 +3,6 @@
 function initPlanControls() {
   renderPresetPlansList();
 
-  // Delete/Leave plan
-  const deleteBtn = document.getElementById("delete-plan-btn");
-  if (deleteBtn) {
-    deleteBtn.addEventListener("click", async () => {
-      if (!state.activePlan) return;
-      if (!confirm("確定要放棄目前的讀經計畫嗎？已讀章節紀錄仍會保留。")) {
-        return;
-      }
-      await db.leavePlan(state.activePlan.id, state.activePlan.presetKey);
-    });
-  }
-
   // Back Button
   const backBtn = document.getElementById("btn-back-to-plans");
   if (backBtn) {
@@ -29,7 +17,33 @@ function initPlanControls() {
     });
   }
 
-  // Sub-tabs
+  // Options Dropdown Menu Toggle
+  const optionsBtn = document.getElementById("btn-plan-options");
+  const dropdown = document.getElementById("plan-options-dropdown");
+  if (optionsBtn && dropdown) {
+    optionsBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      dropdown.classList.toggle("hidden");
+    });
+    document.addEventListener("click", () => {
+      dropdown.classList.add("hidden");
+    });
+  }
+
+  // Abandon Plan Button inside options dropdown
+  const deleteBtn = document.getElementById("delete-plan-btn");
+  if (deleteBtn) {
+    deleteBtn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      if (!state.activePlan) return;
+      if (!confirm("確定要放棄目前的讀經計畫嗎？已讀章節紀錄仍會保留。")) {
+        return;
+      }
+      await db.leavePlan(state.activePlan.id, state.activePlan.presetKey);
+    });
+  }
+
+  // Sub-tabs Toggle (Daily Reading vs Stats)
   const tabSchedule = document.getElementById("tab-plan-schedule");
   const tabStats = document.getElementById("tab-plan-stats");
   const subviewSchedule = document.getElementById("subview-plan-schedule");
@@ -37,21 +51,74 @@ function initPlanControls() {
 
   if (tabSchedule && tabStats) {
     tabSchedule.addEventListener("click", () => {
-      tabSchedule.classList.add("active-tab-btn");
-      tabStats.classList.remove("active-tab-btn");
+      tabSchedule.classList.add("active");
+      tabStats.classList.remove("active");
       if (subviewSchedule) subviewSchedule.classList.remove("hidden");
       if (subviewPlanStats) subviewPlanStats.classList.add("hidden");
       renderPlanScheduleTracker();
     });
 
     tabStats.addEventListener("click", async () => {
-      tabStats.classList.add("active-tab-btn");
-      tabSchedule.classList.remove("active-tab-btn");
+      tabStats.classList.add("active");
+      tabSchedule.classList.remove("active");
       if (subviewSchedule) subviewSchedule.classList.add("hidden");
       if (subviewPlanStats) subviewPlanStats.classList.remove("hidden");
       if (state.activePlan) {
         await updateStatsView(state.activePlan.presetKey);
       }
+    });
+  }
+
+  // Category Pills filters inside Plan List Page
+  const listPills = document.querySelectorAll("#plan-list-status-pills .pill-btn");
+  listPills.forEach(pill => {
+    pill.addEventListener("click", () => {
+      listPills.forEach(p => p.classList.remove("active"));
+      pill.classList.add("active");
+      const filter = pill.getAttribute("data-filter");
+      
+      const joinedContainer = document.getElementById("joined-plans-list-container");
+      const presetContainer = document.getElementById("preset-plans-list-container");
+      const sidebarCard = document.getElementById("plan-sidebar-info-card");
+      
+      if (filter === "mine") {
+        if (joinedContainer) joinedContainer.classList.remove("hidden");
+        if (presetContainer) presetContainer.classList.add("hidden");
+        if (sidebarCard) sidebarCard.classList.remove("hidden");
+        renderJoinedPlansList();
+      } else if (filter === "church") {
+        if (joinedContainer) joinedContainer.classList.add("hidden");
+        if (presetContainer) presetContainer.classList.remove("hidden");
+        if (sidebarCard) sidebarCard.classList.remove("hidden");
+        renderPresetPlansList();
+      } else {
+        if (joinedContainer) joinedContainer.classList.remove("hidden");
+        if (presetContainer) presetContainer.classList.add("hidden");
+        if (sidebarCard) sidebarCard.classList.add("hidden");
+        
+        const joinedList = document.getElementById("joined-plans-list");
+        if (joinedList) {
+          joinedList.innerHTML = `
+            <div class="empty-state" style="text-align: center; padding: 3rem 0; width: 100%;">
+              <p style="color: var(--text-secondary); margin-bottom: 1rem; font-weight: 700;">目前沒有${filter === "saved" ? "已儲存" : "已完成"}的計畫</p>
+              <p style="font-size: 0.82rem; color: var(--text-muted);">前往「尋找計畫」加入新挑戰吧！</p>
+            </div>
+          `;
+        }
+      }
+    });
+  });
+
+  // Action button: Start Reading Today
+  const startReadingBtn = document.getElementById("btn-start-reading-today");
+  if (startReadingBtn) {
+    startReadingBtn.addEventListener("click", () => {
+      if (!state.activePlan || !state.selectedPlanDay) return;
+      const day = state.activePlan.days.find(d => d.dayNum === state.selectedPlanDay);
+      if (!day || !day.chapters || day.chapters.length === 0) return;
+      
+      const firstUnread = day.chapters.find(ch => !ch.isRead) || day.chapters[0];
+      readChapterDirect(firstUnread.book, firstUnread.chapter);
     });
   }
 
@@ -61,113 +128,6 @@ function initPlanControls() {
   }
 }
 
-function getPresetKeyByName(name) {
-  if (!name) return null;
-  const foundDb = (state.globalPlans || []).find(p => p.name === name);
-  if (foundDb) return foundDb.presetKey || foundDb.id;
-  const found = Object.entries(CHURCH_PLAN_PRESETS).find(([key, preset]) => preset.name === name);
-  return found ? found[0] : null;
-}
-
-window.changeActivePlan = function(key) {
-  if (!state.activePlans) return;
-  const plan = state.activePlans.find(p => p.presetKey === key);
-  if (plan) {
-    state.activePlan = plan;
-    localStorage.setItem("selected_plan_key", key);
-    renderPlanView();
-    updateDashboardView();
-  }
-};
-
-function calculateDaysBetween(start, end) {
-  const sDate = new Date(start);
-  const eDate = new Date(end);
-  const diffTime = Math.abs(eDate - sDate);
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-  return diffDays;
-}
-
-function renderPresetPlansList() {
-  const container = document.getElementById("preset-plans-list");
-  if (!container) return;
-
-  container.innerHTML = "";
-
-  const availablePlans = state.globalPlans && state.globalPlans.length > 0
-    ? state.globalPlans
-    : Object.entries(CHURCH_PLAN_PRESETS).map(([key, p]) => ({ id: key, presetKey: key, ...p }));
-
-  availablePlans.forEach(preset => {
-    const key = preset.presetKey || preset.id;
-    const isJoined = state.activePlans && state.activePlans.some(p => p.presetKey === key || getPresetKeyByName(p.name) === key);
-
-    const card = document.createElement("div");
-    card.className = "preset-plan-item-card";
-    card.style = `
-      background: rgba(255, 255, 255, 0.45);
-      border: 1px solid var(--border-card);
-      border-radius: var(--radius-sm);
-      padding: 0.9rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.4rem;
-      transition: all 0.2s ease;
-      cursor: default;
-    `;
-
-    card.onmouseenter = () => {
-      card.style.background = "rgba(99, 102, 241, 0.05)";
-      card.style.borderColor = "var(--primary-color)";
-    };
-    card.onmouseleave = () => {
-      card.style.background = "rgba(255, 255, 255, 0.45)";
-      card.style.borderColor = "var(--border-card)";
-    };
-
-    const bookBadges = preset.books.map(b => `<span style="font-size: 0.72rem; background: var(--border-card); color: var(--text-primary); padding: 0.15rem 0.4rem; border-radius: 4px; display: inline-block;">${b}</span>`).join(" ");
-
-    const started = isPlanStarted(preset);
-    const badgeHtml = isJoined 
-      ? (started 
-          ? '<span style="font-size: 0.7rem; background: #10b981; color: white; padding: 0.1rem 0.4rem; border-radius: 4px; font-weight: 700; white-space: nowrap;">進行中</span>'
-          : '<span style="font-size: 0.7rem; background: #3b82f6; color: white; padding: 0.1rem 0.4rem; border-radius: 4px; font-weight: 700; white-space: nowrap;">等待開始</span>'
-        )
-      : '';
-
-    card.innerHTML = `
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;">
-        <h4 style="margin: 0; font-size: 0.9rem; font-weight: 700; color: var(--text-primary);">${preset.name}</h4>
-        ${badgeHtml}
-      </div>
-      <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">
-        📅 ${preset.startDate} ~ ${preset.endDate} (${calculateDaysBetween(preset.startDate, preset.endDate)} 天)
-      </div>
-      <div style="display: flex; flex-wrap: wrap; gap: 0.3rem; margin: 0.2rem 0;">
-        ${bookBadges}
-      </div>
-      ${!isJoined ? `
-        <button class="primary-btn join-preset-btn" data-key="${key}" style="font-size: 0.78rem; padding: 0.35rem 0.75rem; margin-top: 0.3rem; align-self: flex-end;">
-          加入挑戰
-        </button>
-      ` : `
-        <button class="secondary-btn" disabled style="font-size: 0.78rem; padding: 0.35rem 0.75rem; margin-top: 0.3rem; align-self: flex-end; cursor: not-allowed;">
-          已加入
-        </button>
-      `}
-    `;
-
-    container.appendChild(card);
-  });
-
-  container.querySelectorAll(".join-preset-btn").forEach(btn => {
-    btn.onclick = async (e) => {
-      e.preventDefault();
-      const key = btn.getAttribute("data-key");
-      await db.joinPresetPlan(key);
-    };
-  });
-}
 
 function generatePlanObject(name, startDate, endDate, selectedBooks, presetKey = null) {
   const preset = presetKey ? CHURCH_PLAN_PRESETS[presetKey] : null;
@@ -224,7 +184,9 @@ function generatePlanObject(name, startDate, endDate, selectedBooks, presetKey =
 
       for (let dayOffset = 0; dayOffset < daysInMonth; dayOffset++) {
         const dayDate = new Date(mSpec.year, mSpec.month - 1, dayOffset + 1);
-        const dateStr = dayDate.toISOString().substring(5, 10).replace("-", "/"); // MM/DD
+        const mm = String(dayDate.getMonth() + 1).padStart(2, '0');
+        const dd = String(dayDate.getDate()).padStart(2, '0');
+        const dateStr = `${mm}/${dd}`; // MM/DD
         
         let chapters = [];
         if (dayOffset < readingDays) {
@@ -262,8 +224,12 @@ function generatePlanObject(name, startDate, endDate, selectedBooks, presetKey =
   }
 
   // FALLBACK: Standard linear generation
-  const start = new Date(startDate);
-  const end = new Date(endDate);
+  const parseLocalDate = (dateStr) => {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  };
+  const start = parseLocalDate(startDate);
+  const end = parseLocalDate(endDate);
   const totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
 
   const allChapters = [];
@@ -308,7 +274,9 @@ function generatePlanObject(name, startDate, endDate, selectedBooks, presetKey =
   const days = dailyChapters.map((chapters, index) => {
     const dayDate = new Date(start);
     dayDate.setDate(start.getDate() + index);
-    const dateStr = dayDate.toISOString().substring(5, 10).replace("-", "/"); // MM/DD
+    const mm = String(dayDate.getMonth() + 1).padStart(2, '0');
+    const dd = String(dayDate.getDate()).padStart(2, '0');
+    const dateStr = `${mm}/${dd}`; // MM/DD
     
     return {
       dayNum: index + 1,
@@ -386,6 +354,8 @@ function calculateAllPlansProgress() {
   }
 }
 
+
+
 async function renderPlanView() {
   renderJoinedPlansList();
   renderPresetPlansList();
@@ -402,12 +372,42 @@ async function renderPlanView() {
     if (detailSubview) detailSubview.classList.add("hidden");
   }
 
-  // If user is admin/senior pastor and in simulated admin mode, render global plan management list
+  // Admin simulation check
   const isRealAdmin = !state.isSupabaseMode || (state.realRole === "admin" || state.realRole === "senior_pastor");
   const isSimulatedAdmin = state.currentUser && (state.currentUser.role === "admin" || state.currentUser.role === "senior_pastor");
+  const adminCard = document.getElementById("admin-plan-card");
+  if (adminCard) {
+    if (isRealAdmin && isSimulatedAdmin) {
+      adminCard.classList.remove("hidden");
+    } else {
+      adminCard.classList.add("hidden");
+    }
+  }
+
   if (isRealAdmin && isSimulatedAdmin && typeof renderAdminPlanManagement === 'function') {
     renderAdminPlanManagement();
   }
+}
+
+
+
+function getPlanCoverHtml(plan) {
+  let gradient = "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
+  let text = "速讀";
+  if (plan.presetKey === "q1") {
+    gradient = "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)";
+    text = "第一季";
+  } else if (plan.presetKey === "q2") {
+    gradient = "linear-gradient(135deg, #5ee7df 0%, #b490ca 100%)";
+    text = "第二季";
+  } else if (plan.presetKey === "q3") {
+    gradient = "linear-gradient(135deg, #f6d365 0%, #fda085 100%)";
+    text = "第三季";
+  } else if (plan.presetKey === "q4") {
+    gradient = "linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%)";
+    text = "第四季";
+  }
+  return `<div class="plan-cover-thumbnail" style="width: 72px; height: 72px; border-radius: 12px; background: ${gradient}; display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 0.95rem; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">${text}</div>`;
 }
 
 function renderJoinedPlansList() {
@@ -419,8 +419,8 @@ function renderJoinedPlansList() {
   if (!state.activePlans || state.activePlans.length === 0) {
     container.innerHTML = `
       <div class="empty-state" style="text-align: center; padding: 3rem 0;">
-        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">您目前沒有加入任何讀經計畫。</p>
-        <p style="font-size: 0.88rem; color: var(--text-muted);">請在右側清單選擇欲加入的季計畫！</p>
+        <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-weight: 700;">您目前沒有加入任何讀經計畫。</p>
+        <p style="font-size: 0.88rem; color: var(--text-muted);">請點擊頂部「<strong>尋找計畫</strong>」瀏覽並加入！</p>
       </div>
     `;
     return;
@@ -432,34 +432,89 @@ function renderJoinedPlansList() {
     card.style = `
       background: var(--bg-card);
       border: 1px solid var(--border-card);
-      border-radius: var(--radius-sm);
-      padding: 1.2rem;
+      border-radius: 16px;
+      padding: 1rem;
       display: flex;
-      flex-direction: column;
-      gap: 0.6rem;
+      align-items: center;
+      gap: 1rem;
       cursor: pointer;
       transition: all 0.2s ease;
     `;
     card.onclick = () => {
       state.activePlan = plan;
+      state.selectedPlanDay = null; // reset to first uncompleted day
       localStorage.setItem("selected_plan_key", plan.presetKey || "");
       renderPlanView();
     };
 
     const progress = plan.progress || 0;
     card.innerHTML = `
-      <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;">
-        <h4 style="margin: 0; font-size: 1rem; font-weight: 700; color: var(--text-primary);">${plan.name}</h4>
-        <span style="font-size: 0.72rem; background: var(--primary-color); color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-weight: 700; white-space: nowrap;">查看詳情 & 統計</span>
+      ${getPlanCoverHtml(plan)}
+      <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 0.25rem; min-width: 0;">
+        <h4 style="margin: 0; font-size: 1.05rem; font-weight: 800; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${plan.name}</h4>
+        <div style="font-size: 0.78rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.3rem;">
+          <span>📅</span> <span>${plan.startDate} ~ ${plan.endDate}</span>
+        </div>
+        <div class="plan-progress-wrapper" style="margin-top: 0.4rem; height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; position: relative;">
+          <div class="plan-progress-bar" style="width: ${progress}%; height: 100%; background: #ff4757 !important; border-radius: 2px;"></div>
+        </div>
+        <div style="font-size: 0.76rem; font-weight: 600; color: var(--text-secondary); margin-top: 0.1rem;">
+          已讀 ${progress}% (${plan.completedChapters} / ${plan.totalChapters} 章)
+        </div>
       </div>
-      <div style="font-size: 0.8rem; color: var(--text-secondary);">
-        📅 範圍：${plan.startDate} ~ ${plan.endDate}
-      </div>
-      <div class="plan-progress-wrapper" style="margin-top: 0.4rem; height: 8px;">
-        <div class="plan-progress-bar" style="width: ${progress}%;"></div>
-      </div>
-      <div style="font-size: 0.8rem; font-weight: 600; text-align: right; color: var(--text-secondary);">
-        已讀 ${progress}% (${plan.completedChapters} / ${plan.totalChapters} 章)
+    `;
+    container.appendChild(card);
+  });
+}
+
+function renderPresetPlansList() {
+  const container = document.getElementById("preset-plans-list");
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  const presets = Object.entries(CHURCH_PLAN_PRESETS);
+  presets.forEach(([key, preset]) => {
+    // Check if user already joined
+    const isJoined = state.activePlans && state.activePlans.some(p => p.presetKey === key);
+
+    const card = document.createElement("div");
+    card.className = "joined-plan-item-card";
+    card.style = `
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: 16px;
+      padding: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    `;
+    card.onclick = async () => {
+      if (isJoined) {
+        state.activePlan = state.activePlans.find(p => p.presetKey === key);
+        state.selectedPlanDay = null;
+        renderPlanView();
+      } else {
+        if (confirm(`確定要加入「${preset.name}」讀經計畫挑戰嗎？`)) {
+          loader.show("加入計畫中...");
+          await db.joinPlan(preset.name, preset.startDate, preset.endDate, preset.books, key);
+          loader.hide();
+        }
+      }
+    };
+
+    card.innerHTML = `
+      ${getPlanCoverHtml({ presetKey: key })}
+      <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 0.25rem; min-width: 0;">
+        <h4 style="margin: 0; font-size: 1.05rem; font-weight: 800; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${preset.name}</h4>
+        <div style="font-size: 0.78rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.3rem;">
+          <span>📅</span> <span>${preset.startDate} ~ ${preset.endDate}</span>
+        </div>
+        <div style="font-size: 0.76rem; font-weight: 700; color: ${isJoined ? '#10b981' : 'var(--primary-color)'}; margin-top: 0.2rem; display: flex; align-items: center; gap: 0.25rem;">
+          ${isJoined ? '✓ 已加入挑戰' : '+ 點擊加入計畫挑戰'}
+        </div>
       </div>
     `;
     container.appendChild(card);
@@ -473,290 +528,220 @@ async function renderPlanDetailView() {
   const titleEl = document.getElementById("plan-detail-title");
   if (titleEl) titleEl.textContent = state.activePlan.name;
 
+  // Set Cover title & dates
+  const coverTitle = document.getElementById("plan-cover-title");
+  const coverDates = document.getElementById("plan-cover-dates");
+  const coverCard = document.getElementById("plan-detail-cover");
+
+  if (coverTitle) coverTitle.textContent = state.activePlan.name;
+  if (coverDates) coverDates.textContent = `${state.activePlan.startDate} ~ ${state.activePlan.endDate}`;
+  
+  if (coverCard) {
+    let gradient = "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
+    if (state.activePlan.presetKey === "q1") {
+      gradient = "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)";
+    } else if (state.activePlan.presetKey === "q2") {
+      gradient = "linear-gradient(135deg, #5ee7df 0%, #b490ca 100%)";
+    } else if (state.activePlan.presetKey === "q3") {
+      gradient = "linear-gradient(135deg, #f6d365 0%, #fda085 100%)";
+    } else if (state.activePlan.presetKey === "q4") {
+      gradient = "linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%)";
+    }
+    coverCard.style.background = gradient;
+  }
+
   // Render current selected tab content
   const tabSchedule = document.getElementById("tab-plan-schedule");
   const tabStats = document.getElementById("tab-plan-stats");
+  const subviewSchedule = document.getElementById("subview-plan-schedule");
+  const subviewPlanStats = document.getElementById("subview-plan-stats");
 
-  if (tabStats && tabStats.classList.contains("active-tab-btn")) {
+  if (tabStats && tabStats.classList.contains("active")) {
+    if (subviewSchedule) subviewSchedule.classList.add("hidden");
+    if (subviewPlanStats) subviewPlanStats.classList.remove("hidden");
     await updateStatsView(state.activePlan.presetKey);
   } else {
     // Default to Schedule Tab
-    if (tabSchedule) tabSchedule.classList.add("active-tab-btn");
-    if (tabStats) tabStats.classList.remove("active-tab-btn");
+    if (tabSchedule) tabSchedule.classList.add("active");
+    if (tabStats) tabStats.classList.remove("active");
+    if (subviewSchedule) subviewSchedule.classList.remove("hidden");
+    if (subviewPlanStats) subviewPlanStats.classList.add("hidden");
     renderPlanScheduleTracker();
   }
 }
 
-async function renderPlanScheduleTracker() {
-  const container = document.getElementById("plan-tracker-container");
-  const deleteBtn = document.getElementById("delete-plan-btn");
+function renderHorizontalDateStrip() {
+  const carousel = document.getElementById("plan-date-carousel");
+  if (!carousel || !state.activePlan) return;
 
-  if (!state.activePlan) {
-    if (container) {
-      container.innerHTML = `
-        <div class="empty-state" style="text-align: center; padding: 3rem 0;">
-          <p style="color: var(--text-secondary);">請選擇一個讀經計畫查看詳情。</p>
-        </div>
-      `;
+  carousel.innerHTML = "";
+  
+  const daysCount = state.activePlan.days.length;
+  let startDayNum = Math.max(1, state.selectedPlanDay - 2);
+  let endDayNum = Math.min(daysCount, startDayNum + 4);
+  if (endDayNum - startDayNum < 4) {
+    startDayNum = Math.max(1, endDayNum - 4);
+  }
+
+  for (let dNum = startDayNum; dNum <= endDayNum; dNum++) {
+    const day = state.activePlan.days.find(d => d.dayNum === dNum);
+    if (!day) continue;
+
+    const dateCard = document.createElement("div");
+    dateCard.className = `date-card ${dNum === state.selectedPlanDay ? "active" : ""}`;
+    
+    let formattedDate = "";
+    if (day.date) {
+      const parts = day.date.split('/');
+      if (parts.length === 2) {
+        formattedDate = `${parseInt(parts[0])}月${parseInt(parts[1])}日`;
+      } else {
+        formattedDate = day.date;
+      }
     }
+
+    dateCard.innerHTML = `
+      <span class="day-num">${dNum}</span>
+      <span class="date-lbl">${formattedDate}</span>
+    `;
+
+    dateCard.addEventListener("click", () => {
+      state.selectedPlanDay = dNum;
+      renderHorizontalDateStrip();
+      renderPlanScheduleTracker();
+    });
+
+    carousel.appendChild(dateCard);
+  }
+}
+
+async function renderPlanScheduleTracker() {
+  const container = document.getElementById("plan-tasks-list");
+  if (!container || !state.activePlan) return;
+
+  container.innerHTML = "";
+
+  // Set default selected day if not set
+  if (!state.selectedPlanDay) {
+    const firstUncompleted = state.activePlan.days.find(day => {
+      if (!day.chapters || day.chapters.length === 0) return false;
+      return !day.chapters.every(ch => ch.isRead);
+    });
+    state.selectedPlanDay = firstUncompleted ? firstUncompleted.dayNum : 1;
+  }
+
+  // Update date carousel
+  renderHorizontalDateStrip();
+
+  const selectedDay = state.activePlan.days.find(d => d.dayNum === state.selectedPlanDay);
+  if (!selectedDay) return;
+
+  // Render day subtitle
+  const daySubtitle = document.getElementById("plan-day-subtitle");
+  if (daySubtitle) {
+    daySubtitle.textContent = `${state.activePlan.totalDays} 天中的第 ${state.selectedPlanDay} 天`;
+  }
+
+  // Check checkPlanSchedule
+  await checkPlanSchedule(state.activePlan);
+
+  const isAdmin = state.currentUser && state.currentUser.role === 'admin';
+  const started = isPlanStarted(state.activePlan) || isAdmin;
+
+  // Render status pill for day
+  const statusPill = document.getElementById("plan-day-status-pill");
+  if (statusPill) {
+    if (!selectedDay.chapters || selectedDay.chapters.length === 0) {
+      statusPill.textContent = "🧘 補讀/休息日";
+      statusPill.style.background = "rgba(99, 102, 241, 0.1)";
+      statusPill.style.color = "var(--primary-color)";
+    } else {
+      const allDone = selectedDay.chapters.every(ch => ch.isRead);
+      if (allDone) {
+        statusPill.textContent = "已完成";
+        statusPill.style.background = "rgba(16, 185, 129, 0.1)";
+        statusPill.style.color = "#10b981";
+      } else {
+        statusPill.textContent = "進行中";
+        statusPill.style.background = "rgba(245, 158, 11, 0.1)";
+        statusPill.style.color = "#f59e0b";
+      }
+    }
+  }
+
+  // Render items
+  if (!selectedDay.chapters || selectedDay.chapters.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 2rem; background: var(--bg-card); border: 1px dashed var(--border-card); border-radius: 14px; color: var(--text-secondary); font-weight: 700; width: 100%;">
+        🧘 今天是補讀或靈修休息日，好好親近神吧！
+      </div>
+    `;
     return;
   }
 
-  // Check plan schedule alignment (downgrade check)
-  await checkPlanSchedule(state.activePlan);
-
-  if (deleteBtn) deleteBtn.classList.remove("hidden");
-  
-  const isAdmin = state.currentUser && state.currentUser.role === 'admin';
-  const started = isPlanStarted(state.activePlan) || isAdmin;
-  const isActuallyStarted = isPlanStarted(state.activePlan);
-
-  let warningBanner = "";
-  if (!isActuallyStarted) {
-    if (isAdmin) {
-      warningBanner = `
-        <div class="not-started-banner" style="background: rgba(16, 185, 129, 0.15); border: 1px solid #10b981; border-radius: var(--radius-sm); padding: 0.8rem; margin: 1rem 0; color: var(--text-primary); font-size: 0.85rem; font-weight: 600; line-height: 1.4;">
-          💡 此計畫尚未開始 (開始日期：${state.activePlan.startDate})。您目前以<strong>系統管理員 (Admin)</strong> 身分進行測試，已為您解除限制。
-        </div>
-      `;
-    } else {
-      warningBanner = `
-        <div class="not-started-banner" style="background: rgba(59, 130, 246, 0.1); border: 1px solid #3b82f6; border-radius: var(--radius-sm); padding: 0.8rem; margin: 1rem 0; color: var(--text-primary); font-size: 0.85rem; font-weight: 600; line-height: 1.4;">
-          ⚠️ 此計畫尚未開始 (開始日期：${state.activePlan.startDate})。開始前無法標記讀經進度。
-        </div>
-      `;
-    }
-  }
-  
-  const currentRound = state.activePlan.currentRound || 1;
-  const level = state.activePlan.level || 'normal';
-  const wasDowngraded = state.activePlan.wasDowngraded || false;
-
-  // Level selector HTML
-  let levelSelectorHtml = `
-    <div class="plan-level-selector-bar" style="margin-top: 0.5rem; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; background: rgba(255,255,255,0.25); padding: 0.6rem; border-radius: var(--radius-sm); border: 1px solid var(--border-card);">
-      <label style="font-size: 0.82rem; font-weight: 700; color: var(--text-secondary); display: flex; align-items: center; gap: 0.25rem; margin: 0;">
-        🎯 進度等級：
-      </label>
-      <select id="plan-level-select" style="font-size: 0.82rem; padding: 0.25rem 0.4rem; border-radius: 4px; border: 1px solid var(--border-card); background: var(--bg-card); color: var(--text-primary); cursor: pointer;" 
-        ${(wasDowngraded && level === 'normal') ? 'disabled title="因進度落後降為一般，已限制手動升級"' : ''}
-        onchange="window.changePlanLevel(this.value)">
-        <option value="normal" ${level === 'normal' ? 'selected' : ''}>一般進度 (讀1遍)</option>
-        <option value="breakthrough" ${level === 'breakthrough' ? 'selected' : ''}>突破進度 (讀2遍)</option>
-        <option value="super" ${level === 'super' ? 'selected' : ''}>超強進度 (讀3遍)</option>
-      </select>
-    </div>
-  `;
-
-  if (wasDowngraded && level === 'normal') {
-    levelSelectorHtml += `
-      <div style="font-size: 0.72rem; color: #ef4444; font-weight: 600; margin-top: -0.8rem; margin-bottom: 0.8rem; padding-left: 0.5rem;">
-        ⚠️ 因落後降為一般，不得申請升級，讀完第一遍後將自動升級。
-      </div>
-    `;
-  }
-
-  let roundClass = "round-1";
-  if (currentRound === 2) roundClass = "round-2";
-  else if (currentRound === 3) roundClass = "round-3";
-  else if (currentRound >= 4) roundClass = "round-4";
-
-  let roundLabel = `第 ${currentRound} 遍`;
-  if (currentRound >= 4) {
-    roundLabel = `第 ${currentRound} 遍 (自主掌控)`;
-  }
-
-  let html = levelSelectorHtml + `
-    <div class="plan-progress-header">
-      <div class="plan-progress-wrapper" style="margin-top: 1rem;">
-        <div class="plan-progress-bar ${roundClass}" style="width: ${state.activePlan.progress}%;"></div>
-      </div>
-      <p style="font-size: 0.88rem; font-weight: 600; color: var(--text-secondary); margin-top: 0.5rem; text-align: right; margin-bottom: 0.5rem;">
-        ${roundLabel} 已讀: ${state.activePlan.progress}% (${state.activePlan.completedChapters} / ${state.activePlan.totalChapters} 章)
-      </p>
-    </div>
+  selectedDay.chapters.forEach(ch => {
+    const taskItem = document.createElement("div");
+    taskItem.className = "plan-task-item";
     
-    ${warningBanner}
-    
-    <div class="days-scroll-list" style="max-height: 480px; overflow-y: auto; margin-top: 1.5rem; padding-right: 0.5rem;">
-  `;
+    const isChecked = ch.isRead;
+    const checkState = isChecked ? "checked" : "";
+    const svgIcon = isChecked ? `<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>` : "";
 
-  // Group days by year and month dynamically
-  const groups = {};
-  state.activePlan.days.forEach(day => {
-    const yr = day.year || new Date().getFullYear();
-    const mo = day.month || (new Date().getMonth() + 1);
-    const key = `${yr}年${mo}月`;
-    if (!groups[key]) {
-      groups[key] = [];
-    }
-    groups[key].push(day);
-  });
-
-  Object.entries(groups).forEach(([monthName, monthDays]) => {
-    const monthId = `month-${monthName.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '')}`;
-
-    html += `
-      <div class="month-section" style="margin-bottom: 1.2rem;">
-        <div class="month-header" onclick="window.toggleMonthSection('${monthId}')" style="font-size: 0.98rem; font-weight: 800; color: var(--primary-color); padding: 0.65rem 0.9rem; cursor: pointer; display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid var(--border-card); background: rgba(99,102,241,0.07); border-radius: 8px; transition: background 0.2s ease; user-select: none;">
-          <span style="display: flex; align-items: center; gap: 0.4rem;">📅 ${monthName}</span>
-          <svg class="month-toggle-icon" viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none" style="transition: transform 0.2s ease; transform: rotate(-90deg);"><polyline points="6 9 12 15 18 9"></polyline></svg>
-        </div>
-        <div class="month-days-list hidden" id="${monthId}" style="margin-top: 0.6rem; display: flex; flex-direction: column; gap: 0.5rem; transition: all 0.3s ease;">
-    `;
-
-    monthDays.forEach(day => {
-      if (!day.chapters || day.chapters.length === 0) {
-        html += `
-          <div class="rest-day-item" style="padding: 0.65rem 0.9rem; border: 1px dashed var(--border-card, rgba(0,0,0,0.12)); border-radius: 8px; background: rgba(255, 255, 255, 0.22); display: flex; align-items: center; justify-content: space-between; font-size: 0.82rem; color: var(--text-muted);">
-            <span style="font-weight: 600;">Day ${day.dayNum} (${day.date})</span>
-            <span style="font-weight: 700; color: var(--primary-color); display: inline-flex; align-items: center; gap: 0.3rem;">
-               🧘 補讀/休息日
-            </span>
-          </div>
-        `;
-      } else {
-        const allDone = day.chapters.every(ch => ch.isRead);
-        const badgeClass = allDone ? "day-badge complete" : "day-badge";
-        const badgeText = allDone ? "已完成" : "未完";
-
-        html += `
-          <div class="day-section" style="border: 1px solid var(--border-card); border-radius: 8px; background: var(--bg-card); overflow: hidden; margin: 0;">
-            <div class="day-title-flex" onclick="toggleDaySection(this)" style="padding: 0.6rem 0.8rem; display: flex; justify-content: space-between; align-items: center; cursor: pointer; background: rgba(255,255,255,0.03);">
-              <div class="day-title" style="font-size: 0.88rem; font-weight: 700; color: var(--text-primary);">Day ${day.dayNum} <span style="font-size: 0.8rem; font-weight: 500; color: var(--text-muted); margin-left: 0.5rem;">(${day.date})</span></div>
-              <span class="${badgeClass}">${badgeText}</span>
-            </div>
-            <div class="day-chapters-list hidden" style="padding: 0.6rem 0.8rem; display: flex; flex-direction: column; gap: 0.45rem;">
-        `;
-
-        day.chapters.forEach(ch => {
-          const isChecked = ch.isRead ? "checked" : "";
-          const labelClass = ch.isRead ? "chapter-checkbox-item checked" : "chapter-checkbox-item";
-          const isDisabled = started ? "" : "disabled style='cursor: not-allowed; opacity: 0.6;'";
-          
-          html += `
-            <label class="${labelClass}" data-key="${ch.key}" ${!started ? 'style="opacity: 0.6; cursor: not-allowed;"' : ''}>
-              <input type="checkbox" value="${ch.key}" ${isChecked} ${isDisabled} onchange="togglePlanChapterCheckbox(this, '${ch.book}', ${ch.chapter})">
-              <span>${ch.book} ${ch.chapter}章</span>
-              <button class="text-link-btn" style="margin-left: auto; font-size: 0.75rem; font-weight: 600;" onclick="readChapterDirect('${ch.book}', ${ch.chapter})">閱讀</button>
-            </label>
-          `;
-        });
-
-        html += `
-            </div>
-          </div>
-        `;
-      }
-    });
-
-    html += `
-        </div>
+    taskItem.innerHTML = `
+      <div class="task-checkbox ${checkState}" onclick="event.stopPropagation(); window.toggleYouVersionChapter(this, '${ch.book}', ${ch.chapter})">
+        ${svgIcon}
+      </div>
+      <div class="task-title" onclick="readChapterDirect('${ch.book}', ${ch.chapter})">
+        ${ch.book} ${ch.chapter}章
+      </div>
+      <div class="task-arrow" onclick="readChapterDirect('${ch.book}', ${ch.chapter})">
+        <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="9 18 15 12 9 6"></polyline></svg>
       </div>
     `;
+    container.appendChild(taskItem);
   });
-  html += `</div>`;
-  if (container) container.innerHTML = html;
 }
 
-function toggleDaySection(headerEl) {
-  const list = headerEl.nextElementSibling;
-  if (list) {
-    list.classList.toggle("hidden");
-  }
-}
-
-window.toggleMonthSection = function(monthId) {
-  const container = document.getElementById(monthId);
-  if (container) {
-    container.classList.toggle("hidden");
-    const header = container.previousElementSibling;
-    if (header) {
-      const icon = header.querySelector(".month-toggle-icon");
-      if (icon) {
-        const isHidden = container.classList.contains("hidden");
-        icon.style.transform = isHidden ? "rotate(-90deg)" : "rotate(0deg)";
-      }
-    }
-  }
-};
-
-async function togglePlanChapterCheckbox(cb, book, chapter) {
-  const isChecked = cb.checked;
-  const label = cb.parentElement;
+window.toggleYouVersionChapter = async function(checkboxEl, book, chapter) {
+  const isChecked = !checkboxEl.classList.contains("checked");
   
-  if (isChecked) {
-    label.classList.add("checked");
-  } else {
-    label.classList.remove("checked");
-  }
-
   loader.show("記錄中...");
   await db.logChapterRead(book, chapter, isChecked);
   
   calculatePlanProgress();
   db.saveLocalUserStats();
   
+  if (isChecked) {
+    checkboxEl.classList.add("checked");
+    checkboxEl.innerHTML = `<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+  } else {
+    checkboxEl.classList.remove("checked");
+    checkboxEl.innerHTML = ``;
+  }
+  
   // Check if round completion is reached
   if (state.activePlan && state.activePlan.progress === 100) {
     await handleRoundCompletion(state.activePlan);
-  } else {
-    const bar = document.querySelector("#plan-tracker-container .plan-progress-bar");
-    const percentText = document.querySelector("#plan-tracker-container p");
-    
-    if (bar && percentText) {
-      bar.style.width = `${state.activePlan.progress}%`;
-      const currentRound = state.activePlan.currentRound || 1;
-      let roundLabel = `第 ${currentRound} 遍`;
-      if (currentRound >= 4) {
-        roundLabel = `第 ${currentRound} 遍 (自主掌控)`;
-      }
-      percentText.innerHTML = `${roundLabel} 已讀: ${state.activePlan.progress}% (${state.activePlan.completedChapters} / ${state.activePlan.totalChapters} 章)`;
-    }
   }
-
-  const daySection = label.closest(".day-section");
-  if (daySection) {
-    const checkboxes = daySection.querySelectorAll("input[type='checkbox']");
-    const allChecked = Array.from(checkboxes).every(box => box.checked);
-    const badge = daySection.querySelector(".day-badge");
-    if (allChecked) {
-      badge.className = "day-badge complete";
-      badge.textContent = "已完成";
-    } else {
-      badge.className = "day-badge";
-      badge.textContent = "未完";
-    }
-  }
-
+  
+  // Re-render to refresh status pills and details
+  renderPlanScheduleTracker();
   loader.hide();
-}
+};
 
-function updatePlanCheckboxState(key, isChecked) {
-  const checkbox = document.querySelector(`.chapter-checkbox-item[data-key="${key}"] input`);
-  if (checkbox) {
-    checkbox.checked = isChecked;
-    const label = checkbox.parentElement;
-    if (isChecked) {
-      label.classList.add("checked");
-    } else {
-      label.classList.remove("checked");
-    }
-    const daySection = label.closest(".day-section");
-    if (daySection) {
-      const checkboxes = daySection.querySelectorAll("input[type='checkbox']");
-      const allChecked = Array.from(checkboxes).every(box => box.checked);
-      const badge = daySection.querySelector(".day-badge");
-      if (allChecked) {
-        badge.className = "day-badge complete";
-        badge.textContent = "已完成";
-      } else {
-        badge.className = "day-badge";
-        badge.textContent = "未完";
-      }
-    }
+window.showPlanLevelModal = async function() {
+  if (!state.activePlan) return;
+  const level = state.activePlan.level || 'normal';
+  const newLevel = prompt(
+    "變更計畫進度等級：\n- normal: 一般進度 (讀1遍)\n- breakthrough: 突破進度 (讀2遍)\n- super: 超強進度 (讀3遍)\n\n請輸入 normal、breakthrough 或 super：", 
+    level
+  );
+  if (newLevel && ['normal', 'breakthrough', 'super'].includes(newLevel)) {
+    await window.changePlanLevel(newLevel);
+  } else if (newLevel !== null) {
+    alert("輸入無效，請重新嘗試！");
   }
-}
+};
 
 function readChapterDirect(bookName, chapter) {
   const book = BIBLE_BOOKS.find(b => b.name === bookName);
@@ -773,6 +758,14 @@ function readChapterDirect(bookName, chapter) {
   }
 }
 
+function updatePlanCheckboxState(key, isChecked) {
+  // Safe empty fallback since we redraw tasks on update
+  if (state.activePlan) {
+    renderPlanScheduleTracker();
+  }
+}
+
+
 async function checkPlanSchedule(plan) {
   if (!plan) return;
 
@@ -925,6 +918,7 @@ window.changePlanLevel = async function(newLevel) {
   renderPlanView();
   updateDashboardView();
 };
+
 
 function initAdminPlanManagement() {
   const addBtn = document.getElementById("admin-add-plan-btn");
@@ -1130,359 +1124,3 @@ async function renderAdminPlanManagement() {
   }
 }
 
-function initAdminPlanManagement() {
-  const addBtn = document.getElementById("admin-add-plan-btn");
-  const cancelBtn = document.getElementById("admin-cancel-plan-btn");
-  const saveBtn = document.getElementById("admin-save-plan-btn");
-  const formContainer = document.getElementById("admin-plan-form-container");
-
-  if (!addBtn || !cancelBtn || !saveBtn || !formContainer) return;
-
-  // Render Bible books selection grids
-  const oldGrid = document.getElementById("admin-old-books-grid");
-  const newGrid = document.getElementById("admin-new-books-grid");
-
-  if (oldGrid && newGrid) {
-    oldGrid.innerHTML = "";
-    newGrid.innerHTML = "";
-    BIBLE_BOOKS.forEach(book => {
-      const label = document.createElement("label");
-      label.style = `
-        display: flex;
-        align-items: center;
-        gap: 0.25rem;
-        font-size: 0.72rem;
-        cursor: pointer;
-        padding: 0.2rem 0.3rem;
-        border-radius: 4px;
-        background: white;
-        border: 1px solid var(--border-card);
-        user-select: none;
-      `;
-      label.innerHTML = `
-        <input type="checkbox" class="admin-book-checkbox" value="${book.name}" style="margin: 0; cursor: pointer;">
-        ${book.name}
-      `;
-      if (book.section === "old") {
-        oldGrid.appendChild(label);
-      } else {
-        newGrid.appendChild(label);
-      }
-    });
-  }
-
-  // Bind quick select buttons
-  document.getElementById("admin-select-all-books").onclick = () => {
-    document.querySelectorAll(".admin-book-checkbox").forEach(cb => cb.checked = true);
-  };
-  document.getElementById("admin-clear-books").onclick = () => {
-    document.querySelectorAll(".admin-book-checkbox").forEach(cb => cb.checked = false);
-  };
-  document.getElementById("admin-select-old-books").onclick = () => {
-    BIBLE_BOOKS.forEach(book => {
-      const cb = document.querySelector(`.admin-book-checkbox[value="${book.name}"]`);
-      if (cb) cb.checked = book.section === "old";
-    });
-  };
-  document.getElementById("admin-select-new-books").onclick = () => {
-    BIBLE_BOOKS.forEach(book => {
-      const cb = document.querySelector(`.admin-book-checkbox[value="${book.name}"]`);
-      if (cb) cb.checked = book.section === "new";
-    });
-  };
-
-  // Toggle Form
-  addBtn.onclick = () => {
-    document.getElementById("admin-plan-form-title").textContent = "新增讀經計畫";
-    document.getElementById("admin-edit-plan-id").value = "";
-    document.getElementById("admin-plan-name").value = "";
-    document.getElementById("admin-plan-start-date").value = "";
-    document.getElementById("admin-plan-end-date").value = "";
-    document.querySelectorAll(".admin-book-checkbox").forEach(cb => cb.checked = false);
-    formContainer.classList.remove("hidden");
-  };
-
-  cancelBtn.onclick = () => {
-    formContainer.classList.add("hidden");
-  };
-
-  // Save Plan
-  saveBtn.onclick = async () => {
-    const id = document.getElementById("admin-edit-plan-id").value;
-    const name = document.getElementById("admin-plan-name").value.trim();
-    const startDate = document.getElementById("admin-plan-start-date").value;
-    const endDate = document.getElementById("admin-plan-end-date").value;
-
-    const checkedBooks = [];
-    document.querySelectorAll(".admin-book-checkbox:checked").forEach(cb => {
-      checkedBooks.push(cb.value);
-    });
-
-    if (!name) {
-      alert("請輸入計畫名稱！");
-      return;
-    }
-    if (!startDate || !endDate) {
-      alert("請選擇計畫開始與結束日期！");
-      return;
-    }
-    if (new Date(startDate) > new Date(endDate)) {
-      alert("開始日期不可晚於結束日期！");
-      return;
-    }
-    if (checkedBooks.length === 0) {
-      alert("請至少選取一個聖經書卷！");
-      return;
-    }
-
-    loader.show("正在儲存計畫...");
-    const success = await db.saveGlobalPlan({
-      id: id || null,
-      name,
-      startDate,
-      endDate,
-      books: checkedBooks
-    });
-    loader.hide();
-
-    if (success) {
-      alert("計畫儲存成功！");
-      formContainer.classList.add("hidden");
-      renderAdminPlanManagement();
-      if (typeof renderPresetPlansList === 'function') {
-        renderPresetPlansList();
-      }
-    }
-  };
-}
-
-async function renderAdminPlanManagement() {
-  const tableBody = document.getElementById("admin-plans-table-body");
-  if (!tableBody) return;
-
-  tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">載入計畫列表中...</td></tr>`;
-
-  try {
-    const plans = state.globalPlans || [];
-    tableBody.innerHTML = "";
-
-    if (plans.length === 0) {
-      tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">目前無任何計畫，請點擊上方「新增計畫」建立</td></tr>`;
-      return;
-    }
-
-    plans.forEach(plan => {
-      const tr = document.createElement("tr");
-
-      const bookListText = plan.books.join(", ");
-      const bookCount = plan.books.length;
-      const booksDisplay = bookCount > 6 
-        ? `<span title="${bookListText}" style="cursor: help; text-decoration: underline dashed; text-underline-offset: 3px;">${plan.books.slice(0, 6).join(", ")}... 等 ${bookCount} 卷</span>`
-        : bookListText;
-
-      tr.innerHTML = `
-        <td><strong>${escapeHTML(plan.name)}</strong></td>
-        <td><span style="font-size: 0.8rem; font-weight: 600;">📅 ${plan.startDate} ~ ${plan.endDate}</span></td>
-        <td><span style="font-size: 0.78rem;">${booksDisplay}</span></td>
-        <td style="text-align: center; vertical-align: middle;">
-          <div style="display: flex; gap: 0.3rem; justify-content: center;">
-            <button class="primary-btn admin-edit-plan-btn" style="font-size: 0.72rem; padding: 0.2rem 0.5rem; height: auto; cursor: pointer;">編輯</button>
-            <button class="danger-btn admin-delete-plan-btn" style="font-size: 0.72rem; padding: 0.2rem 0.5rem; height: auto; cursor: pointer;">刪除</button>
-          </div>
-        </td>
-      `;
-
-      // Bind edit event
-      tr.querySelector(".admin-edit-plan-btn").onclick = () => {
-        document.getElementById("admin-plan-form-title").textContent = "編輯讀經計畫";
-        document.getElementById("admin-edit-plan-id").value = plan.id;
-        document.getElementById("admin-plan-name").value = plan.name;
-        document.getElementById("admin-plan-start-date").value = plan.startDate;
-        document.getElementById("admin-plan-end-date").value = plan.endDate;
-        
-        // Check corresponding books
-        document.querySelectorAll(".admin-book-checkbox").forEach(cb => {
-          cb.checked = plan.books.includes(cb.value);
-        });
-
-        document.getElementById("admin-plan-form-container").classList.remove("hidden");
-        document.getElementById("admin-plan-form-container").scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-      };
-
-      // Bind delete event
-      tr.querySelector(".admin-delete-plan-btn").onclick = async () => {
-        if (confirm(`您確定要刪除「${plan.name}」嗎？這將使其他會友無法再從列表「加入」此計畫，但已加入該計畫之會友仍可照常閱讀及打卡。`)) {
-          loader.show("刪除計畫中...");
-          const success = await db.deleteGlobalPlan(plan.id);
-          loader.hide();
-          if (success) {
-            alert("計畫已成功刪除！");
-            renderAdminPlanManagement();
-            if (typeof renderPresetPlansList === 'function') {
-              renderPresetPlansList();
-            }
-          }
-        }
-      };
-
-      tableBody.appendChild(tr);
-    });
-
-  } catch (err) {
-    console.error("Failed to render admin plans:", err);
-    tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #ef4444;">載入計畫失敗: ${err.message || err}</td></tr>`;
-  }
-}
-
-async function checkPlanSchedule(plan) {
-  if (!plan) return;
-
-  const started = isPlanStarted(plan);
-  if (!started) return;
-
-  const currentRound = plan.currentRound || 1;
-  if (currentRound >= 4) return; // 3遍以上不安排進度，自主掌控
-
-  // Calculate expected progress
-  const start = new Date(plan.startDate);
-  const end = new Date(plan.endDate);
-  const totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
-  const today = new Date();
-  const elapsedDays = Math.max(0, Math.min(totalDays, Math.ceil((today - start) / (1000 * 60 * 60 * 24)) + 1));
-
-  const progressFactor = elapsedDays / totalDays;
-
-  const level = plan.level || 'normal';
-  let targetRounds = 1;
-  if (level === 'breakthrough') targetRounds = 2;
-  else if (level === 'super') targetRounds = 3;
-
-  const expectedTotalChapters = progressFactor * targetRounds * plan.totalChapters;
-
-  // Calculate actual total completed chapters across all rounds
-  let actualCompletedChapters = 0;
-  for (let r = 1; r <= currentRound; r++) {
-    const roundLogs = state.readingLogs.filter(l => 
-      (l.plan_id === plan.id || l.presetKey === plan.presetKey) &&
-      (l.round || 1) === r
-    );
-    const uniqueChapters = new Set(roundLogs.map(l => `${l.book}_${l.chapter}`));
-    actualCompletedChapters += uniqueChapters.size;
-  }
-
-  if (Math.floor(expectedTotalChapters) > 0 && actualCompletedChapters < Math.floor(expectedTotalChapters)) {
-    let newLevel = level;
-    let message = "";
-
-    if (level === 'super') {
-      newLevel = 'breakthrough';
-      plan.wasDowngraded = true;
-      message = `⚠️ 進度落後警告：您的累計讀經進度已落後於「超強進度」的預期範圍（預計需完成 ${Math.floor(expectedTotalChapters)} 章，實際完成 ${actualCompletedChapters} 章）。\n\n系統已自動將您降級為「突破進度」，讓進度回歸合理區間。`;
-    } else if (level === 'breakthrough') {
-      newLevel = 'normal';
-      plan.wasDowngraded = true;
-      message = `⚠️ 進度落後警告：您的累計讀經進度已落後於「突破進度」的預期範圍（預計需完成 ${Math.floor(expectedTotalChapters)} 章，實際完成 ${actualCompletedChapters} 章）。\n\n系統已自動將您降級為「一般進度」。您此後將不得手動申請升級，直到您讀完第一遍為止。`;
-    }
-
-    if (newLevel !== level) {
-      plan.level = newLevel;
-
-      if (state.isSupabaseMode && state.supabase) {
-        await state.supabase.from("reading_plans")
-          .update({ 
-            level: newLevel,
-            was_downgraded: plan.wasDowngraded
-          })
-          .eq("id", plan.id);
-      } else {
-        localStorage.setItem("active_reading_plans", JSON.stringify(state.activePlans));
-      }
-
-      alert(message);
-      calculatePlanProgress();
-    }
-  }
-}
-
-async function handleRoundCompletion(plan) {
-  const currentRound = plan.currentRound || 1;
-  const level = plan.level || 'normal';
-
-  let newRound = currentRound + 1;
-  let newLevel = level;
-  let wasDowngraded = plan.wasDowngraded;
-  let message = "";
-
-  if (currentRound === 1) {
-    if (level === 'normal') {
-      newLevel = 'breakthrough';
-      wasDowngraded = false; // Reset downgrade restriction on round completion
-      message = `🎉 恭喜您圓滿讀完第一遍！\n系統已自動將您升級為「突破進度 (第 2 遍)」，請繼續加油重複閱讀！`;
-    } else {
-      message = `🎉 恭喜您完成了第一遍的讀經進度！開始進入第二遍閱讀，加油！`;
-    }
-  } else if (currentRound === 2) {
-    if (level === 'breakthrough') {
-      newLevel = 'super';
-      wasDowngraded = false;
-      message = `🏆 太棒了！您已讀完第二遍！\n系統已自動將您升級為「超強進度 (第 3 遍)」，挑戰最高讀經榮譽！`;
-    } else {
-      message = `🎉 恭喜您完成了第二遍的讀經進度！開始進入第三遍閱讀！`;
-    }
-  } else if (currentRound === 3) {
-    message = `🔥 震撼！您已成功完成三遍讀經！\n此後系統不再為您強制安排預計進度，您可以自行掌控後續的閱讀自主權。`;
-  } else {
-    message = `✨ 恭喜您完成了第 ${currentRound} 遍讀經！繼續挑戰第 ${newRound} 遍！`;
-  }
-
-  plan.currentRound = newRound;
-  plan.level = newLevel;
-  plan.wasDowngraded = wasDowngraded;
-
-  if (state.isSupabaseMode && state.supabase) {
-    const { error } = await state.supabase.from("reading_plans")
-      .update({ 
-        current_round: newRound,
-        level: newLevel,
-        was_downgraded: wasDowngraded
-      })
-      .eq("id", plan.id);
-    if (error) console.error("Failed to update round completion in Supabase:", error);
-  } else {
-    localStorage.setItem("active_reading_plans", JSON.stringify(state.activePlans));
-  }
-
-  calculatePlanProgress();
-  alert(message);
-}
-
-window.changePlanLevel = async function(newLevel) {
-  if (!state.activePlan) return;
-
-  if (state.activePlan.wasDowngraded && state.activePlan.level === 'normal' && newLevel !== 'normal') {
-    alert("您目前因進度落後降為一般進度，需要先讀完第一遍後才可以重新升級！");
-    return;
-  }
-
-  loader.show("正在變更進度等級...");
-
-  state.activePlan.level = newLevel;
-
-  if (state.isSupabaseMode && state.supabase) {
-    const { error } = await state.supabase.from("reading_plans")
-      .update({ level: newLevel })
-      .eq("id", state.activePlan.id);
-    if (error) console.error("Failed to update plan level in Supabase:", error);
-  } else {
-    localStorage.setItem("active_reading_plans", JSON.stringify(state.activePlans));
-  }
-
-  calculatePlanProgress();
-
-  // Run schedule check immediately after upgrading level
-  await checkPlanSchedule(state.activePlan);
-
-  loader.hide();
-  renderPlanView();
-  updateDashboardView();
-};

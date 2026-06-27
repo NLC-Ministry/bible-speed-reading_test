@@ -1,8 +1,46 @@
 // Dashboard tab view controller
 
+const DAILY_VERSES = [
+  { text: "「神的話是我腳前的燈，是我路上的光。」", source: "詩篇 119:105" },
+  { text: "「但那等候耶和華的，必重新得力。他們必如鷹展翅上騰，他們奔跑卻不困倦，行走卻不疲乏。」", source: "以賽亞書 40:31" },
+  { text: "「你要專心仰賴耶和華，不可倚靠自己的聰明，在你一切所行的事上都要認定他，他必指引你的路。」", source: "箴言 3:5-6" },
+  { text: "「我將這些事告訴你們，是要叫你們在我裡面有平安。在世上你們有苦難，但你們可以放心，我已經勝了世界。」", source: "約約翰福音 16:33" },
+  { text: "「耶和華是我的牧者，我必不致缺乏。」", source: "詩篇 23:1" },
+  { text: "「應當一無掛慮，只要凡事藉著禱告、祈求和感謝，將你們所要的告訴神。神所賜出人意外的平安，必在基督耶穌裡保守你們的心懷意念。」", source: "腓立比書 4:6-7" },
+  { text: "「我們曉得萬事都互相效力，叫愛神的人得益處，就是按他旨意被召的人。」", source: "羅馬書 8:28" },
+  { text: "「所以，不要為明天憂慮，因為明天自有明天的憂慮；一天的難處一天當就夠了。」", source: "馬太福音 6:34" },
+  { text: "「我靠著那加給我力量的，凡事都能做。」", source: "腓立比書 4:13" },
+  { text: "「大山可以挪開，小山可以遷移，但我的慈愛必不離開你，我平安的盟約也不遷移。這是憐恤你的耶和華說的。」", source: "以賽亞書 54:10" },
+  { text: "「神愛世人，甚至將他的獨生子賜給他們，叫一切信他的不致滅亡，反得永生。」", source: "約翰福音 3:16" },
+  { text: "「你們要先求他的國和他的義，這些東西都要加給你們了。」", source: "馬太福音 6:33" },
+  { text: "「你不要害怕，因為我與你同在；不要驚惶，因為我是你的神。我必堅固你，我必幫助你，我必用我公義的右手扶持你。」", source: "以賽亞書 41:10" },
+  { text: "「人活著，不是單靠食物，乃是靠神口裡所出的一切話。」", source: "馬太福音 4:4" },
+  { text: "「因他受的鞭傷，我們得醫治；因他受的刑罰，我們得平安。」", source: "以賽亞書 53:5" },
+  { text: "「你們要靠主常常喜樂！我再說，你們要喜樂！」", source: "腓立比書 4:4" },
+  { text: "「堅心倚賴你的，你必保守他十分平安，因為他倚靠你。」", source: "以賽亞書 26:3" },
+  { text: "「所以，我們只管坦然無懼地來到施恩的寶座前，為要得憐恤，蒙恩惠，作隨時的幫助。」", source: "希伯來書 4:16" },
+  { text: "「不可叫人小看你年輕，總要在言語、行為、愛心、信心、清潔上，都作信徒的榜樣。」", source: "提摩太前書 4:12" },
+  { text: "「你們若有彼此相愛的心，眾人因此就認出你們是我的門徒了。」", source: "約翰福音 13:35" },
+  { text: "「凡勞苦擔重擔的人，可以到我這裡來，我就使你們得安息。」", source: "馬太福音 11:28" },
+  { text: "「至於我和我家，我們必定事奉耶和華。」", source: "約書亞記 24:15" },
+  { text: "「耶和華必在你前面行，他必與你同在，必不撇下你，也不丟棄你。不要懼怕，也不要驚惶。」", source: "申命記 31:8" },
+  { text: "「聖靈所結的果子，就是仁愛、喜樂、和平、忍耐、恩慈、良善、信實、溫柔、節制。這樣的事，沒有律法禁止。」", source: "加拉太書 5:22-23" },
+  { text: "「我留下一條新命令給你們，乃是叫你們彼此相愛；我怎樣愛你們，你們也要怎樣彼此相愛。」", source: "約翰福音 13:34" },
+  { text: "「耶和華是我的亮光，是我的拯救，我還怕誰呢？耶和華是我性命的保障，我還懼誰呢？」", source: "詩篇 27:1" },
+  { text: "「那光是真光，照亮一切生在世上的人。」", source: "約翰福音 1:9" },
+  { text: "「耶和華要保護你，免受一切的災害。他要保護你的性命。你出你入，耶和華要保護你，從今時直到永遠。」", source: "詩篇 121:7-8" },
+  { text: "「神的道是活潑的，是有功效的，比一切兩刃的劍更快。」", source: "希伯來書 4:12" },
+  { text: "「我們愛，因為神先愛我們。」", source: "約翰一書 4:19" },
+  { text: "「你若能信，在信的人，凡事都能。」", source: "馬可福音 9:23" }
+];
+
 function updateDashboardView() {
   document.getElementById("user-greeting").textContent = state.currentUser.name || "弟兄姊妹";
   document.getElementById("streak-days").textContent = state.currentUser.streak || "0";
+  
+  // Render Daily Verse and Church Announcements
+  renderDailyVerse();
+  updateAnnouncementsList();
 
   // Render active plan card
   const planSummaryDiv = document.getElementById("active-plan-summary");
@@ -639,3 +677,114 @@ function initPilgrimageControls() {
   }
 }
 
+
+
+window.openAnnouncementForm = function() {
+  const form = document.getElementById("admin-announcement-form-container");
+  if (form) form.classList.remove("hidden");
+};
+
+window.closeAnnouncementForm = function() {
+  const form = document.getElementById("admin-announcement-form-container");
+  if (form) form.classList.add("hidden");
+  
+  const titleInput = document.getElementById("announcement-title-input");
+  const contentInput = document.getElementById("announcement-content-input");
+  if (titleInput) titleInput.value = "";
+  if (contentInput) contentInput.value = "";
+};
+
+window.saveAnnouncement = async function() {
+  const titleInput = document.getElementById("announcement-title-input");
+  const contentInput = document.getElementById("announcement-content-input");
+  if (!titleInput || !contentInput) return;
+  
+  const title = titleInput.value.trim();
+  const content = contentInput.value.trim();
+  if (!title || !content) {
+    alert("請輸入公告標題與內容！");
+    return;
+  }
+  
+  loader.show("發布公告中...");
+  const success = await db.saveAnnouncement(title, content);
+  loader.hide();
+  
+  if (success) {
+    window.closeAnnouncementForm();
+    await updateAnnouncementsList();
+  }
+};
+
+window.deleteAnnouncement = async function(id) {
+  if (!confirm("確定要刪除此公告嗎？此動作將無法復原。")) return;
+  
+  loader.show("刪除公告中...");
+  const success = await db.deleteAnnouncement(id);
+  loader.hide();
+  
+  if (success) {
+    await updateAnnouncementsList();
+  }
+};
+
+async function updateAnnouncementsList() {
+  const listContainer = document.getElementById("church-announcements-list");
+  if (!listContainer) return;
+  
+  const isAdmin = state.currentUser && (state.currentUser.role === 'admin' || state.currentUser.role === 'senior_pastor');
+  const publishBtn = document.getElementById("btn-show-announcement-form");
+  if (publishBtn) {
+    if (isAdmin) publishBtn.classList.remove("hidden");
+    else publishBtn.classList.add("hidden");
+  }
+  
+  const announcements = await db.fetchAnnouncements();
+  listContainer.innerHTML = "";
+  
+  if (announcements.length === 0) {
+    listContainer.innerHTML = `<div style="text-align: center; padding: 1.5rem; color: var(--text-muted); font-size: 0.85rem;">目前尚無教會公告。</div>`;
+    return;
+  }
+  
+  announcements.forEach(ann => {
+    const item = document.createElement("div");
+    item.style = `
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-card);
+      border-radius: 12px;
+      padding: 0.8rem 1rem;
+      position: relative;
+    `;
+    
+    const formattedTime = new Date(ann.created_at).toLocaleDateString('zh-TW', { 
+      month: '2-digit', 
+      day: '2-digit', 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+    
+    item.innerHTML = `
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.3rem;">
+        <h4 style="font-size: 0.95rem; font-weight: 800; color: var(--text-primary); margin: 0; line-height: 1.4;">${escapeHTML(ann.title)}</h4>
+        <div style="display: flex; align-items: center; gap: 0.4rem;">
+          <span style="font-size: 0.7rem; color: var(--text-muted); white-space: nowrap;">${formattedTime}</span>
+          ${isAdmin ? `<button class="circular-action-btn" style="width: 22px; height: 22px; padding: 0; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); display: flex; align-items: center; justify-content: center; font-size: 0.65rem;" onclick="window.deleteAnnouncement('${ann.id}')" title="刪除公告">🗑️</button>` : ''}
+        </div>
+      </div>
+      <p style="font-size: 0.82rem; color: var(--text-secondary); margin: 0; line-height: 1.5; white-space: pre-wrap;">${escapeHTML(ann.content)}</p>
+    `;
+    listContainer.appendChild(item);
+  });
+}
+
+function renderDailyVerse() {
+  const verseTextEl = document.getElementById("daily-verse-text");
+  const verseSourceEl = document.getElementById("daily-verse-source");
+  if (verseTextEl && verseSourceEl) {
+    const dayOfMonth = new Date().getDate();
+    const verse = DAILY_VERSES[(dayOfMonth - 1) % DAILY_VERSES.length];
+    verseTextEl.textContent = verse.text;
+    verseSourceEl.textContent = `— ${verse.source}`;
+  }
+}

@@ -297,7 +297,46 @@ const db = {
           if (!plan.presetKey) {
             plan.presetKey = getPresetKeyByName(plan.name);
           }
+          // Self-heal legacy timezone-offsetted dates and missing year/month properties
+          if (plan.presetKey && plan.days && plan.days.length > 0) {
+            const isMissingProperties = !plan.days[0].year || !plan.days[0].month;
+            const hasShiftBug = (plan.presetKey === 'q1' && plan.days[0].date === '06/30') || 
+                               (plan.presetKey === 'q2' && plan.days[0].date === '09/30') || 
+                               (plan.presetKey === 'q3' && plan.days[0].date === '12/31') || 
+                               (plan.presetKey === 'q4' && plan.days[0].date === '03/31');
+                               
+            if ((hasShiftBug || isMissingProperties) && typeof generatePlanObject === 'function') {
+              const preset = CHURCH_PLAN_PRESETS[plan.presetKey];
+              if (preset) {
+                const freshPlan = generatePlanObject(plan.name, plan.startDate, plan.endDate, plan.target_books || preset.books, plan.presetKey);
+                const readKeys = new Set();
+                plan.days.forEach(d => {
+                  if (d.chapters) {
+                    d.chapters.forEach(c => {
+                      if (c.isRead) readKeys.add(c.key);
+                    });
+                  }
+                });
+                freshPlan.days.forEach(d => {
+                  if (d.chapters) {
+                    d.chapters.forEach(c => {
+                      if (readKeys.has(c.key)) c.isRead = true;
+                    });
+                  }
+                });
+                freshPlan.id = plan.id;
+                freshPlan.progress = plan.progress;
+                freshPlan.completedChapters = plan.completedChapters;
+                freshPlan.currentRound = plan.currentRound;
+                freshPlan.level = plan.level;
+                freshPlan.wasDowngraded = plan.wasDowngraded;
+                
+                Object.assign(plan, freshPlan);
+              }
+            }
+          }
         });
+        localStorage.setItem("active_reading_plans", JSON.stringify(state.activePlans));
         calculateAllPlansProgress();
 
         const selectedKey = localStorage.getItem("selected_plan_key");
@@ -1172,5 +1211,91 @@ const db = {
 
     await this.loadGlobalPlans();
     return true;
+  },
+
+  async fetchAnnouncements() {
+    if (state.isSupabaseMode && state.supabase) {
+      try {
+        const { data, error } = await state.supabase
+          .from('church_announcements')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (error) {
+          console.error("Error fetching announcements from Supabase:", error);
+          return [];
+        }
+        return data || [];
+      } catch (e) {
+        console.error("Error fetching announcements:", e);
+        return [];
+      }
+    } else {
+      const local = localStorage.getItem("church_announcements");
+      return local ? JSON.parse(local) : [
+        { 
+          id: 'default-welcome', 
+          title: '📢 歡迎使用速讀挑戰系統！', 
+          content: '親愛的弟兄姊妹平安，歡迎加入教會季度速讀挑戰。讓我們一起藉著每日讀經，更加認識神、親近神！如有任何問題，請洽詢教會管理員。', 
+          created_at: new Date().toISOString() 
+        }
+      ];
+    }
+  },
+
+  async saveAnnouncement(title, content) {
+    if (state.isSupabaseMode && state.supabase) {
+      try {
+        const { data: { user } } = await state.supabase.auth.getUser();
+        const userId = user ? user.id : (state.currentUser ? state.currentUser.id : null);
+        const { error } = await state.supabase
+          .from('church_announcements')
+          .insert([{ title, content, created_by: userId }]);
+        if (error) {
+          console.error("Error saving announcement in Supabase:", error);
+          alert(`發布公告失敗: ${error.message || error}`);
+          return false;
+        }
+        return true;
+      } catch (e) {
+        console.error("Error saving announcement:", e);
+        return false;
+      }
+    } else {
+      const current = await this.fetchAnnouncements();
+      const newAnn = {
+        id: Date.now().toString(),
+        title,
+        content,
+        created_at: new Date().toISOString()
+      };
+      current.unshift(newAnn);
+      localStorage.setItem("church_announcements", JSON.stringify(current));
+      return true;
+    }
+  },
+
+  async deleteAnnouncement(id) {
+    if (state.isSupabaseMode && state.supabase) {
+      try {
+        const { error } = await state.supabase
+          .from('church_announcements')
+          .delete()
+          .eq('id', id);
+        if (error) {
+          console.error("Error deleting announcement in Supabase:", error);
+          alert(`刪除公告失敗: ${error.message || error}`);
+          return false;
+        }
+        return true;
+      } catch (e) {
+        console.error("Error deleting announcement:", e);
+        return false;
+      }
+    } else {
+      let current = await this.fetchAnnouncements();
+      current = current.filter(a => a.id !== id);
+      localStorage.setItem("church_announcements", JSON.stringify(current));
+      return true;
+    }
   }
 };

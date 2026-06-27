@@ -52,30 +52,32 @@ function initReaderControls() {
 
   // Mark chapter read checkbox
   const markReadBtn = document.getElementById("mark-read-btn");
-  markReadBtn.addEventListener("click", async () => {
-    const isChecked = !markReadBtn.classList.contains("checked");
-    const bookObj = BIBLE_BOOKS.find(b => b.id === state.readerState.bookId);
-    
-    loader.show(isChecked ? "標記已讀中..." : "取消標記中...");
-    await db.logChapterRead(bookObj.name, state.readerState.chapter, isChecked);
-    
-    if (isChecked) {
-      markReadBtn.classList.add("checked");
-    } else {
-      markReadBtn.classList.remove("checked");
-    }
-    
-    // Auto update reading plan progress checkbox if exists
-    if (state.activePlan) {
-      const planDayChKey = `${bookObj.name}_${state.readerState.chapter}`;
-      updatePlanCheckboxState(planDayChKey, isChecked);
-      calculatePlanProgress();
-      if (state.activePlan.progress === 100) {
-        await handleRoundCompletion(state.activePlan);
+  if (markReadBtn) {
+    markReadBtn.addEventListener("click", async () => {
+      const isChecked = !markReadBtn.classList.contains("checked");
+      const bookObj = BIBLE_BOOKS.find(b => b.id === state.readerState.bookId);
+      
+      loader.show(isChecked ? "標記已讀中..." : "取消標記中...");
+      await db.logChapterRead(bookObj.name, state.readerState.chapter, isChecked);
+      
+      if (isChecked) {
+        markReadBtn.classList.add("checked");
+      } else {
+        markReadBtn.classList.remove("checked");
       }
-    }
-    loader.hide();
-  });
+      
+      // Auto update reading plan progress checkbox if exists
+      if (state.activePlan) {
+        const planDayChKey = `${bookObj.name}_${state.readerState.chapter}`;
+        updatePlanCheckboxState(planDayChKey, isChecked);
+        calculatePlanProgress();
+        if (state.activePlan.progress === 100) {
+          await handleRoundCompletion(state.activePlan);
+        }
+      }
+      loader.hide();
+    });
+  }
 }
 
 function populateBookSelector(filter) {
@@ -195,11 +197,13 @@ async function renderReaderText() {
   container.innerHTML = `<div class="loader-inline">讀取經文中...</div>`;
   
   // Set checked button status
-  const isRead = state.readingLogs.some(l => l.book === book.name && l.chapter === chapter);
-  if (isRead) {
-    markReadBtn.classList.add("checked");
-  } else {
-    markReadBtn.classList.remove("checked");
+  if (markReadBtn) {
+    const isRead = state.readingLogs.some(l => l.book === book.name && l.chapter === chapter);
+    if (isRead) {
+      markReadBtn.classList.add("checked");
+    } else {
+      markReadBtn.classList.remove("checked");
+    }
   }
 
   // Load Bible text
