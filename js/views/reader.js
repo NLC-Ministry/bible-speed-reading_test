@@ -78,6 +78,49 @@ function initReaderControls() {
       loader.hide();
     });
   }
+
+  // Scroll to bottom detection to automatically mark as read
+  window.addEventListener("scroll", async () => {
+    const readerView = document.getElementById("reader-view");
+    if (!readerView || readerView.classList.contains("hidden")) return;
+
+    if (state.readerState.autoMarked) return;
+
+    const scrollTop = window.scrollY || window.pageYOffset || document.documentElement.scrollTop;
+    const windowHeight = window.innerHeight;
+    const docHeight = document.documentElement.scrollHeight;
+
+    // Use a 50px buffer to account for mobile zooming/elastic scroll
+    if (scrollTop + windowHeight >= docHeight - 50) {
+      state.readerState.autoMarked = true; // prevent double trigger
+      
+      const bookObj = BIBLE_BOOKS.find(b => b.id === state.readerState.bookId);
+      const chapter = state.readerState.chapter;
+      
+      if (!bookObj) return;
+
+      const isAlreadyRead = state.readingLogs.some(l => l.book === bookObj.name && l.chapter === chapter);
+      if (!isAlreadyRead) {
+        // Log chapter read in DB
+        await db.logChapterRead(bookObj.name, chapter, true);
+        
+        // Update states and recalculate progress
+        calculatePlanProgress();
+        db.saveLocalUserStats();
+
+        // Update plan list page checkbox if matching
+        updatePlanCheckboxState(`${bookObj.name}_${chapter}`, true);
+
+        // Check if active plan finishes
+        if (state.activePlan && state.activePlan.progress === 100) {
+          await handleRoundCompletion(state.activePlan);
+        }
+
+        // Show premium toast alert
+        showToast(`📖 已自動將 ${bookObj.name} 第 ${chapter} 章標記為已讀！`);
+      }
+    }
+  });
 }
 
 function populateBookSelector(filter) {
@@ -187,6 +230,9 @@ function navigateToChapter(direction) {
 
 async function renderReaderText() {
   const container = document.getElementById("bible-content");
+  
+  // Reset autoMarked for the newly loaded chapter
+  state.readerState.autoMarked = false;
   const heading = document.getElementById("bible-title");
   const markReadBtn = document.getElementById("mark-read-btn");
   
@@ -279,4 +325,40 @@ function showContextToolbar(verseElement, highlightKey) {
   setTimeout(() => {
     document.addEventListener("click", documentClickHandler);
   }, 10);
+}
+
+function showToast(message) {
+  let toast = document.getElementById("reader-auto-toast");
+  if (!toast) {
+    toast = document.createElement("div");
+    toast.id = "reader-auto-toast";
+    toast.style.cssText = `
+      position: fixed;
+      bottom: 85px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: rgba(16, 185, 129, 0.95);
+      color: white;
+      padding: 0.8rem 1.6rem;
+      border-radius: 25px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+      z-index: 99999;
+      pointer-events: none;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      opacity: 0;
+      white-space: nowrap;
+    `;
+    document.body.appendChild(toast);
+  }
+  
+  toast.textContent = message;
+  toast.style.opacity = "1";
+  toast.style.transform = "translateX(-50%) translateY(0)";
+  
+  setTimeout(() => {
+    toast.style.opacity = "0";
+    toast.style.transform = "translateX(-50%) translateY(20px)";
+  }, 2500);
 }

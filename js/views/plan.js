@@ -577,18 +577,14 @@ function renderHorizontalDateStrip() {
   carousel.innerHTML = "";
   
   const daysCount = state.activePlan.days.length;
-  let startDayNum = Math.max(1, state.selectedPlanDay - 2);
-  let endDayNum = Math.min(daysCount, startDayNum + 4);
-  if (endDayNum - startDayNum < 4) {
-    startDayNum = Math.max(1, endDayNum - 4);
-  }
 
-  for (let dNum = startDayNum; dNum <= endDayNum; dNum++) {
+  for (let dNum = 1; dNum <= daysCount; dNum++) {
     const day = state.activePlan.days.find(d => d.dayNum === dNum);
     if (!day) continue;
 
     const dateCard = document.createElement("div");
     dateCard.className = `date-card ${dNum === state.selectedPlanDay ? "active" : ""}`;
+    dateCard.setAttribute("data-day", dNum);
     
     let formattedDate = "";
     if (day.date) {
@@ -607,15 +603,31 @@ function renderHorizontalDateStrip() {
 
     dateCard.addEventListener("click", () => {
       state.selectedPlanDay = dNum;
-      renderHorizontalDateStrip();
-      renderPlanScheduleTracker();
+      
+      // Update active highlight class
+      const cards = carousel.querySelectorAll('.date-card');
+      cards.forEach(c => c.classList.remove('active'));
+      dateCard.classList.add('active');
+      
+      // Smoothly scroll the selected day card into the center of viewport
+      dateCard.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      
+      renderPlanScheduleTracker(true); // Pass true to skip rebuilding the carousel
     });
 
     carousel.appendChild(dateCard);
   }
+
+  // Auto center active card on load
+  setTimeout(() => {
+    const activeCard = carousel.querySelector(`.date-card[data-day="${state.selectedPlanDay}"]`);
+    if (activeCard) {
+      activeCard.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'center' });
+    }
+  }, 100);
 }
 
-async function renderPlanScheduleTracker() {
+async function renderPlanScheduleTracker(skipCarouselUpdate = false) {
   const container = document.getElementById("plan-tasks-list");
   if (!container || !state.activePlan) return;
 
@@ -631,7 +643,9 @@ async function renderPlanScheduleTracker() {
   }
 
   // Update date carousel
-  renderHorizontalDateStrip();
+  if (!skipCarouselUpdate) {
+    renderHorizontalDateStrip();
+  }
 
   const selectedDay = state.activePlan.days.find(d => d.dayNum === state.selectedPlanDay);
   if (!selectedDay) return;
@@ -725,7 +739,7 @@ window.toggleYouVersionChapter = async function(checkboxEl, book, chapter) {
   }
   
   // Re-render to refresh status pills and details
-  renderPlanScheduleTracker();
+  renderPlanScheduleTracker(true);
   loader.hide();
 };
 

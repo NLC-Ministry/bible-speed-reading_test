@@ -73,13 +73,30 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // 8. Register Service Worker for PWA offline support
+  const isLocalhost = window.location.hostname === 'localhost' || 
+                      window.location.hostname === '127.0.0.1' || 
+                      window.location.hostname.startsWith('10.') || 
+                      window.location.hostname.startsWith('192.168.');
+
   if ("serviceWorker" in navigator) {
-    try {
-      navigator.serviceWorker.register("./sw.js")
-        .then(reg => console.log("Service Worker 註冊成功，範圍:", reg.scope))
-        .catch(err => console.error("Service Worker 註冊失敗:", err));
-    } catch (err) {
-      console.error("Service Worker registration failed:", err);
+    if (isLocalhost) {
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        for (let registration of registrations) {
+          registration.unregister().then(success => {
+            if (success) {
+              console.log("Localhost detected: Unregistered existing Service Worker.");
+            }
+          });
+        }
+      });
+    } else {
+      try {
+        navigator.serviceWorker.register("./sw.js")
+          .then(reg => console.log("Service Worker 註冊成功，範圍:", reg.scope))
+          .catch(err => console.error("Service Worker 註冊失敗:", err));
+      } catch (err) {
+        console.error("Service Worker registration failed:", err);
+      }
     }
   }
 
