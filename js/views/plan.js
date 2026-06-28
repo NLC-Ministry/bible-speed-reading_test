@@ -404,7 +404,30 @@ async function renderPlanView() {
   if (state.activePlan) {
     if (listSubview) listSubview.classList.add("hidden");
     if (detailSubview) detailSubview.classList.remove("hidden");
-    renderPlanDetailView();
+    await renderPlanDetailView();
+
+    // Auto-open first unread chapter if Schedule tab is active and reader is not active
+    const tabStats = document.getElementById("tab-plan-stats");
+    const tabRanking = document.getElementById("tab-plan-ranking");
+    const tabHistory = document.getElementById("tab-plan-history");
+    const isScheduleActive = !(tabStats && tabStats.classList.contains("active")) &&
+                             !(tabRanking && tabRanking.classList.contains("active")) &&
+                             !(tabHistory && tabHistory.classList.contains("active"));
+
+    if (isScheduleActive && !state.inlineReader.active) {
+      if (!state.selectedPlanDay) {
+        const firstUncompleted = state.activePlan.days.find(day => {
+          if (!day.chapters || day.chapters.length === 0) return false;
+          return !day.chapters.every(ch => ch.isRead);
+        });
+        state.selectedPlanDay = firstUncompleted ? firstUncompleted.dayNum : 1;
+      }
+      const day = state.activePlan.days.find(d => d.dayNum === state.selectedPlanDay);
+      if (day && day.chapters && day.chapters.length > 0) {
+        const firstUnread = day.chapters.find(ch => !ch.isRead) || day.chapters[0];
+        window.openPlanInlineReader(firstUnread.book, firstUnread.chapter, state.selectedPlanDay);
+      }
+    }
   } else {
     if (listSubview) listSubview.classList.remove("hidden");
     if (detailSubview) detailSubview.classList.add("hidden");
@@ -623,9 +646,9 @@ async function renderPlanDetailView() {
     if (tabRanking) tabRanking.classList.remove("active");
     if (tabHistory) tabHistory.classList.remove("active");
     if (subviewSchedule) subviewSchedule.classList.remove("hidden");
-    if (subviewPlanStats) subviewPlanStats.add("hidden");
-    if (subviewPlanRanking) subviewPlanRanking.add("hidden");
-    if (subviewPlanHistory) subviewPlanHistory.add("hidden");
+    if (subviewPlanStats) subviewPlanStats.classList.add("hidden");
+    if (subviewPlanRanking) subviewPlanRanking.classList.add("hidden");
+    if (subviewPlanHistory) subviewPlanHistory.classList.add("hidden");
     renderPlanScheduleTracker();
   }
 }
