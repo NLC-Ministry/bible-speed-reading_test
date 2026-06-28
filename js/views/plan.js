@@ -1958,7 +1958,7 @@ async function renderGroupParticipantsRankingTable() {
       const itemRow = document.createElement("div");
       itemRow.style.cssText = `
         display: grid;
-        grid-template-columns: 1fr 65px 65px 55px 75px;
+        grid-template-columns: 1fr 80px 80px 70px 90px;
         gap: 0.4rem;
         align-items: center;
         padding: 0.6rem 0.2rem;
