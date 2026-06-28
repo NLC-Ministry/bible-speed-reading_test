@@ -133,14 +133,14 @@
           <!-- Main Column: Personal Progress & Announcements -->
           <div class="card-col span-12">
             <!-- 每日金句 (Verse of the Day) -->
-            <div class="glass-card" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(124, 58, 237, 0.12) 100%); border: 1px solid rgba(99, 102, 241, 0.25); margin-bottom: 1.5rem; position: relative; overflow: hidden; padding: 1.5rem; border-radius: 16px; min-height: 120px; display: flex; flex-direction: column; justify-content: center;">
+            <div class="glass-card" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(124, 58, 237, 0.12) 100%); border: 1px solid rgba(99, 102, 241, 0.25); margin-bottom: 1.5rem; position: relative; overflow: hidden; padding: 1.5rem; border-radius: 16px; min-height: 120px; height: auto; display: flex; flex-direction: column; justify-content: center;">
               <div style="font-size: 0.75rem; font-weight: 700; color: var(--primary-color); margin-bottom: 0.5rem; letter-spacing: 0.05em; text-transform: uppercase;">✨ 每日金句</div>
               <blockquote id="daily-verse-text" style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary); line-height: 1.6; margin: 0 0 0.5rem 0; font-family: 'Outfit', sans-serif;">
                 「神的話是我腳前的燈，是我路上的光。」
               </blockquote>
               <cite id="daily-verse-source" style="font-size: 0.8rem; color: var(--text-muted); font-style: normal; font-weight: 600; text-align: right; display: block;">— 詩篇 119:105</cite>
             </div>
-            <div class="glass-card">
+            <div class="glass-card" style="height: auto; margin-bottom: 1.5rem;">
               <h3 class="card-title">進行中的計畫</h3>
               <div id="active-plan-summary">
                 <!-- Dynamic active plan summary -->
@@ -152,7 +152,7 @@
             </div>
 
             <!-- 教會公告 (Church Announcements) -->
-            <div class="glass-card" style="margin-bottom: 1.5rem; display: flex; flex-direction: column;">
+            <div class="glass-card" style="margin-bottom: 1.5rem; display: flex; flex-direction: column; height: auto;">
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem;">
                 <h3 class="card-title" style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
                   <svg viewBox="0 0 24 24" width="20" height="20" stroke="var(--primary-color)" stroke-width="2.2" fill="none"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
@@ -187,8 +187,8 @@
 
 
           <!-- Row 2 Left Column: Daily Devotional Notes -->
-          <div class="card-col span-8">
-            <div class="glass-card devotional-card" style="height: 100%; display: flex; flex-direction: column;">
+          <div class="card-col span-12">
+            <div class="glass-card devotional-card" style="height: auto; display: flex; flex-direction: column;">
               <div class="card-header-flex" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem;">
                 <h3 class="card-title" style="margin-bottom: 0; display: flex; align-items: center; gap: 0.5rem;">
                   <svg viewBox="0 0 24 24" width="20" height="20" stroke="var(--primary-color)" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
@@ -216,21 +216,13 @@
             </div>
           </div>
 
-          <!-- Row 2 Right Column: Group Check-in Tracker -->
-          <div class="card-col span-4">
-            <div class="glass-card today-progress-card" style="height: 100%; display: flex; flex-direction: column;">
-              <h3 class="card-title" style="margin-bottom: 0.8rem; display: flex; align-items: center; gap: 0.5rem;">
-                <svg viewBox="0 0 24 24" width="20" height="20" stroke="var(--primary-color)" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                小組今日讀經進度
-              </h3>
-              <div class="search-box-wrapper" style="margin-bottom: 1rem; position: relative;">
-                <input type="text" id="member-today-search" class="form-control" placeholder="搜尋成員名字..." style="padding-left: 2.2rem; font-size: 0.82rem; height: 36px; border-radius: var(--radius-sm);">
-                <svg viewBox="0 0 24 24" width="14" height="14" stroke="var(--text-muted)" stroke-width="2.5" fill="none" style="position: absolute; left: 12px; top: 11px;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-              </div>
-              <div class="member-progress-list" id="member-today-list" style="flex: 1; overflow-y: auto; max-height: 200px; display: flex; flex-direction: column; gap: 0.6rem; padding-right: 0.2rem;">
-                <!-- Dynamically generated check-in list -->
-              </div>
-            </div>
+
+        <!-- Honors Badge Wall -->
+        <div class="glass-card" style="padding: 1.2rem; background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 16px; margin-bottom: 0.5rem; margin-top: 1.5rem; height: auto;">
+          <h3 class="card-title" style="margin-bottom: 1rem; font-size: 1.05rem; font-weight: 800; color: var(--text-primary);">我的榮譽勳章牆</h3>
+          <div id="stats-badge-wall-container" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0.75rem; max-height: 250px; overflow-y: auto; padding-right: 0.2rem;">
+            <!-- Generated dynamically -->
+          </div>
         </div>
 
       </section>
@@ -545,7 +537,7 @@
                   <span id="report-stat-makeup">115</span><span style="font-size: 1rem; font-weight: 700; margin-left: 0.2rem; color: var(--text-secondary);">天</span>
                 </div>
               </div>
-            
+            </div>
 
             <!-- Heatmap -->
             <div class="glass-card" class="glass-card">
@@ -563,15 +555,6 @@
                 <span>多</span>
               </div>
             </div>
-
-            <!-- Honors Badge Wall -->
-            <div class="glass-card" style="padding: 1.2rem; background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 16px; margin-bottom: 0.5rem;">
-              <h3 class="card-title" style="margin-bottom: 1rem; font-size: 1.05rem; font-weight: 800; color: var(--text-primary);">我的榮譽勳章牆</h3>
-              <div id="stats-badge-wall-container" style="display: grid; grid-template-columns: 1fr; gap: 0.75rem; max-height: 250px; overflow-y: auto; padding-right: 0.2rem;">
-                <!-- Generated dynamically -->
-              </div>
-            </div></div>
-
           </div>
 
 

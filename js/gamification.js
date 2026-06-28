@@ -259,8 +259,8 @@ function triggerBadgeUnlockEffect(badgeId) {
       el.querySelector("div").style.transform = "scale(0.75)";
       setTimeout(() => {
         el.remove();
-        // Update stats wall if viewing stats tab
-        if (appRouter.currentTab === "stats-view") {
+        // Update stats wall if container is present
+        if (document.getElementById("stats-badge-wall-container")) {
           renderUnlockedBadgesWall();
         }
       }, 400);

@@ -92,15 +92,19 @@ function updateDashboardView() {
   // Render Pastoral ranking top 5 list
   renderPastoralZoneRankingList();
 
-  // Load Devotional Notes & Group Progress
+  // Load Devotional Notes
   loadTodayDevotional();
-  renderTodayGroupProgress();
 
   // Render Pilgrimage Trail & controls
   renderPilgrimageTrail();
   if (!state.pilgrimageControlsInit) {
     initPilgrimageControls();
     state.pilgrimageControlsInit = true;
+  }
+
+  // Render Honor Badges Wall
+  if (typeof renderBadgeWall === "function") {
+    renderBadgeWall("stats-badge-wall-container");
   }
 }
 
