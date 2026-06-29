@@ -239,7 +239,7 @@ function triggerBadgeUnlockEffect(badgeId) {
       ${badge.icon}
     </div>
     <h3 style="font-size: 1.6rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.5rem; letter-spacing: 2px;">🏆 榮譽成就解鎖 🏆</h3>
-    <h4 style="font-size: 1.35rem; font-weight: 800; background: ${badge.color}; -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 1.2rem;">「${badge.title}」</h4>
+    <h4 style="font-size: 1.35rem; font-weight: 800; background: ${badge.color}; -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 1.2rem;">${badge.title}</h4>
     <p style="font-size: 0.92rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 2.2rem; padding: 0 1rem;">${descParsed}</p>
     <button class="primary-btn" style="width: 100%; padding: 0.8rem; font-weight: 700; font-size: 1rem; border-radius: var(--radius-sm);" onclick="closeBadgeModal('${badgeId}')">太棒了，繼續保持！</button>
   `;

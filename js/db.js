@@ -1082,11 +1082,11 @@ const db = {
     const started = isPlanStarted(newPlanObj);
     const isAdmin = state.currentUser && state.currentUser.role === 'admin';
     if (started) {
-      showToast(`成功加入「${planName}」！計畫已開始。`);
+      showToast(`成功加入 ${planName}！計畫已開始。`);
     } else if (isAdmin) {
-      showToast(`成功預約加入「${planName}」！計畫將於 ${startDate} 開始。您目前為系統管理員，可提早進行測試。`);
+      showToast(`成功預約加入 ${planName}！計畫將於 ${startDate} 開始。您目前為系統管理員，可提早進行測試。`);
     } else {
-      showToast(`成功預約加入「${planName}」！計畫將於 ${startDate} 開始。`);
+      showToast(`成功預約加入 ${planName}！計畫將於 ${startDate} 開始。`);
     }
   },
 

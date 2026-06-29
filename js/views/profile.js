@@ -672,7 +672,7 @@ function initAdminOrgManagement() {
     }
     const opt = regionSelect.options[regionSelect.selectedIndex];
     const oldName = opt.text;
-    const newName = prompt(`請輸入大區「${oldName}」的新名稱：`, oldName);
+    const newName = prompt(`請輸入大區 ${oldName} 的新名稱：`, oldName);
     if (newName && newName.trim() && newName.trim() !== oldName) {
       loader.show("更新大區中...");
       const success = await db.updateGreatRegion(val, newName.trim());
@@ -692,7 +692,7 @@ function initAdminOrgManagement() {
       return;
     }
     const opt = regionSelect.options[regionSelect.selectedIndex];
-    if (confirm(`您確定要刪除大區「${opt.text}」嗎？這將連帶刪除此大區下所有的牧區與小組！`)) {
+    if (confirm(`您確定要刪除大區 ${opt.text} 嗎？這將連帶刪除此大區下所有的牧區與小組！`)) {
       loader.show("刪除大區中...");
       const success = await db.deleteGreatRegion(val);
       loader.hide();
@@ -732,7 +732,7 @@ function initAdminOrgManagement() {
     }
     const opt = zoneSelect.options[zoneSelect.selectedIndex];
     const oldName = opt.text;
-    const newName = prompt(`請輸入牧區「${oldName}」的新名稱：`, oldName);
+    const newName = prompt(`請輸入牧區 ${oldName} 的新名稱：`, oldName);
     if (newName && newName.trim() && newName.trim() !== oldName) {
       loader.show("更新牧區中...");
       const success = await db.updatePastoralZone(val, newName.trim());
@@ -752,7 +752,7 @@ function initAdminOrgManagement() {
       return;
     }
     const opt = zoneSelect.options[zoneSelect.selectedIndex];
-    if (confirm(`您確定要刪除牧區「${opt.text}」嗎？這將連帶刪除此牧區下所有的小組！`)) {
+    if (confirm(`您確定要刪除牧區 ${opt.text} 嗎？這將連帶刪除此牧區下所有的小組！`)) {
       loader.show("刪除牧區中...");
       const success = await db.deletePastoralZone(val);
       loader.hide();
@@ -792,7 +792,7 @@ function initAdminOrgManagement() {
     }
     const opt = groupSelect.options[groupSelect.selectedIndex];
     const oldName = opt.text;
-    const newName = prompt(`請輸入小組「${oldName}」的新名稱：`, oldName);
+    const newName = prompt(`請輸入小組 ${oldName} 的新名稱：`, oldName);
     if (newName && newName.trim() && newName.trim() !== oldName) {
       loader.show("更新小組中...");
       const success = await db.updateSmallGroup(val, newName.trim());
@@ -812,7 +812,7 @@ function initAdminOrgManagement() {
       return;
     }
     const opt = groupSelect.options[groupSelect.selectedIndex];
-    if (confirm(`您確定要刪除小組「${opt.text}」嗎？`)) {
+    if (confirm(`您確定要刪除小組 ${opt.text} 嗎？`)) {
       loader.show("刪除小組中...");
       const success = await db.deleteSmallGroup(val);
       loader.hide();

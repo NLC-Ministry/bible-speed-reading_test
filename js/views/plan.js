@@ -619,7 +619,7 @@ function renderPresetPlansList() {
         state.selectedPlanDay = null;
         renderPlanView();
       } else {
-        if (confirm(`確定要加入「${plan.name}」讀經計畫挑戰嗎？`)) {
+        if (confirm(`確定要加入 ${plan.name} 讀經計畫挑戰嗎？`)) {
           await db.joinPresetPlan(key);
         }
       }
@@ -1390,7 +1390,7 @@ async function renderAdminPlanManagement() {
 
       // Bind delete event
       tr.querySelector(".admin-delete-plan-btn").onclick = async () => {
-        if (confirm(`您確定要刪除「${plan.name}」嗎？這將使其他會友無法再從列表「加入」此計畫，但已加入該計畫之會友仍可照常閱讀及打卡。`)) {
+        if (confirm(`您確定要刪除 ${plan.name} 嗎？這將使其他會友無法再從列表「加入」此計畫，但已加入該計畫之會友仍可照常閱讀及打卡。`)) {
           loader.show("刪除計畫中...");
           const success = await db.deleteGlobalPlan(plan.id);
           loader.hide();
@@ -2055,7 +2055,14 @@ async function renderPlanHistoryView() {
   // 8. Render Bible Pilgrimage Trail canvas
   const pilgrimageCard = document.getElementById("grp-pilgrimage-card");
   const currentScopeUsers = window._grpScopedUsers || [];
-  if (currentScopeUsers.length === 0) {
+  
+  const rankingZoneSelector = document.getElementById("ranking-zone-selector");
+  const selectedFilter = window._statsTabScope !== null 
+    ? window._statsTabScope 
+    : (rankingZoneSelector ? rankingZoneSelector.value : null);
+  const isChurchScope = (window._currentStatsTab === 'church') || (selectedFilter === 'all');
+
+  if (currentScopeUsers.length === 0 || isChurchScope) {
     if (pilgrimageCard) pilgrimageCard.style.display = "none";
   } else {
     if (pilgrimageCard) pilgrimageCard.style.display = "";
@@ -2152,9 +2159,9 @@ async function renderGroupMiniStats() {
   const labelMembers = document.getElementById('grp-label-members');
   const labelActive = document.getElementById('grp-label-active');
 
-  if (labelTotal) labelTotal.textContent = scopeLabel === "全教會" ? '全教會總閱讀章數' : `「${scopeLabel}」總閱讀章數`;
-  if (labelMembers) labelMembers.textContent = scopeLabel === "全教會" ? '全教會參與人數' : `「${scopeLabel}」參與人數`;
-  if (labelActive) labelActive.textContent = scopeLabel === "全教會" ? '本週全教會活躍人數' : `「${scopeLabel}」本週活躍人數`;
+  if (labelTotal) labelTotal.textContent = scopeLabel === "全教會" ? '全教會總閱讀章數' : `${scopeLabel} 總閱讀章數`;
+  if (labelMembers) labelMembers.textContent = scopeLabel === "全教會" ? '全教會參與人數' : `${scopeLabel} 參與人數`;
+  if (labelActive) labelActive.textContent = scopeLabel === "全教會" ? '本週全教會活躍人數' : `${scopeLabel} 本週活躍人數`;
 
   const elTotal = document.getElementById('grp-total-read');
   const elMembers = document.getElementById('grp-total-members');
@@ -2292,7 +2299,7 @@ function renderGroupTeamHeatmap() {
   if (titleEl) {
     titleEl.textContent = scopeLabel === "全教會"
       ? '全教會讀經熱點地圖 (365天打卡活躍度)'
-      : `「${scopeLabel}」團隊讀經熱點地圖 (365天打卡活躍度)`;
+      : `${scopeLabel} 團隊讀經熱點地圖 (365天打卡活躍度)`;
   }
 
   const userIds = new Set(scopedUsers.map(u => u.id).filter(Boolean));
@@ -2554,7 +2561,7 @@ async function renderMyPersonalRankings() {
   const elRankZone = document.getElementById("my-rank-zone");
   const elRankZoneTotal = document.getElementById("my-rank-zone-total");
   
-  if (elRankZoneTitle && myZone) elRankZoneTitle.textContent = `「${myZone}」個人排行`;
+  if (elRankZoneTitle && myZone) elRankZoneTitle.textContent = `${myZone} 個人排行`;
   if (elRankZone) elRankZone.textContent = myZone ? `第 ${myRankZone} 名` : "未選牧區";
   if (elRankZoneTotal) elRankZoneTotal.textContent = myZone ? `共 ${sortedZone.length} 人` : "請設定所屬牧區";
 }
@@ -2692,7 +2699,7 @@ async function renderGroupParticipantsRankingTable() {
     if (isMembersActive) {
       if (query) {
         groupMembers = scopedUsersList.filter(u => u.name.toLowerCase().includes(query));
-        if (rankingTitle) rankingTitle.textContent = `搜尋結果:「${query}」`;
+        if (rankingTitle) rankingTitle.textContent = `搜尋結果: ${query}`;
       } else {
         const selectedFilter = membersZoneSelector ? membersZoneSelector.value : null;
         if (selectedFilter) {

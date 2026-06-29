@@ -99,9 +99,9 @@ async function updateStatsView(filterPresetKey = null) {
     if (role === "senior_pastor" || role === "admin") {
       const zoneSelectGroup = document.getElementById("stats-zone-selector");
       const selectedZone = zoneSelectGroup ? zoneSelectGroup.value : "";
-      miniCardLabels[0].textContent = selectedZone ? `「${selectedZone}」總閱讀章數` : "全教會總閱讀章數";
-      miniCardLabels[1].textContent = selectedZone ? `「${selectedZone}」參與人數` : "全教會參與人數";
-      miniCardLabels[2].textContent = selectedZone ? `「${selectedZone}」本週活躍人數` : "全教會本週活躍人數";
+      miniCardLabels[0].textContent = selectedZone ? `${selectedZone} 總閱讀章數` : "全教會總閱讀章數";
+      miniCardLabels[1].textContent = selectedZone ? `${selectedZone} 參與人數` : "全教會參與人數";
+      miniCardLabels[2].textContent = selectedZone ? `${selectedZone} 本週活躍人數` : "全教會本週活躍人數";
     } else if (role === "great_zone_leader") {
       miniCardLabels[0].textContent = "本大區總閱讀章數";
       miniCardLabels[1].textContent = "本大區參與人數";
@@ -542,14 +542,14 @@ function renderHeatmap(teamUsers = []) {
       const zoneSelectGroup = document.getElementById("stats-zone-selector");
       const selectedZone = zoneSelectGroup ? zoneSelectGroup.value : "";
       titleEl.textContent = selectedZone 
-        ? `「${selectedZone}」團隊讀經熱點地圖 (365天打卡活躍度)`
+        ? `${selectedZone} 團隊讀經熱點地圖 (365天打卡活躍度)`
         : "全教會團隊讀經熱點地圖 (365天打卡活躍度)";
     } else if (role === "great_zone_leader") {
-      titleEl.textContent = `「${state.currentUser.great_region}」團隊讀經熱點地圖 (365天打卡活躍度)`;
+      titleEl.textContent = `${state.currentUser.great_region} 團隊讀經熱點地圖 (365天打卡活躍度)`;
     } else if (role === "zone_leader") {
-      titleEl.textContent = `「${state.currentUser.pastoral_zone}」團隊讀經熱點地圖 (365天打卡活躍度)`;
+      titleEl.textContent = `${state.currentUser.pastoral_zone} 團隊讀經熱點地圖 (365天打卡活躍度)`;
     } else {
-      titleEl.textContent = `「${state.currentUser.small_group}」小組讀經熱點地圖 (365天打卡活躍度)`;
+      titleEl.textContent = `${state.currentUser.small_group} 小組讀經熱點地圖 (365天打卡活躍度)`;
     }
   }
 

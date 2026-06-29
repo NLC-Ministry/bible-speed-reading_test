@@ -320,7 +320,7 @@ async function renderTodayGroupProgress() {
   
   const hasPlan = state.activePlans && state.activePlans.length > 0;
   if (!hasPlan) {
-    listEl.innerHTML = '<div style="font-size: 0.88rem; color: var(--text-muted); text-align: center; padding: 2rem 0;">請先至「讀經計畫」加入計畫，以查看今日進度！</div>';
+    listEl.innerHTML = '<div style="font-size: 0.88rem; color: var(--text-muted); text-align: center; padding: 2rem 0;">請先至 讀經計畫 加入計畫，以查看今日進度！</div>';
     return;
   }
   
