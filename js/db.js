@@ -1,5 +1,18 @@
 // Unified Data Service (Supabase & LocalStorage integration)
 
+/**
+ * 依計畫名稱查找 CHURCH_PLAN_PRESETS 的 key（僅作舊資料 fallback 使用）
+ * @param {string} name
+ * @returns {string|null}
+ */
+function getPresetKeyByName(name) {
+  if (!name) return null;
+  for (const [key, preset] of Object.entries(CHURCH_PLAN_PRESETS)) {
+    if (preset.name === name) return key;
+  }
+  return null;
+}
+
 const db = {
   // Initialize Supabase Connection
   async init() {
@@ -194,7 +207,8 @@ const db = {
         const uniqueMap = {};
         rawLogs.forEach(l => {
           const r = l.round || 1;
-          const key = `${l.book}_${l.chapter}_${r}`;
+          const planKey = l.plan_id || '';
+          const key = `${l.book}_${l.chapter}_${planKey}_${r}`;
           if (!uniqueMap[key] || new Date(l.read_at) > new Date(uniqueMap[key].read_at)) {
             uniqueMap[key] = l;
           }
@@ -211,45 +225,29 @@ const db = {
 
         state.activePlans = [];
         if (plans && plans.length > 0) {
-          // Collect rows that need preset_key backfill (legacy data)
-          const legacyUpdates = [];
-
           plans.forEach(dbPlan => {
-            // Prefer stored preset_key, fall back to name-based lookup
-            const key = dbPlan.preset_key || getPresetKeyByName(dbPlan.name);
+            // 優先用 global_plan_id（UUID）連結 global_plans；其次用 preset_key；最後 fallback 到名稱查找（舊資料相容）
+            const globalPlanId = dbPlan.global_plan_id || null;
+            const key = dbPlan.preset_key
+              || (globalPlanId ? globalPlanId : null)
+              || getPresetKeyByName(dbPlan.name);
 
             const planObj = generatePlanObject(dbPlan.name, dbPlan.start_date, dbPlan.end_date, dbPlan.target_books, key);
             planObj.id = dbPlan.id;
+            planObj.globalPlanId = globalPlanId;  // 保存 UUID 關聯
             planObj.level = dbPlan.level || 'normal';
             planObj.currentRound = dbPlan.current_round || 1;
             planObj.wasDowngraded = dbPlan.was_downgraded || false;
             state.activePlans.push(planObj);
-
-            // Queue a silent Supabase update if preset_key was missing
-            if (!dbPlan.preset_key && key) {
-              legacyUpdates.push({ id: dbPlan.id, preset_key: key });
-            }
           });
-
-          // Silently backfill preset_key for legacy records
-          if (legacyUpdates.length > 0) {
-            Promise.all(
-              legacyUpdates.map(({ id, preset_key }) =>
-                state.supabase
-                  .from("reading_plans")
-                  .update({ preset_key })
-                  .eq("id", id)
-                  .then(({ error }) => {
-                    if (error) console.warn(`Failed to backfill preset_key for plan ${id}:`, error);
-                    else console.log(`✅ Backfilled preset_key="${preset_key}" for plan ${id}`);
-                  })
-              )
-            );
-          }
 
           const selectedKey = localStorage.getItem("selected_plan_key");
           if (selectedKey) {
-            state.activePlan = state.activePlans.find(p => p.presetKey === selectedKey) || state.activePlans[0];
+            state.activePlan = state.activePlans.find(p =>
+              p.presetKey === selectedKey ||
+              p.globalPlanId === selectedKey ||
+              p.id === selectedKey
+            ) || state.activePlans[0];
           } else {
             state.activePlan = state.activePlans[0];
           }
@@ -301,7 +299,8 @@ const db = {
       const uniqueLocalMap = {};
       rawLocalLogs.forEach(l => {
         const r = l.round || 1;
-        const key = `${l.book}_${l.chapter}_${r}`;
+        const planKey = l.plan_id || l.presetKey || '';
+        const key = `${l.book}_${l.chapter}_${planKey}_${r}`;
         if (!uniqueLocalMap[key] || new Date(l.read_at) > new Date(uniqueLocalMap[key].read_at)) {
           uniqueLocalMap[key] = l;
         }
@@ -639,6 +638,11 @@ const db = {
   },
 
   async fetchMergedUsersList(filterPresetKey = null) {
+    // If no filterPresetKey is provided, automatically default to the active plan's presetKey or ID
+    if (!filterPresetKey && state.activePlan) {
+      filterPresetKey = state.activePlan.presetKey || state.activePlan.id;
+    }
+
     const mockUser = {
       name: state.currentUser.name,
       great_region: state.currentUser.great_region || "東區",
@@ -655,7 +659,7 @@ const db = {
         const { data: usersProfiles } = await state.supabase.from("profiles").select("*").eq("is_demo", false);
         const { data: allLogs } = await state.supabase.from("reading_logs").select("user_id, book, chapter, read_at, plan_id, round");
         state.allLogsCache = allLogs || [];
-        const { data: allPlans } = await state.supabase.from("reading_plans").select("id, user_id, name, preset_key, target_books, current_round, level");
+        const { data: allPlans } = await state.supabase.from("reading_plans").select("id, user_id, name, preset_key, global_plan_id, target_books, current_round, level");
 
         window.userPlanIdCache = {};
         if (allPlans) {
@@ -695,7 +699,7 @@ const db = {
           return usersProfiles.map(profile => {
             const userPlans = plansByUser[profile.id] || [];
             const uPlan = filterPresetKey
-              ? userPlans.find(p => p.preset_key === filterPresetKey || p.name === filterPresetKey)
+              ? userPlans.find(p => p.preset_key === filterPresetKey || p.global_plan_id === filterPresetKey || p.name === filterPresetKey)
               : userPlans[0] || null;
 
             const uLogs = logsByUser[profile.id] || [];
@@ -1018,7 +1022,11 @@ const db = {
       try {
         const { data: { user } } = await state.supabase.auth.getUser();
         if (user) {
-          const { data: dbPlan, error } = await state.supabase.from("reading_plans").insert({
+          // 判斷是否為 global_plans 的 UUID key（非 q1~q4 的固定 key）
+          const presetKeys = Object.keys(CHURCH_PLAN_PRESETS);
+          const isGlobalPlanUUID = !presetKeys.includes(key) && key && key.includes('-');
+
+          const insertPayload = {
             user_id: user.id,
             name: planName,
             start_date: startDate,
@@ -1028,13 +1036,24 @@ const db = {
             level: 'normal',
             current_round: 1,
             was_downgraded: false
-          }).select().single();
+          };
+
+          // 若是來自 global_plans 的計畫，儲存 global_plan_id（UUID FK）
+          if (isGlobalPlanUUID) {
+            insertPayload.global_plan_id = key;
+          }
+
+          const { data: dbPlan, error } = await state.supabase
+            .from("reading_plans")
+            .insert(insertPayload)
+            .select().single();
 
           if (error) {
             console.error("Failed to insert plan in Supabase:", error);
           } else {
             newPlanObj = generatePlanObject(planName, startDate, endDate, selectedBooks, key);
             newPlanObj.id = dbPlan.id;
+            newPlanObj.globalPlanId = dbPlan.global_plan_id || null;
             if (!state.activePlans) state.activePlans = [];
             state.activePlans.push(newPlanObj);
             state.activePlan = newPlanObj;
@@ -1069,6 +1088,10 @@ const db = {
     } else {
       showToast(`成功預約加入「${planName}」！計畫將於 ${startDate} 開始。`);
     }
+  },
+
+  async joinPlan(name, startDate, endDate, books, key) {
+    return this.joinPresetPlan(key);
   },
 
   async leavePlan(planId, presetKey) {
@@ -1137,7 +1160,9 @@ const db = {
 
   async loadGlobalPlans() {
     state.globalPlans = [];
+
     if (state.isSupabaseMode && state.supabase) {
+      // ── Supabase 模式：資料完全來自資料庫，不混合硬寫的 CHURCH_PLAN_PRESETS ──
       try {
         const { data, error } = await state.supabase
           .from("global_plans")
@@ -1146,14 +1171,14 @@ const db = {
 
         if (error) {
           console.error("Failed to load global plans from Supabase:", error);
-        } else if (data && data.length > 0) {
-          state.globalPlans = data.map(dbPlan => ({
+        } else {
+          state.globalPlans = (data || []).map(dbPlan => ({
             id: dbPlan.id,
             name: dbPlan.name,
             startDate: dbPlan.start_date,
             endDate: dbPlan.end_date,
             books: dbPlan.target_books,
-            presetKey: dbPlan.id
+            presetKey: dbPlan.id   // 用 UUID 作為 key
           }));
           return;
         }
@@ -1162,12 +1187,10 @@ const db = {
       }
     }
 
-    // Fallback: load from local storage or default presets
-    const localGlobal = localStorage.getItem("global_plans_presets");
-    if (localGlobal) {
-      state.globalPlans = JSON.parse(localGlobal);
-    } else {
-      state.globalPlans = Object.entries(CHURCH_PLAN_PRESETS).map(([key, p]) => ({
+    // ── localStorage / Demo 模式：從本機讀取，並補上硬寫的四季預設計畫 ──
+    const mergeWithPresets = (loadedList) => {
+      const presetKeys = Object.keys(CHURCH_PLAN_PRESETS);
+      const presetPlans = Object.entries(CHURCH_PLAN_PRESETS).map(([key, p]) => ({
         id: key,
         name: p.name,
         startDate: p.startDate,
@@ -1175,6 +1198,17 @@ const db = {
         books: p.books,
         presetKey: key
       }));
+      // 自訂計畫：排除掉 presetKey 為 q1~q4 的項目避免重複
+      const customPlans = loadedList.filter(p => !presetKeys.includes(p.presetKey) && !presetKeys.includes(p.id));
+      return [...presetPlans, ...customPlans];
+    };
+
+    const localGlobal = localStorage.getItem("global_plans_presets");
+    if (localGlobal) {
+      const localList = JSON.parse(localGlobal);
+      state.globalPlans = mergeWithPresets(localList);
+    } else {
+      state.globalPlans = mergeWithPresets([]);
       localStorage.setItem("global_plans_presets", JSON.stringify(state.globalPlans));
     }
   },
@@ -1214,12 +1248,15 @@ const db = {
         return false;
       }
     } else {
-      // LocalStorage mode
+      // LocalStorage mode — only persist CUSTOM plans (presets are always injected by loadGlobalPlans)
+      const presetKeys = Object.keys(CHURCH_PLAN_PRESETS);
       const localGlobal = localStorage.getItem("global_plans_presets");
       let list = localGlobal ? JSON.parse(localGlobal) : [];
-      if (plan.id) {
+      // Strip preset entries from the stored list so we only track custom plans
+      list = list.filter(p => !presetKeys.includes(p.presetKey) && !presetKeys.includes(p.id));
+      if (plan.id && !presetKeys.includes(plan.id)) {
         list = list.map(p => p.id === plan.id ? plan : p);
-      } else {
+      } else if (!plan.id) {
         plan.id = "local_" + Date.now();
         plan.presetKey = plan.id;
         list.push(plan);

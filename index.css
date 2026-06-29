@@ -1798,6 +1798,76 @@ button.logout-btn:hover {
   border-color: var(--text-primary);
 }
 
+/* ── 讀經統計 Inner Tabs ──────────────────────────── */
+.stats-inner-tab-row {
+  display: flex;
+  gap: 0.3rem;
+  background: var(--bg-input);
+  padding: 0.28rem;
+  border-radius: 14px;
+  border: 1px solid var(--border-card);
+  margin-bottom: 1.2rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+.stats-inner-tab {
+  flex: 1;
+  padding: 0.5rem 0.5rem;
+  border: none;
+  border-radius: 10px;
+  background: none;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.22s ease;
+  white-space: nowrap;
+  text-align: center;
+}
+.stats-inner-tab:hover:not(.active) {
+  background: rgba(255,255,255,0.05);
+  color: var(--text-secondary);
+}
+.stats-inner-tab.active[data-tab="personal"] {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(99,102,241,0.35);
+}
+.stats-inner-tab.active[data-tab="zone"] {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(16,185,129,0.35);
+}
+.stats-inner-tab.active[data-tab="church"] {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(59,130,246,0.35);
+}
+.stats-inner-tab.active[data-tab="admin"] {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(245,158,11,0.35);
+}
+/* Admin scope bar */
+.stats-admin-scope-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  background: rgba(245,158,11,0.08);
+  border: 1px solid rgba(245,158,11,0.25);
+  border-radius: 12px;
+  padding: 0.6rem 1rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+.stats-admin-scope-bar label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #d97706;
+  white-space: nowrap;
+}
+
+
 /* Header bar for plan details view */
 .youversion-detail-header {
   display: flex;
@@ -1918,6 +1988,49 @@ button.logout-btn:hover {
   background: rgba(99,102,241,0.12);
   box-shadow: 0 4px 12px rgba(99,102,241,0.15);
 }
+/* 今天 */
+.date-card.today {
+  border: 2px solid #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.18);
+}
+.date-card.today .day-num {
+  color: #f59e0b;
+}
+.date-card.today .date-lbl {
+  color: #f59e0b;
+  font-weight: 700;
+}
+.date-card.today::before {
+  content: "今";
+  position: absolute;
+  top: 4px;
+  left: 6px;
+  font-size: 0.6rem;
+  font-weight: 900;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.15);
+  border-radius: 3px;
+  padding: 0 3px;
+  line-height: 1.4;
+}
+/* 過去日期 */
+.date-card.past {
+  opacity: 0.45;
+}
+.date-card.past .day-num {
+  color: var(--text-muted);
+}
+/* 今天 + 已完成 優先顯示綠色 */
+.date-card.today.completed {
+  border: 2px solid #10b981;
+  background: rgba(16, 185, 129, 0.12);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.15);
+}
+.date-card.today.completed .day-num,
+.date-card.today.completed .date-lbl {
+  color: #10b981;
+}
 .date-card .day-num {
   font-size: 1.2rem;
   font-weight: 800;
@@ -1964,11 +2077,29 @@ button.logout-btn:hover {
   background: #10b981;
   color: white;
 }
+/* 第一遍完成，但當前處於第二或第三遍中 (還沒讀第二遍) */
+.plan-task-item .task-checkbox.checked.round-1.dimmed {
+  background: transparent;
+  border-color: rgba(16, 185, 129, 0.45);
+  color: rgba(16, 185, 129, 0.6);
+}
+/* 第二遍完成：靛藍色雙勾 */
+.plan-task-item .task-checkbox.checked.round-2 {
+  border-color: #6366f1;
+  background: #6366f1;
+  color: white;
+}
+/* 第三遍完成：金色星星 */
+.plan-task-item .task-checkbox.checked.round-3 {
+  border-color: #f59e0b;
+  background: #f59e0b;
+  color: white;
+}
 .plan-task-item .task-checkbox svg {
-  width: 12px;
-  height: 12px;
+  width: 16px;
+  height: 16px;
   stroke: currentColor;
-  stroke-width: 4;
+  stroke-width: 3.5;
   fill: none;
 }
 .plan-task-item .task-title {
@@ -1982,6 +2113,27 @@ button.logout-btn:hover {
   font-size: 1.1rem;
   display: flex;
   align-items: center;
+}
+
+/* 第n遍提示標籤 */
+.task-round-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.18rem 0.55rem;
+  border-radius: 20px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  letter-spacing: 0.03em;
+}
+.task-round-label.round-2 {
+  background: rgba(99, 102, 241, 0.12);
+  color: #6366f1;
+  border: 1px solid rgba(99, 102, 241, 0.25);
+}
+.task-round-label.round-3 {
+  background: rgba(245, 158, 11, 0.12);
+  color: #d97706;
+  border: 1px solid rgba(245, 158, 11, 0.3);
 }
 
 /* Dropdown Menu for right options btn */

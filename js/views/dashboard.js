@@ -488,88 +488,90 @@ function getMemberColor(name) {
 async function renderPilgrimageTrail() {
   const canvas = document.getElementById("pilgrimage-canvas");
   if (!canvas) return;
-  
+
+  // Must have an active plan to draw the plan-specific trail
+  if (!state.activePlan || !state.activePlan.days || state.activePlan.days.length === 0) {
+    canvas.getContext("2d").clearRect(0, 0, canvas.width, canvas.height);
+    return;
+  }
+
   const ctx = canvas.getContext("2d");
-  
-  // Build cumulative chapter offsets per book
-  const TOTAL_CHAPTERS = BIBLE_BOOKS.reduce((s, b) => s + b.chapters, 0); // 1189
-  const bookCumulative = []; // bookCumulative[i] = first chapter index of BIBLE_BOOKS[i]
-  let cum = 0;
-  BIBLE_BOOKS.forEach(b => {
-    bookCumulative.push(cum);
-    cum += b.chapters;
-  });
+  const currentRound = state.activePlan.currentRound || 1;
 
-  // Flat array of all 1189 chapters
-  const allChapters = [];
-  BIBLE_BOOKS.forEach(book => {
-    for (let c = 1; c <= book.chapters; c++) {
-      allChapters.push({
-        bookName: book.name,
-        abbrev: book.abbrev,
-        chapterNum: c
+  // ── 1. Build plan chapter list (in reading order) ──────────────────────
+  const planChapters = [];
+  let lastBook = null;
+  state.activePlan.days.forEach(day => {
+    if (!day.chapters) return;
+    day.chapters.forEach(ch => {
+      const isBookStart = ch.book !== lastBook;
+      planChapters.push({
+        bookName: ch.book,
+        chapterNum: ch.chapter,
+        isReadR1: ch.isReadR1 || false,
+        isReadR2: ch.isReadR2 || false,
+        isReadR3: ch.isReadR3 || false,
+        isRead: ch.isRead || false,
+        isBookStart
       });
-    }
+      lastBook = ch.book;
+    });
   });
 
-  // --- Fetch group members first so we can compute max reach ---
+  const TOTAL_PLAN_CHAPTERS = planChapters.length;
+  if (TOTAL_PLAN_CHAPTERS === 0) return;
+
+  // ── 2. Compute MY progress per round ──────────────────────────────────
+  const myR1Count = planChapters.filter(c => c.isReadR1).length;
+  const myR2Count = planChapters.filter(c => c.isReadR2).length;
+  const myR3Count = planChapters.filter(c => c.isReadR3).length;
+  const myChaptersRead = currentRound === 3 ? myR3Count : (currentRound === 2 ? myR2Count : myR1Count);
+
+  // ── 3. Fetch group members (plan-scoped via fetchMergedUsersList) ──────
   let allUsers = await db.fetchMergedUsersList();
-
-  // 屬靈旅程 always shows the current user's pastoral zone — ignores permission filter selector
   const myZone = state.currentUser.pastoral_zone || "";
-  let groupMembers = myZone
-    ? allUsers.filter(u => u.pastoral_zone === myZone)
-    : [];
+  let groupMembers = myZone ? allUsers.filter(u => u.pastoral_zone === myZone) : [];
   if (!groupMembers || groupMembers.length === 0) {
-    groupMembers = [{ name: state.currentUser.name, chapters_read: state.currentUser.chapters_read }];
+    groupMembers = [{ name: state.currentUser.name, chapters_read: myChaptersRead }];
+  }
+  // Override self with local round-specific count for accuracy
+  groupMembers = groupMembers.map(m =>
+    m.name === state.currentUser.name ? { ...m, chapters_read: myChaptersRead } : m
+  );
+  if (!groupMembers.some(m => m.name === state.currentUser.name)) {
+    groupMembers = [{ name: state.currentUser.name, chapters_read: myChaptersRead }, ...groupMembers];
   }
 
-  // Ensure current user is in the list
-  const currentUserInList = groupMembers.some(m => m.name === state.currentUser.name);
-  if (!currentUserInList) {
-    groupMembers = [{ name: state.currentUser.name, chapters_read: state.currentUser.chapters_read }, ...groupMembers];
-  }
-
-  // Find furthest position reached by anyone in the pastoral zone
   const maxChaptersRead = groupMembers.reduce((max, m) => Math.max(max, m.chapters_read || 0), 0);
-  const myChaptersRead = state.currentUser.chapters_read || 0;
+  const maxDrawIndex = Math.min(Math.max(0, maxChaptersRead - 1) + 16, TOTAL_PLAN_CHAPTERS - 1);
 
-  // Reveal path up to max chapters + 16 preview chapters (2 rows), clamped to total chapters
-  const maxDrawIndex = Math.min(Math.max(0, maxChaptersRead - 1) + 16, TOTAL_CHAPTERS - 1);
+  // ── 4. Round-based color palette ──────────────────────────────────────
+  const palette = {
+    1: { myPath: "#818cf8", grpPath: "#93c5fd", myFill: "#e0e7ff", grpFill: "#eff6ff", myStroke: "#6366f1", grpStroke: "#3b82f6", myText: "#4338ca", grpText: "#1d4ed8" },
+    2: { myPath: "#a855f7", grpPath: "#c4b5fd", myFill: "#f3e8ff", grpFill: "#faf5ff", myStroke: "#9333ea", grpStroke: "#7c3aed", myText: "#7e22ce", grpText: "#6d28d9" },
+    3: { myPath: "#f59e0b", grpPath: "#fcd34d", myFill: "#fef3c7", grpFill: "#fffbeb", myStroke: "#d97706", grpStroke: "#ca8a04", myText: "#92400e", grpText: "#b45309" },
+  };
+  const pal = palette[Math.min(currentRound, 3)];
 
-  // Dynamic canvas sizing based on drawn index
+  // ── 5. Canvas sizing ──────────────────────────────────────────────────
   const cols = 8;
-  const spacingX = 85;
-  const spacingY = 85;
+  const spacingX = 90;
+  const spacingY = 95;
   const rowsCount = Math.ceil((maxDrawIndex + 1) / cols);
-  
-  const width = cols * spacingX + 15;
-  const height = rowsCount * spacingY + 15;
-  
-  canvas.width = width;
-  canvas.height = height;
-  ctx.clearRect(0, 0, width, height);
+  canvas.width  = cols * spacingX + 20;
+  canvas.height = rowsCount * spacingY + 20;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Update Legend text/color code dynamically
-  const legendEl = document.getElementById("pilgrimage-legend");
-  if (legendEl) {
-    legendEl.innerHTML = `
-      <span style="display:flex; align-items:center; gap:4px; margin-right:8px;"><span style="display:inline-block; width:10px; height:10px; background:#e0e7ff; border:1px solid #6366f1; border-radius:50%;"></span>我已讀</span>
-      <span style="display:flex; align-items:center; gap:4px; margin-right:8px;"><span style="display:inline-block; width:10px; height:10px; background:#eff6ff; border:1px solid #3b82f6; border-radius:50%;"></span>組員已讀</span>
-      <span style="display:flex; align-items:center; gap:4px;"><span style="display:inline-block; width:10px; height:10px; background:#f8fafc; border:1px solid #cbd5e1; border-radius:50%;"></span>後續道路</span>
-    `;
-  }
-
-  // Helper: draw a path line segment between chapter index ranges
-  function drawPathLine(startIndex, endIndex, strokeStyle) {
+  // ── 6. Path line helper ───────────────────────────────────────────────
+  function drawPathLine(startIndex, endIndex, color, width = 8) {
     if (endIndex < startIndex) return;
     ctx.beginPath();
-    ctx.strokeStyle = strokeStyle;
-    ctx.lineWidth = 8;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
-    const startPos = getTileCoords(startIndex);
-    ctx.moveTo(startPos.x, startPos.y);
+    const s = getTileCoords(startIndex);
+    ctx.moveTo(s.x, s.y);
     for (let i = startIndex + 1; i <= endIndex; i++) {
       const p = getTileCoords(i);
       ctx.lineTo(p.x, p.y);
@@ -577,135 +579,174 @@ async function renderPilgrimageTrail() {
     ctx.stroke();
   }
 
-  // --- 1. Draw Winding Path Background Line (grey) ---
+  // ── 7. Draw path lines ────────────────────────────────────────────────
+  // Background grey path
   drawPathLine(0, maxDrawIndex, "rgba(226, 232, 240, 0.8)");
-
-  // --- 2. Draw Unlocked Group Path Line (light blue) ---
+  // Round 1 footprint underlay (visible only on round 2+)
+  if (currentRound >= 2 && myR1Count > 1) {
+    drawPathLine(0, Math.min(myR1Count - 1, maxDrawIndex), "rgba(99, 102, 241, 0.2)", 6);
+  }
+  // Group path
   if (maxChaptersRead > 1) {
-    drawPathLine(0, Math.min(maxChaptersRead - 1, maxDrawIndex), "#93c5fd");
+    drawPathLine(0, Math.min(maxChaptersRead - 1, maxDrawIndex), pal.grpPath, 7);
   }
-
-  // --- 3. Draw My Progress Path Line (vibrant indigo) ---
+  // My path
   if (myChaptersRead > 1) {
-    drawPathLine(0, Math.min(myChaptersRead - 1, maxDrawIndex), "#818cf8");
+    drawPathLine(0, Math.min(myChaptersRead - 1, maxDrawIndex), pal.myPath, 9);
   }
 
-  // --- 4. Draw Tile Nodes ---
+  // ── 8. Draw tile nodes ────────────────────────────────────────────────
   for (let i = 0; i <= maxDrawIndex; i++) {
     const pos = getTileCoords(i);
-    const ch = allChapters[i];
+    const ch = planChapters[i];
     if (!ch) continue;
-    
-    // Determine colors based on reading status
-    let fillStyle = "#f8fafc";
+
+    // Large circle for book start, small for regular chapters
+    const isBookStart = ch.isBookStart;
+    const r = isBookStart ? 26 : 15;
+
+    let fillStyle  = "#f8fafc";
     let strokeStyle = "#cbd5e1";
-    let textColor = "#64748b";
+    let textColor  = "#94a3b8";
     let isBold = false;
-    
-    if (i < myChaptersRead) {
-      fillStyle = "#e0e7ff"; // indigo light
-      strokeStyle = "#6366f1"; // indigo line
-      textColor = "#4338ca"; // indigo text
+    let strokeW = isBookStart ? 2.5 : 1.5;
+
+    const isMineRead = i < myChaptersRead;
+    const isGrpRead  = !isMineRead && i < maxChaptersRead;
+
+    if (isMineRead) {
+      fillStyle   = pal.myFill;
+      strokeStyle = pal.myStroke;
+      textColor   = pal.myText;
       isBold = true;
-    } else if (i < maxChaptersRead) {
-      fillStyle = "#eff6ff"; // blue light
-      strokeStyle = "#3b82f6"; // blue line
-      textColor = "#1d4ed8"; // blue text
+      strokeW = isBookStart ? 3.5 : 2.5;
+      // Glow for round 2+
+      if (currentRound >= 2) {
+        ctx.save();
+        ctx.shadowColor = pal.myStroke;
+        ctx.shadowBlur  = isBookStart ? 18 : 10;
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
+        ctx.fillStyle = fillStyle;
+        ctx.fill();
+        ctx.restore();
+      }
+    } else if (isGrpRead) {
+      fillStyle   = pal.grpFill;
+      strokeStyle = pal.grpStroke;
+      textColor   = pal.grpText;
+      strokeW = isBookStart ? 2.5 : 1.5;
     }
-    
-    // Tile circle
+
+    // Draw main circle
     ctx.beginPath();
-    ctx.arc(pos.x, pos.y, 20, 0, Math.PI * 2);
+    ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
     ctx.fillStyle = fillStyle;
     ctx.fill();
-    ctx.lineWidth = 2;
+    ctx.lineWidth   = strokeW;
     ctx.strokeStyle = strokeStyle;
     ctx.stroke();
-    
-    // Text drawing inside tile
-    ctx.fillStyle = textColor;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    
-    if (ch.chapterNum === 1) {
-      // First chapter of a book -> draw book name abbrev
-      ctx.font = "bold 11px sans-serif";
-      ctx.fillText(ch.abbrev, pos.x, pos.y);
+
+    // Round 2+: draw dim R1 inner ring on tiles that were read in R1 but not yet in current round
+    if (currentRound >= 2 && ch.isReadR1 && !isMineRead) {
+      ctx.beginPath();
+      ctx.arc(pos.x, pos.y, r - 4, 0, Math.PI * 2);
+      ctx.strokeStyle = "rgba(99, 102, 241, 0.35)";
+      ctx.lineWidth   = 1.5;
+      ctx.stroke();
+    }
+
+    // Book-start: outer ring for emphasis
+    if (isBookStart && isMineRead) {
+      ctx.beginPath();
+      ctx.arc(pos.x, pos.y, r + 4, 0, Math.PI * 2);
+      ctx.strokeStyle = strokeStyle + "55";
+      ctx.lineWidth   = 2;
+      ctx.stroke();
+    }
+
+    // Label text
+    ctx.fillStyle     = textColor;
+    ctx.textAlign     = "center";
+    ctx.textBaseline  = "middle";
+
+    const bookData = BIBLE_BOOKS ? BIBLE_BOOKS.find(b => b.name === ch.bookName) : null;
+    if (isBookStart) {
+      const abbrev = bookData ? bookData.abbrev : ch.bookName.substring(0, 2);
+      ctx.font = `bold 11px sans-serif`;
+      ctx.fillText(abbrev, pos.x, pos.y);
     } else {
-      // Regular chapter number
-      ctx.font = isBold ? "bold 10px sans-serif" : "9px sans-serif";
+      ctx.font = isBold ? "bold 9px sans-serif" : "8px sans-serif";
       ctx.fillText(ch.chapterNum, pos.x, pos.y);
     }
   }
 
-  // --- 5. Group and Draw Member Avatars ---
-  const membersByPosition = {};
+  // ── 9. Member avatar badges ───────────────────────────────────────────
+  const membersByPos = {};
   groupMembers.forEach(m => {
-    const cr = m.chapters_read || 0;
-    const posIndex = Math.max(0, cr - 1);
-    if (!membersByPosition[posIndex]) {
-      membersByPosition[posIndex] = [];
-    }
-    membersByPosition[posIndex].push(m);
+    const posIndex = Math.max(0, (m.chapters_read || 0) - 1);
+    if (!membersByPos[posIndex]) membersByPos[posIndex] = [];
+    membersByPos[posIndex].push(m);
   });
 
-  Object.keys(membersByPosition).forEach(posStr => {
+  Object.entries(membersByPos).forEach(([posStr, list]) => {
     const posIndex = parseInt(posStr, 10);
-    if (posIndex > maxDrawIndex) return; // safety clamp
-    
+    if (posIndex > maxDrawIndex) return;
     const tilePos = getTileCoords(posIndex);
-    const list = membersByPosition[posStr];
     const count = list.length;
-    
     list.forEach((m, idx) => {
-      let ox = 0;
-      let oy = 0;
-      if (count > 1) {
-        // Arrange avatars in a neat circle surrounding the tile node
-        const angle = (idx * 2 * Math.PI) / count;
-        const radius = 15;
-        ox = Math.cos(angle) * radius;
-        oy = Math.sin(angle) * radius;
-      }
-      
-      const x = tilePos.x + ox;
-      const y = tilePos.y + oy;
+      const angle  = count > 1 ? (idx * 2 * Math.PI) / count : 0;
+      const offset = count > 1 ? 18 : 0;
+      const x = tilePos.x + Math.cos(angle) * offset;
+      const y = tilePos.y + Math.sin(angle) * offset;
       const isMe = m.name === state.currentUser.name;
-      
+
       ctx.save();
-      ctx.shadowColor = "rgba(0, 0, 0, 0.2)";
-      ctx.shadowBlur = 4;
+      ctx.shadowColor   = "rgba(0, 0, 0, 0.22)";
+      ctx.shadowBlur    = 5;
       ctx.shadowOffsetY = 2;
-      
-      // Avatar Outer Circle
       ctx.beginPath();
       ctx.arc(x, y, 15, 0, Math.PI * 2);
       ctx.fillStyle = getMemberColor(m.name);
       ctx.fill();
-      
-      ctx.lineWidth = 1.5;
-      ctx.strokeStyle = isMe ? "#ffffff" : "rgba(255, 255, 255, 0.85)";
+      ctx.lineWidth   = isMe ? 2.5 : 1.5;
+      ctx.strokeStyle = "#ffffff";
       ctx.stroke();
       ctx.restore();
 
-      // Avatar Initial Text
-      ctx.fillStyle = "#ffffff";
-      ctx.font = "bold 9px sans-serif";
-      ctx.textAlign = "center";
+      ctx.fillStyle    = "#ffffff";
+      ctx.font         = "bold 9px sans-serif";
+      ctx.textAlign    = "center";
       ctx.textBaseline = "middle";
-      const displayName = m.name.substring(0, 2);
-      ctx.fillText(displayName, x, y);
+      ctx.fillText(m.name.substring(0, 2), x, y);
     });
   });
 
-  // --- 6. Smooth Auto-Scroll to Current User's Tile position ---
+  // ── 10. Legend ────────────────────────────────────────────────────────
+  const legendEl = document.getElementById("pilgrimage-legend");
+  if (legendEl) {
+    if (currentRound === 1) {
+      legendEl.innerHTML = `
+        <span style="display:flex;align-items:center;gap:4px;margin-right:8px;"><span style="display:inline-block;width:14px;height:14px;background:${pal.myFill};border:2px solid ${pal.myStroke};border-radius:50%;"></span>我已讀</span>
+        <span style="display:flex;align-items:center;gap:4px;margin-right:8px;"><span style="display:inline-block;width:10px;height:10px;background:${pal.grpFill};border:1.5px solid ${pal.grpStroke};border-radius:50%;"></span>組員已讀</span>
+        <span style="display:flex;align-items:center;gap:4px;margin-right:8px;"><span style="display:inline-block;width:18px;height:18px;background:${pal.myFill};border:2.5px solid ${pal.myStroke};border-radius:50%;font-size:9px;text-align:center;line-height:18px;"></span>大圈＝新書卷</span>
+        <span style="display:flex;align-items:center;gap:4px;"><span style="display:inline-block;width:10px;height:10px;background:#f8fafc;border:1.5px solid #cbd5e1;border-radius:50%;"></span>後續道路</span>`;
+    } else {
+      legendEl.innerHTML = `
+        <span style="display:flex;align-items:center;gap:4px;margin-right:8px;"><span style="display:inline-block;width:14px;height:14px;background:${pal.myFill};border:2px solid ${pal.myStroke};border-radius:50%;box-shadow:0 0 6px ${pal.myStroke};"></span>第${currentRound}遍已讀</span>
+        <span style="display:flex;align-items:center;gap:4px;margin-right:8px;"><span style="display:inline-block;width:10px;height:10px;background:transparent;border:1.5px solid rgba(99,102,241,0.4);border-radius:50%;"></span>第1遍足跡</span>
+        <span style="display:flex;align-items:center;gap:4px;"><span style="display:inline-block;width:10px;height:10px;background:#f8fafc;border:1.5px solid #cbd5e1;border-radius:50%;"></span>後續道路</span>`;
+    }
+  }
+
+  // ── 11. Auto-scroll to my position ───────────────────────────────────
   const wrapper = canvas.closest(".trail-scroll-wrapper");
   if (wrapper) {
     const myTilePos = getTileCoords(Math.max(0, myChaptersRead - 1));
     setTimeout(() => {
       wrapper.scrollTo({
-        top: Math.max(0, myTilePos.y - wrapper.clientHeight / 2),
-        left: Math.max(0, myTilePos.x - wrapper.clientWidth / 2),
+        top:  Math.max(0, myTilePos.y - wrapper.clientHeight / 2),
+        left: Math.max(0, myTilePos.x - wrapper.clientWidth  / 2),
         behavior: "smooth"
       });
     }, 120);

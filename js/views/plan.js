@@ -1,5 +1,48 @@
 // Reading plans tab view controller
 
+window._currentStatsTab = 'personal';
+window._statsTabScope = null;
+
+window.switchStatTab = async function(tab) {
+  window._currentStatsTab = tab;
+  
+  // Highlight active inner tab button
+  const tabs = document.querySelectorAll(".stats-inner-tab");
+  tabs.forEach(t => {
+    if (t.getAttribute("data-tab") === tab) {
+      t.classList.add("active");
+    } else {
+      t.classList.remove("active");
+    }
+  });
+
+  // Toggle admin scope bar visibility
+  const adminScopeBar = document.getElementById("stats-admin-scope-bar");
+  if (adminScopeBar) {
+    if (tab === 'admin') {
+      adminScopeBar.classList.remove("hidden");
+    } else {
+      adminScopeBar.classList.add("hidden");
+    }
+  }
+
+  // Set the scope override variable based on selected tab
+  const myZone = (state.currentUser && state.currentUser.pastoral_zone) || "";
+  if (tab === 'personal') {
+    window._statsTabScope = 'me';
+  } else if (tab === 'zone') {
+    window._statsTabScope = myZone ? `zone:${myZone}` : 'zone:未設定牧區';
+  } else if (tab === 'church') {
+    window._statsTabScope = 'all';
+  } else if (tab === 'admin') {
+    window._statsTabScope = null; // Uses rankingZoneSelector.value
+  }
+
+  if (state.activePlan) {
+    await renderPlanStatsView();
+  }
+};
+
 function initPlanControls() {
   renderPresetPlansList();
 
@@ -59,28 +102,20 @@ function initPlanControls() {
   if (tabMembers) tabMembers.style.display = _canSeeMembers ? "" : "none";
   if (subviewPlanMembers) subviewPlanMembers.style.display = _canSeeMembers ? "" : "none";
 
+  // Control visibility of inner admin stats tab
+  const innerAdminTab = document.getElementById("stats-inner-tab-admin");
+  if (innerAdminTab) {
+    innerAdminTab.style.display = _canSeeMembers ? "" : "none";
+  }
+
   const allTabs = [tabSchedule, tabStats, tabRanking, _canSeeMembers ? tabMembers : null].filter(Boolean);
   const allSubviews = [subviewSchedule, subviewPlanStats, subviewPlanRanking, _canSeeMembers ? subviewPlanMembers : null].filter(Boolean);
-
-  const filterCard = document.getElementById("global-stats-filter-card");
 
   function switchToTab(activeTab, activeSubview) {
     allTabs.forEach(t => t && t.classList.remove("active"));
     allSubviews.forEach(s => s && s.classList.add("hidden"));
     if (activeTab) activeTab.classList.add("active");
     if (activeSubview) activeSubview.classList.remove("hidden");
-
-    if (activeTab === tabStats) {
-      if (filterCard) {
-        filterCard.classList.remove("hidden");
-        filterCard.style.display = "flex";
-      }
-    } else {
-      if (filterCard) {
-        filterCard.classList.add("hidden");
-        filterCard.style.display = "none";
-      }
-    }
   }
 
   if (tabSchedule) {
@@ -93,7 +128,8 @@ function initPlanControls() {
   if (tabStats) {
     tabStats.addEventListener("click", async () => {
       switchToTab(tabStats, subviewPlanStats);
-      if (state.activePlan) await renderPlanStatsView();
+      // Reset inner tab to 'personal' on click
+      await window.switchStatTab('personal');
     });
   }
 
@@ -143,7 +179,7 @@ function initPlanControls() {
           joinedList.innerHTML = `
             <div class="empty-state" style="text-align: center; padding: 3rem 0; width: 100%;">
               <p style="color: var(--text-secondary); margin-bottom: 1rem; font-weight: 700;">目前沒有已完成的計畫</p>
-              <p style="font-size: 0.82rem; color: var(--text-muted);">前往「已儲存」加入新挑戰吧！</p>
+              <p style="font-size: 0.82rem; color: var(--text-muted);">前往「尋找計畫」加入新挑戰吧！</p>
             </div>
           `;
         }
@@ -376,11 +412,22 @@ function calculateAllPlansProgress() {
     const currentRound = plan.currentRound || 1;
     plan.days.forEach(day => {
       day.chapters.forEach(ch => {
-        const isRead = state.readingLogs.some(l => {
-          const isPlanMatch = !l.presetKey || (l.presetKey === plan.presetKey) || (plan.id && l.plan_id === plan.id);
-          const isRoundMatch = (l.round || 1) === currentRound;
-          return l.book === ch.book && l.chapter === ch.chapter && isPlanMatch && isRoundMatch;
-        });
+        const checkRoundLog = (rTarget) => {
+          return state.readingLogs.some(l => {
+            const isPlanMatch = 
+              (plan.id && l.plan_id === plan.id) || 
+              (plan.presetKey && l.presetKey === plan.presetKey) ||
+              (!l.plan_id && !l.presetKey);
+            const isRoundMatch = (l.round || 1) === rTarget;
+            return l.book === ch.book && l.chapter === ch.chapter && isPlanMatch && isRoundMatch;
+          });
+        };
+
+        ch.isReadR1 = checkRoundLog(1);
+        ch.isReadR2 = checkRoundLog(2);
+        ch.isReadR3 = checkRoundLog(3);
+
+        const isRead = currentRound === 3 ? ch.isReadR3 : (currentRound === 2 ? ch.isReadR2 : ch.isReadR1);
         ch.isRead = isRead;
         if (isRead) completed++;
       });
@@ -528,10 +575,24 @@ function renderPresetPlansList() {
 
   container.innerHTML = "";
 
-  const presets = Object.entries(CHURCH_PLAN_PRESETS);
-  presets.forEach(([key, preset]) => {
+  let plans = [];
+  if (state.globalPlans && state.globalPlans.length > 0) {
+    plans = state.globalPlans;
+  } else {
+    plans = Object.entries(CHURCH_PLAN_PRESETS).map(([key, p]) => ({
+      id: key,
+      name: p.name,
+      startDate: p.startDate,
+      endDate: p.endDate,
+      books: p.books,
+      presetKey: key
+    }));
+  }
+
+  plans.forEach(plan => {
+    const key = plan.presetKey || plan.id;
     // Check if user already joined
-    const isJoined = state.activePlans && state.activePlans.some(p => p.presetKey === key);
+    const isJoined = state.activePlans && state.activePlans.some(p => p.presetKey === key || p.id === plan.id);
 
     const card = document.createElement("div");
     card.className = "joined-plan-item-card";
@@ -548,14 +609,12 @@ function renderPresetPlansList() {
     `;
     card.onclick = async () => {
       if (isJoined) {
-        state.activePlan = state.activePlans.find(p => p.presetKey === key);
+        state.activePlan = state.activePlans.find(p => p.presetKey === key || p.id === plan.id);
         state.selectedPlanDay = null;
         renderPlanView();
       } else {
-        if (confirm(`確定要加入「${preset.name}」讀經計畫挑戰嗎？`)) {
-          loader.show("加入計畫中...");
-          await db.joinPlan(preset.name, preset.startDate, preset.endDate, preset.books, key);
-          loader.hide();
+        if (confirm(`確定要加入「${plan.name}」讀經計畫挑戰嗎？`)) {
+          await db.joinPresetPlan(key);
         }
       }
     };
@@ -563,9 +622,9 @@ function renderPresetPlansList() {
     card.innerHTML = `
       ${getPlanCoverHtml({ presetKey: key })}
       <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 0.25rem; min-width: 0;">
-        <h4 style="margin: 0; font-size: 1.05rem; font-weight: 800; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${preset.name}</h4>
+        <h4 style="margin: 0; font-size: 1.05rem; font-weight: 800; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${plan.name}</h4>
         <div style="font-size: 0.78rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.3rem;">
-          <span>📅</span> <span>${preset.startDate} ~ ${preset.endDate}</span>
+          <span>📅</span> <span>${plan.startDate} ~ ${plan.endDate}</span>
         </div>
         <div style="font-size: 0.76rem; font-weight: 700; color: ${isJoined ? '#10b981' : 'var(--primary-color)'}; margin-top: 0.2rem; display: flex; align-items: center; gap: 0.25rem;">
           ${isJoined ? '✓ 已加入挑戰' : '+ 點擊加入計畫挑戰'}
@@ -672,13 +731,48 @@ function renderHorizontalDateStrip() {
   
   const daysCount = state.activePlan.days.length;
 
+  // 取今天的年/月/日，用於比對計畫日期
+  const now = new Date();
+  const todayYear = now.getFullYear();
+  const todayMonth = now.getMonth() + 1;
+  const todayDay = now.getDate();
+
   for (let dNum = 1; dNum <= daysCount; dNum++) {
     const day = state.activePlan.days.find(d => d.dayNum === dNum);
     if (!day) continue;
 
     const isDayCompleted = day.chapters && day.chapters.length > 0 && day.chapters.every(ch => ch.isRead);
+
+    // 比對日期：day.year / day.month 已有；day.date 格式為 "MM/DD"
+    let isToday = false;
+    let isPast = false;
+    if (day.year && day.month && day.date) {
+      const parts = day.date.split('/');
+      const dayOfMonth = parts.length === 2 ? parseInt(parts[1]) : null;
+      if (dayOfMonth !== null) {
+        const cardYear = day.year;
+        const cardMonth = day.month;
+        const cardDay = dayOfMonth;
+        if (cardYear === todayYear && cardMonth === todayMonth && cardDay === todayDay) {
+          isToday = true;
+        } else if (
+          cardYear < todayYear ||
+          (cardYear === todayYear && cardMonth < todayMonth) ||
+          (cardYear === todayYear && cardMonth === todayMonth && cardDay < todayDay)
+        ) {
+          isPast = true;
+        }
+      }
+    }
+
     const dateCard = document.createElement("div");
-    dateCard.className = `date-card ${dNum === state.selectedPlanDay ? "active" : ""} ${isDayCompleted ? "completed" : ""}`;
+    dateCard.className = [
+      "date-card",
+      dNum === state.selectedPlanDay ? "active" : "",
+      isDayCompleted ? "completed" : "",
+      isToday ? "today" : "",
+      isPast ? "past" : ""
+    ].filter(Boolean).join(" ");
     dateCard.setAttribute("data-day", dNum);
     
     let formattedDate = "";
@@ -799,21 +893,29 @@ async function renderPlanScheduleTracker(skipCarouselUpdate = false) {
     return;
   }
 
+  const currentRound = state.activePlan.currentRound || 1;
+
   selectedDay.chapters.forEach(ch => {
     const taskItem = document.createElement("div");
     taskItem.className = "plan-task-item";
-    
-    const isChecked = ch.isRead;
-    const checkState = isChecked ? "checked" : "";
-    const svgIcon = isChecked ? `<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>` : "";
+
+    const { cssClass, content } = getChapterCheckboxState(ch, currentRound);
+
+    // 第 n 遍提示文字（第二遍起才顯示）
+    const roundLabelHtml = currentRound >= 2
+      ? `<div class="task-round-label round-${currentRound}">第${currentRound}遍</div>`
+      : '';
 
     taskItem.innerHTML = `
-      <div class="task-checkbox ${checkState}" onclick="event.stopPropagation(); window.toggleYouVersionChapter(this, '${ch.book}', ${ch.chapter})">
-        ${svgIcon}
+      <div class="task-checkbox ${cssClass}"
+           data-is-current-read="${ch.isRead ? 'true' : 'false'}"
+           onclick="event.stopPropagation(); window.toggleYouVersionChapter(this, '${ch.book}', ${ch.chapter})">
+        ${content}
       </div>
       <div class="task-title" onclick="window.openPlanInlineReader('${ch.book}', ${ch.chapter}, ${state.selectedPlanDay})">
         ${ch.book} ${ch.chapter}章
       </div>
+      ${roundLabelHtml}
       <div class="task-arrow" onclick="window.openPlanInlineReader('${ch.book}', ${ch.chapter}, ${state.selectedPlanDay})">
         <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="9 18 15 12 9 6"></polyline></svg>
       </div>
@@ -822,30 +924,81 @@ async function renderPlanScheduleTracker(skipCarouselUpdate = false) {
   });
 }
 
+/**
+ * 返回根據各遊完成狀態產生 checkbox 的 cssClass 與內容
+ * 第一遍 ✓ (綠色)  / 第二遍 ⚡ 閃電 (靛藍)  / 第三遍 ★ 星星 (金色)
+ */
+function getChapterCheckboxState(ch, currentRound) {
+  // 第一遍：單勾 ✓
+  const ICON_R1 = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+  // 第二遍：閃電 ⚡
+  const ICON_R2 = `<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" style="width:14px;height:14px"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>`;
+  // 第三遍：星星 ★
+  const ICON_R3 = `<svg viewBox="0 0 24 24" fill="currentColor" stroke="none" style="width:15px;height:15px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`;
+
+  if (currentRound === 1) {
+    return ch.isRead
+      ? { cssClass: 'checked', content: ICON_R1 }
+      : { cssClass: '', content: '' };
+  }
+
+  if (currentRound === 2) {
+    if (ch.isReadR2) {
+      // 第二遍完成：靛藍閃電
+      return { cssClass: 'checked round-2', content: ICON_R2 };
+    } else if (ch.isReadR1) {
+      // 第一遍完成但第二遍尚未：淡化 ✓
+      return { cssClass: 'checked round-1 dimmed', content: ICON_R1 };
+    }
+    return { cssClass: '', content: '' };
+  }
+
+  if (currentRound >= 3) {
+    if (ch.isReadR3) {
+      // 第三遍完成：金色星星
+      return { cssClass: 'checked round-3', content: ICON_R3 };
+    } else if (ch.isReadR2) {
+      // 第二遍完成：靛藍閃電
+      return { cssClass: 'checked round-2', content: ICON_R2 };
+    } else if (ch.isReadR1) {
+      // 只第一遍：淡化 ✓
+      return { cssClass: 'checked round-1 dimmed', content: ICON_R1 };
+    }
+    return { cssClass: '', content: '' };
+  }
+
+  return { cssClass: '', content: '' };
+}
+
+/**
+ * 小强調 badge：顯示第一遍已讀的就記號
+ */
+function getRoundBadge(ch, currentRound) {
+  if (currentRound >= 3 && ch.isReadR2 && !ch.isReadR3) return '✓✓已讀';
+  if (currentRound >= 2 && ch.isReadR1 && !ch.isReadR2) return '✓第1遍';
+  return '';
+}
+
 window.toggleYouVersionChapter = async function(checkboxEl, book, chapter) {
-  const isChecked = !checkboxEl.classList.contains("checked");
+  // 使用 data-is-current-read 屬性判斷「當前遍次」是否已讀
+  // 不轉用 classList.contains("checked")，因為 round-1 dimmed 也會有 checked class
+  const isCurrentlyRead = checkboxEl.dataset.isCurrentRead === 'true';
+  const willBeChecked = !isCurrentlyRead;
   
   loader.show("記錄中...");
-  await db.logChapterRead(book, chapter, isChecked);
+  await db.logChapterRead(book, chapter, willBeChecked);
   
   calculatePlanProgress();
   db.saveLocalUserStats();
   
-  if (isChecked) {
-    checkboxEl.classList.add("checked");
-    checkboxEl.innerHTML = `<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
-  } else {
-    checkboxEl.classList.remove("checked");
-    checkboxEl.innerHTML = ``;
-  }
+  // Re-render to reflect new multi-round state
+  renderPlanScheduleTracker(true);
   
   // Check if round completion is reached
   if (state.activePlan && state.activePlan.progress === 100) {
     await handleRoundCompletion(state.activePlan);
   }
   
-  // Re-render to refresh status pills and details
-  renderPlanScheduleTracker(true);
   loader.hide();
 };
 
@@ -1182,14 +1335,14 @@ async function renderAdminPlanManagement() {
   const tableBody = document.getElementById("admin-plans-table-body");
   if (!tableBody) return;
 
-  tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">載入計畫列表中...</td></tr>`;
+  tableBody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">載入計畫列表中...</td></tr>`;
 
   try {
     const plans = state.globalPlans || [];
     tableBody.innerHTML = "";
 
     if (plans.length === 0) {
-      tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">目前無任何計畫，請點擊上方「新增計畫」建立</td></tr>`;
+      tableBody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">目前無任何計畫，請點擊上方「新增計畫」建立</td></tr>`;
       return;
     }
 
@@ -1198,18 +1351,22 @@ async function renderAdminPlanManagement() {
 
       const bookListText = plan.books.join(", ");
       const bookCount = plan.books.length;
-      const booksDisplay = bookCount > 6 
-        ? `<span title="${bookListText}" style="cursor: help; text-decoration: underline dashed; text-underline-offset: 3px;">${plan.books.slice(0, 6).join(", ")}... 等 ${bookCount} 卷</span>`
-        : bookListText;
 
       tr.innerHTML = `
-        <td><strong>${escapeHTML(plan.name)}</strong></td>
-        <td><span style="font-size: 0.8rem; font-weight: 600;">📅 ${plan.startDate} ~ ${plan.endDate}</span></td>
-        <td><span style="font-size: 0.78rem;">${booksDisplay}</span></td>
+        <td>
+          <strong style="display: block; margin-bottom: 0.15rem; font-size: 0.82rem; word-break: break-all;">${escapeHTML(plan.name)}</strong>
+          <span title="${escapeHTML(bookListText)}" style="font-size: 0.7rem; color: var(--text-muted); cursor: help; text-decoration: underline dashed; text-underline-offset: 2px;">
+            共 ${bookCount} 卷書卷
+          </span>
+        </td>
+        <td>
+          <span style="font-size: 0.72rem; font-weight: 600; display: block; white-space: nowrap;">📅 ${plan.startDate}</span>
+          <span style="font-size: 0.72rem; font-weight: 600; display: block; white-space: nowrap; margin-left: 0.6rem; color: var(--text-muted);">~ ${plan.endDate}</span>
+        </td>
         <td style="text-align: center; vertical-align: middle;">
-          <div style="display: flex; gap: 0.3rem; justify-content: center;">
-            <button class="primary-btn admin-edit-plan-btn" style="font-size: 0.72rem; padding: 0.2rem 0.5rem; height: auto; cursor: pointer;">編輯</button>
-            <button class="danger-btn admin-delete-plan-btn" style="font-size: 0.72rem; padding: 0.2rem 0.5rem; height: auto; cursor: pointer;">刪除</button>
+          <div style="display: flex; flex-direction: column; gap: 0.25rem; align-items: center; justify-content: center;">
+            <button class="primary-btn admin-edit-plan-btn" style="font-size: 0.68rem; padding: 0.2rem 0.4rem; min-width: 42px; text-align: center; height: auto; cursor: pointer;">編輯</button>
+            <button class="danger-btn admin-delete-plan-btn" style="font-size: 0.68rem; padding: 0.2rem 0.4rem; min-width: 42px; text-align: center; height: auto; cursor: pointer;">刪除</button>
           </div>
         </td>
       `;
@@ -1580,7 +1737,10 @@ function populateStatsSelector() {
   });
   
   // Set default selection value
-  let defaultVal = "me"; // Default to Myself
+  let defaultVal = "me";
+  if (!optionsList.some(o => o.value === "me") && optionsList.length > 0) {
+    defaultVal = optionsList[0].value;
+  }
   rankingZoneSelector.value = defaultVal;
   
   rankingZoneSelector.dataset.populated = "true";
@@ -1744,13 +1904,11 @@ async function renderPlanStatsView() {
   // Make sure stats selector is populated
   populateStatsSelector();
   
-  const rankingZoneSelector = document.getElementById("ranking-zone-selector");
-  const selectedVal = rankingZoneSelector ? rankingZoneSelector.value : "me";
-  
   const personalSec = document.getElementById("stats-personal-section");
   const groupSec = document.getElementById("stats-group-section");
   
-  if (selectedVal === "me") {
+  const currentTab = window._currentStatsTab || 'personal';
+  if (currentTab === 'personal') {
     // Show personal, hide group
     if (personalSec) personalSec.classList.remove("hidden");
     if (groupSec) groupSec.classList.add("hidden");
@@ -1770,13 +1928,29 @@ async function renderPlanStatsView() {
     const reportStatStreak = document.getElementById("report-stat-streak");
     if (reportStatStreak) reportStatStreak.textContent = personalStreak;
 
+    const currentRound = state.activePlan.currentRound || 1;
+    const totalPlanDays = state.activePlan.days.length;
+
+    // Helper: count completed days for a given round
+    const countCompletedDaysForRound = (rTarget) => {
+      return state.activePlan.days.filter(d => {
+        if (!d.chapters || d.chapters.length === 0) return false;
+        // For round 1 use isReadR1, round 2 use isReadR2, etc.
+        if (rTarget === 1) return d.chapters.every(ch => ch.isReadR1);
+        if (rTarget === 2) return d.chapters.every(ch => ch.isReadR2);
+        if (rTarget === 3) return d.chapters.every(ch => ch.isReadR3);
+        return d.chapters.every(ch => ch.isRead);
+      }).length;
+    };
+
     // 2. Total completed (累計完成)
-    const completedDaysCount = state.activePlan.days.filter(d => {
-      if (!d.chapters || d.chapters.length === 0) return false;
-      return d.chapters.every(ch => ch.isRead);
-    }).length;
+    // Round 2+: freeze display at round-1 completion total (which should be 100%)
+    const completedR1 = countCompletedDaysForRound(1);
+    const completedCurrentRound = countCompletedDaysForRound(currentRound);
+    const displayCompletedDays = currentRound > 1 ? totalPlanDays : completedR1;
+
     const reportStatCompleted = document.getElementById("report-stat-completed");
-    if (reportStatCompleted) reportStatCompleted.textContent = completedDaysCount;
+    if (reportStatCompleted) reportStatCompleted.textContent = displayCompletedDays;
 
     const reportStatStartDate = document.getElementById("report-stat-start-date");
     if (reportStatStartDate) {
@@ -1788,42 +1962,60 @@ async function renderPlanStatsView() {
       }
     }
 
-    // Calculate expected days up to today
+    // Calculate expected days up to today (for round 1 logic only)
     const planStart = new Date(state.activePlan.startDate);
     const today = new Date();
     const diffTime = today.getTime() - planStart.getTime();
     const diffDays = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1);
-    const expectedDaysCount = Math.min(state.activePlan.days.length, diffDays);
+    const expectedDaysCount = Math.min(totalPlanDays, diffDays);
 
     // 3. Progress Status (進度狀態)
     const reportStatProgressStatus = document.getElementById("report-stat-progress-status");
     if (reportStatProgressStatus) {
-      const diff = completedDaysCount - expectedDaysCount;
-      if (diff > 0) {
-        reportStatProgressStatus.textContent = `超前 ${diff}天`;
-        reportStatProgressStatus.style.color = "#10b981"; // Green
-      } else if (diff < 0) {
-        reportStatProgressStatus.textContent = `落後 ${Math.abs(diff)}天`;
-        reportStatProgressStatus.style.color = "#ef4444"; // Red
+      if (currentRound > 1) {
+        // 第二遍以後：顯示「第N遍 第X天」，不再顯示落後/超前
+        reportStatProgressStatus.textContent = `第${currentRound}遍 第${completedCurrentRound}天`;
+        reportStatProgressStatus.style.color = currentRound === 2 ? "#6366f1" : "#f59e0b";
       } else {
-        reportStatProgressStatus.textContent = "進度一致";
-        reportStatProgressStatus.style.color = "var(--text-primary)";
+        const diff = completedR1 - expectedDaysCount;
+        if (diff > 0) {
+          reportStatProgressStatus.textContent = `超前 ${diff}天`;
+          reportStatProgressStatus.style.color = "#10b981";
+        } else if (diff < 0) {
+          reportStatProgressStatus.textContent = `落後 ${Math.abs(diff)}天`;
+          reportStatProgressStatus.style.color = "#ef4444";
+        } else {
+          reportStatProgressStatus.textContent = "進度一致";
+          reportStatProgressStatus.style.color = "var(--text-primary)";
+        }
       }
     }
 
     // 4. Makeup/Catch up days (補讀)
-    const makeupDays = Math.max(0, expectedDaysCount - completedDaysCount);
+    // Round 2+: freeze at round-1 value (should be 0 if round 1 is done)
+    const makeupDays = currentRound > 1
+      ? Math.max(0, totalPlanDays - completedR1)  // frozen from round 1
+      : Math.max(0, expectedDaysCount - completedR1);
     const reportStatMakeup = document.getElementById("report-stat-makeup");
     if (reportStatMakeup) reportStatMakeup.textContent = makeupDays;
 
-    // 5. Cumulative chapters read (累積閱讀章數)
+    // 5. Cumulative chapters read (累積閱讀章數) — 所有遍次累計，不重置
     const reportStatTotalChapters = document.getElementById("report-stat-total-chapters");
     if (reportStatTotalChapters) {
+      const currentPlanId = state.activePlan.id;
+      const currentPresetKey = state.activePlan.presetKey;
       const uniqueKeys = new Set();
       if (state.readingLogs) {
         state.readingLogs.forEach(l => {
-          const r = l.round || 1;
-          uniqueKeys.add(`${l.book}_${l.chapter}_${r}`);
+          const logMatchesPlan =
+            (currentPlanId && l.plan_id && l.plan_id === currentPlanId) ||
+            (currentPresetKey && l.presetKey && l.presetKey === currentPresetKey) ||
+            (!l.plan_id && !l.presetKey);
+          if (logMatchesPlan) {
+            // 每一遍各章節分開計算，累積跨遍次總章數
+            const r = l.round || 1;
+            uniqueKeys.add(`${l.book}_${l.chapter}_${r}`);
+          }
         });
       }
       reportStatTotalChapters.textContent = uniqueKeys.size;
@@ -1893,7 +2085,22 @@ async function renderGroupMiniStats() {
 
   // Use the selector's scoped users if available, otherwise fallback to user's scope
   let scopedUsers = window._grpScopedUsers;
-  if (scopedUsers === undefined) {
+  // If tab scope is overridden, recalculate scopedUsers using it instead of using cached window._grpScopedUsers
+  if (window._statsTabScope !== null && allUsers.length > 0) {
+    const overrideFilter = window._statsTabScope;
+    if (overrideFilter === "all") {
+      scopedUsers = allUsers;
+    } else if (overrideFilter === "me") {
+      scopedUsers = allUsers.filter(u => u.name === state.currentUser.name);
+    } else if (overrideFilter.startsWith("zone:")) {
+      const zone = overrideFilter.replace("zone:", "");
+      if (zone === "未設定牧區") {
+        scopedUsers = allUsers.filter(u => !u.pastoral_zone || u.pastoral_zone.trim() === "");
+      } else {
+        scopedUsers = allUsers.filter(u => u.pastoral_zone === zone);
+      }
+    }
+  } else if (scopedUsers === undefined) {
     scopedUsers = getScopedUsers(allUsers, state.currentUser);
   }
   if (!scopedUsers) scopedUsers = [];
@@ -1910,7 +2117,9 @@ async function renderGroupMiniStats() {
   // Determine current scope label from selector
   let scopeLabel = "全教會";
   const rankingZoneSelector = document.getElementById("ranking-zone-selector");
-  const selectedFilter = rankingZoneSelector ? rankingZoneSelector.value : null;
+  const selectedFilter = window._statsTabScope !== null 
+    ? window._statsTabScope 
+    : (rankingZoneSelector ? rankingZoneSelector.value : null);
 
   if (selectedFilter) {
     if (selectedFilter === "all") {
@@ -2050,7 +2259,9 @@ function renderGroupTeamHeatmap() {
   // Determine current scope label from selector
   let scopeLabel = "全教會";
   const rankingZoneSelector = document.getElementById("ranking-zone-selector");
-  const selectedFilter = rankingZoneSelector ? rankingZoneSelector.value : null;
+  const selectedFilter = window._statsTabScope !== null 
+    ? window._statsTabScope 
+    : (rankingZoneSelector ? rankingZoneSelector.value : null);
 
   if (selectedFilter) {
     if (selectedFilter === "all") {
@@ -2110,10 +2321,21 @@ function renderGroupTeamHeatmap() {
   buildHeatmapGrid('grp-bible-heatmap-container', logsByDate, scopedUsers.length, '章');
 }
 
+function logMatchesPlan(log, currentPlanId, currentPresetKey) {
+  return (currentPlanId && log.plan_id && log.plan_id === currentPlanId) ||
+         (currentPresetKey && log.presetKey && log.presetKey === currentPresetKey) ||
+         (!log.plan_id && !log.presetKey);
+}
+
 function renderPersonalHeatmap() {
+  // 只顯示當前計畫的閱讀記錄
+  const currentPlanId = state.activePlan && state.activePlan.id;
+  const currentPresetKey = state.activePlan && state.activePlan.presetKey;
   const logsByDate = {};
-  state.readingLogs.forEach(log => {
-    if (log.read_at) {
+  (state.readingLogs || []).forEach(log => {
+    if (!log.read_at) return;
+    const matches = logMatchesPlan(log, currentPlanId, currentPresetKey);
+    if (matches) {
       const dStr = log.read_at.substring(0, 10);
       logsByDate[dStr] = (logsByDate[dStr] || 0) + 1;
     }
@@ -2124,6 +2346,9 @@ function renderPersonalHeatmap() {
 function renderPersonalTrendChart() {
   const canvas = document.getElementById("personal-reading-trend-chart");
   if (!canvas) return;
+
+  const currentPlanId = state.activePlan && state.activePlan.id;
+  const currentPresetKey = state.activePlan && state.activePlan.presetKey;
 
   const range = state.personalTrendRange || "month";
 
@@ -2149,9 +2374,9 @@ function renderPersonalTrendChart() {
     // 7 days starting from Sunday of the current week
     const dates = [];
     const today = new Date();
-    const dayOfWeek = today.getDay(); // 0 (Sunday) to 6 (Saturday)
+    const dayOfWeek = today.getDay();
     const sunday = new Date(today);
-    sunday.setDate(today.getDate() - dayOfWeek); // Back to Sunday
+    sunday.setDate(today.getDate() - dayOfWeek);
     
     for (let i = 0; i < 7; i++) {
       const d = new Date(sunday);
@@ -2163,10 +2388,10 @@ function renderPersonalTrendChart() {
     const logsByDate = {};
     if (state.readingLogs) {
       state.readingLogs.forEach(log => {
-        if (log.read_at) {
-          const dStr = log.read_at.substring(0, 10);
-          logsByDate[dStr] = (logsByDate[dStr] || 0) + 1;
-        }
+        if (!log.read_at) return;
+        if (!logMatchesPlan(log, currentPlanId, currentPresetKey)) return;
+        const dStr = log.read_at.substring(0, 10);
+        logsByDate[dStr] = (logsByDate[dStr] || 0) + 1;
       });
     }
     chartData = dates.map(dStr => logsByDate[dStr] || 0);
@@ -2185,10 +2410,10 @@ function renderPersonalTrendChart() {
     const logsByMonth = {};
     if (state.readingLogs) {
       state.readingLogs.forEach(log => {
-        if (log.read_at) {
-          const mStr = log.read_at.substring(0, 7); // "YYYY-MM"
-          logsByMonth[mStr] = (logsByMonth[mStr] || 0) + 1;
-        }
+        if (!log.read_at) return;
+        if (!logMatchesPlan(log, currentPlanId, currentPresetKey)) return;
+        const mStr = log.read_at.substring(0, 7);
+        logsByMonth[mStr] = (logsByMonth[mStr] || 0) + 1;
       });
     }
     chartData = months.map(mStr => logsByMonth[mStr] || 0);
@@ -2207,10 +2432,10 @@ function renderPersonalTrendChart() {
     const logsByDate = {};
     if (state.readingLogs) {
       state.readingLogs.forEach(log => {
-        if (log.read_at) {
-          const dStr = log.read_at.substring(0, 10);
-          logsByDate[dStr] = (logsByDate[dStr] || 0) + 1;
-        }
+        if (!log.read_at) return;
+        if (!logMatchesPlan(log, currentPlanId, currentPresetKey)) return;
+        const dStr = log.read_at.substring(0, 10);
+        logsByDate[dStr] = (logsByDate[dStr] || 0) + 1;
       });
     }
     chartData = dates.map(dStr => logsByDate[dStr] || 0);
@@ -2495,7 +2720,9 @@ async function renderGroupParticipantsRankingTable() {
         }
       }
     } else {
-      const selectedFilter = rankingZoneSelector ? rankingZoneSelector.value : null;
+      const selectedFilter = window._statsTabScope !== null
+        ? window._statsTabScope
+        : (rankingZoneSelector ? rankingZoneSelector.value : null);
       if (selectedFilter) {
         if (selectedFilter === "all") {
           groupMembers = allUsers;
@@ -2521,8 +2748,13 @@ async function renderGroupParticipantsRankingTable() {
           if (rankingTitle) rankingTitle.textContent = `參與者總覽 (${region}大區排行)`;
         } else if (selectedFilter.startsWith("zone:")) {
           const zone = selectedFilter.replace("zone:", "");
-          groupMembers = allUsers.filter(u => u.pastoral_zone === zone);
-          if (rankingTitle) rankingTitle.textContent = `參與者總覽 (${zone}牧區排行)`;
+          if (zone === "未設定牧區") {
+            groupMembers = allUsers.filter(u => !u.pastoral_zone || u.pastoral_zone.trim() === "");
+            if (rankingTitle) rankingTitle.textContent = "參與者總覽 (未設定牧區成員排行)";
+          } else {
+            groupMembers = allUsers.filter(u => u.pastoral_zone === zone);
+            if (rankingTitle) rankingTitle.textContent = `參與者總覽 (${zone}牧區排行)`;
+          }
         } else if (selectedFilter.startsWith("group:")) {
           const group = selectedFilter.replace("group:", "");
           groupMembers = allUsers.filter(u => u.small_group === group);
