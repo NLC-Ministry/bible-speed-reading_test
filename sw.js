@@ -1,5 +1,5 @@
-const CACHE_NAME = 'church-bible-reading-v78';
-const DYNAMIC_CACHE_NAME = 'church-bible-dynamic-v78';
+const CACHE_NAME = 'church-bible-reading-v79';
+const DYNAMIC_CACHE_NAME = 'church-bible-dynamic-v79';
 
 // Static resources to precache
 const PRECACHE_ASSETS = [
@@ -52,6 +52,18 @@ self.addEventListener('activate', (e) => {
   );
 });
 
+// Helper to "clean" a response so Safari doesn't fail with "Response served by service worker has redirections"
+function cleanResponse(response) {
+  if (!response || !response.redirected) {
+    return response;
+  }
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers: response.headers
+  });
+}
+
 // Fetch Event: intercept requests and apply cache strategies
 self.addEventListener('fetch', (e) => {
   const requestUrl = new URL(e.request.url);
@@ -68,17 +80,16 @@ self.addEventListener('fetch', (e) => {
         return cache.match(e.request).then((cachedResponse) => {
           if (cachedResponse) {
             console.log('[Service Worker] Serving Bible text from cache:', requestUrl.pathname);
-            return cachedResponse;
+            return cleanResponse(cachedResponse);
           }
 
           return fetch(e.request).then((networkResponse) => {
             if (networkResponse && networkResponse.status === 200) {
               cache.put(e.request, networkResponse.clone());
             }
-            return networkResponse;
+            return cleanResponse(networkResponse);
           }).catch((err) => {
             console.warn('[Service Worker] Bible API fetch failed, no cache matches:', err);
-            // Will fallback to local offline text in bible_data.js
             throw err;
           });
         });
@@ -100,12 +111,11 @@ self.addEventListener('fetch', (e) => {
             if (networkResponse && networkResponse.status === 200) {
               cache.put(e.request, networkResponse.clone());
             }
-            return networkResponse;
+            return networkResponse; // Network response is clean if direct to CDN
           }).catch(() => {
-            // Offline fallback for CDNs if cached
             if (cachedResponse) return cachedResponse;
           });
-          return cachedResponse || fetchPromise;
+          return cleanResponse(cachedResponse) || fetchPromise;
         });
       })
     );
@@ -116,19 +126,18 @@ self.addEventListener('fetch', (e) => {
   e.respondWith(
     caches.match(e.request).then((cachedResponse) => {
       const fetchPromise = fetch(e.request).then((networkResponse) => {
-        // Only cache valid standard GET responses
         if (networkResponse && networkResponse.status === 200 && e.request.method === 'GET') {
           const cacheCopy = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
-            cache.put(e.request, cacheCopy);
+            cache.put(e.request, cleanResponse(cacheCopy));
           });
         }
-        return networkResponse;
+        return cleanResponse(networkResponse);
       }).catch((err) => {
         console.warn('[Service Worker] Fetch failed, returning cache if available:', err);
       });
 
-      return cachedResponse || fetchPromise;
+      return cleanResponse(cachedResponse) || fetchPromise;
     })
   );
 });
