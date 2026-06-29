@@ -2052,6 +2052,19 @@ async function renderPlanHistoryView() {
   // 7. Render team heatmap
   renderGroupTeamHeatmap();
 
+  // 7.5 Render Group Progress Distribution (only visible on Admin tab)
+  const distCard = document.getElementById("grp-distribution-card");
+  if (distCard) {
+    if (window._currentStatsTab === 'admin') {
+      distCard.classList.remove("hidden");
+      distCard.style.display = "";
+      renderGroupProgressDistribution();
+    } else {
+      distCard.classList.add("hidden");
+      distCard.style.display = "none";
+    }
+  }
+
   // 8. Render Bible Pilgrimage Trail canvas
   const pilgrimageCard = document.getElementById("grp-pilgrimage-card");
   const currentScopeUsers = window._grpScopedUsers || [];
@@ -2935,6 +2948,4 @@ async function renderPlanMembersView() {
     await renderGroupParticipantsRankingTable();
   }
 
-  // Render group progress distribution bars (since it was moved to Members view)
-  renderGroupProgressDistribution();
 }

@@ -623,6 +623,71 @@
                 </div>
               </div>
 
+              <!-- 團體進度狀態分佈 -->
+              <div class="glass-card hidden" id="grp-distribution-card" style="margin-bottom: 1.2rem; display: flex; flex-direction: column; gap: 1rem; padding: 1.2rem;">
+                <h3 class="card-title" style="margin-bottom: 0.2rem; font-size: 1.05rem; font-weight: 800; color: var(--text-primary);">團體進度狀態分佈</h3>
+                
+                <!-- Metrics Grid -->
+                <div style="display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 1rem; flex-wrap: wrap;">
+                  
+                  <!-- Hero Card: 今日已完成 -->
+                  <div style="background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(99, 102, 241, 0.15); border-radius: 12px; padding: 1rem; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; position: relative;">
+                    <span style="font-size: 0.8rem; font-weight: 800; color: var(--text-secondary); margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.25rem;">⚡ 今日已完成</span>
+                    <div style="font-size: 2.2rem; font-weight: 900; color: var(--primary-color);" id="grp-today-rate">--%</div>
+                    
+                    <div style="width: 100%; background: var(--bg-input); border-radius: 4px; height: 6px; overflow: hidden; margin-top: 0.6rem;">
+                      <div id="grp-today-bar" style="height: 100%; width: 0%; background: var(--primary-color); transition: width 0.6s ease;"></div>
+                    </div>
+                  </div>
+                  
+                  <!-- Status Grid right column (2x2 mini grid) -->
+                  <div style="grid-column: span 2; display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                    
+                    <!-- 超前進度 -->
+                    <div style="background: rgba(16, 185, 129, 0.04); border: 1px solid rgba(16, 185, 129, 0.12); border-radius: 10px; padding: 0.6rem 0.8rem; display: flex; flex-direction: column; justify-content: space-between;">
+                      <span style="font-size: 0.72rem; font-weight: 800; color: #10b981; display: flex; align-items: center; gap: 0.2rem;">🚀 超前進度</span>
+                      <div style="font-size: 1.1rem; font-weight: 800; color: #10b981; margin-top: 0.3rem;" id="grp-ahead-label">--</div>
+                      
+                      <div style="width: 100%; background: rgba(16, 185, 129, 0.1); border-radius: 2px; height: 4px; overflow: hidden; margin-top: 0.4rem;">
+                        <div id="grp-ahead-bar" style="height: 100%; width: 0%; background: #10b981; transition: width 0.6s ease;"></div>
+                      </div>
+                    </div>
+                    
+                    <!-- 進度一致 -->
+                    <div style="background: rgba(148, 163, 184, 0.04); border: 1px solid rgba(148, 163, 184, 0.12); border-radius: 10px; padding: 0.6rem 0.8rem; display: flex; flex-direction: column; justify-content: space-between;">
+                      <span style="font-size: 0.72rem; font-weight: 800; color: var(--text-secondary); display: flex; align-items: center; gap: 0.2rem;">✅ 進度一致</span>
+                      <div style="font-size: 1.1rem; font-weight: 800; color: var(--text-primary); margin-top: 0.3rem;" id="grp-on-schedule-label">--</div>
+                      
+                      <div style="width: 100%; background: rgba(148, 163, 184, 0.1); border-radius: 2px; height: 4px; overflow: hidden; margin-top: 0.4rem;">
+                        <div id="grp-on-schedule-bar" style="height: 100%; width: 0%; background: #94a3b8; transition: width 0.6s ease;"></div>
+                      </div>
+                    </div>
+                    
+                    <!-- 落後進度 -->
+                    <div style="background: rgba(239, 68, 68, 0.04); border: 1px solid rgba(239, 68, 68, 0.12); border-radius: 10px; padding: 0.6rem 0.8rem; display: flex; flex-direction: column; justify-content: space-between;">
+                      <span style="font-size: 0.72rem; font-weight: 800; color: #ef4444; display: flex; align-items: center; gap: 0.2rem;">⚠️ 落後進度</span>
+                      <div style="font-size: 1.1rem; font-weight: 800; color: #ef4444; margin-top: 0.3rem;" id="grp-behind-label">--</div>
+                      
+                      <div style="width: 100%; background: rgba(239, 68, 68, 0.1); border-radius: 2px; height: 4px; overflow: hidden; margin-top: 0.4rem;">
+                        <div id="grp-behind-bar" style="height: 100%; width: 0%; background: #ef4444; transition: width 0.6s ease;"></div>
+                      </div>
+                    </div>
+                    
+                    <!-- 多輪挑戰 -->
+                    <div style="background: rgba(245, 158, 11, 0.04); border: 1px solid rgba(245, 158, 11, 0.12); border-radius: 10px; padding: 0.6rem 0.8rem; display: flex; flex-direction: column; justify-content: space-between;">
+                      <span style="font-size: 0.72rem; font-weight: 800; color: #f59e0b; display: flex; align-items: center; gap: 0.2rem;">🏅 多輪挑戰</span>
+                      <div style="font-size: 1.1rem; font-weight: 800; color: #f59e0b; margin-top: 0.3rem;" id="grp-round2-label">--</div>
+                      
+                      <div style="width: 100%; background: rgba(245, 158, 11, 0.1); border-radius: 2px; height: 4px; overflow: hidden; margin-top: 0.4rem;">
+                        <div id="grp-round2-bar" style="height: 100%; width: 0%; background: #f59e0b; transition: width 0.6s ease;"></div>
+                      </div>
+                    </div>
+                    
+                  </div>
+                  
+                </div>
+              </div>
+
 
               <!-- 團隊讀經熱點地圖 -->
               <div class="glass-card" id="grp-heatmap-card">
@@ -734,70 +799,7 @@
               </div>
             </div>
 
-            <!-- 團體進度狀態分佈 -->
-            <div class="glass-card" id="grp-distribution-card" style="margin-bottom: 1.2rem; display: flex; flex-direction: column; gap: 1rem; padding: 1.2rem;">
-              <h3 class="card-title" style="margin-bottom: 0.2rem; font-size: 1.05rem; font-weight: 800; color: var(--text-primary);">團體進度狀態分佈</h3>
-              
-              <!-- Metrics Grid -->
-              <div style="display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 1rem; flex-wrap: wrap;">
-                
-                <!-- Hero Card: 今日已完成 -->
-                <div style="background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(99, 102, 241, 0.15); border-radius: 12px; padding: 1rem; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; position: relative;">
-                  <span style="font-size: 0.8rem; font-weight: 800; color: var(--text-secondary); margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.25rem;">⚡ 今日已完成</span>
-                  <div style="font-size: 2.2rem; font-weight: 900; color: var(--primary-color);" id="grp-today-rate">--%</div>
-                  
-                  <div style="width: 100%; background: var(--bg-input); border-radius: 4px; height: 6px; overflow: hidden; margin-top: 0.6rem;">
-                    <div id="grp-today-bar" style="height: 100%; width: 0%; background: var(--primary-color); transition: width 0.6s ease;"></div>
-                  </div>
-                </div>
-                
-                <!-- Status Grid right column (2x2 mini grid) -->
-                <div style="grid-column: span 2; display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
-                  
-                  <!-- 超前進度 -->
-                  <div style="background: rgba(16, 185, 129, 0.04); border: 1px solid rgba(16, 185, 129, 0.12); border-radius: 10px; padding: 0.6rem 0.8rem; display: flex; flex-direction: column; justify-content: space-between;">
-                    <span style="font-size: 0.72rem; font-weight: 800; color: #10b981; display: flex; align-items: center; gap: 0.2rem;">🚀 超前進度</span>
-                    <div style="font-size: 1.1rem; font-weight: 800; color: #10b981; margin-top: 0.3rem;" id="grp-ahead-label">--</div>
-                    
-                    <div style="width: 100%; background: rgba(16, 185, 129, 0.1); border-radius: 2px; height: 4px; overflow: hidden; margin-top: 0.4rem;">
-                      <div id="grp-ahead-bar" style="height: 100%; width: 0%; background: #10b981; transition: width 0.6s ease;"></div>
-                    </div>
-                  </div>
-                  
-                  <!-- 進度一致 -->
-                  <div style="background: rgba(148, 163, 184, 0.04); border: 1px solid rgba(148, 163, 184, 0.12); border-radius: 10px; padding: 0.6rem 0.8rem; display: flex; flex-direction: column; justify-content: space-between;">
-                    <span style="font-size: 0.72rem; font-weight: 800; color: var(--text-secondary); display: flex; align-items: center; gap: 0.2rem;">✅ 進度一致</span>
-                    <div style="font-size: 1.1rem; font-weight: 800; color: var(--text-primary); margin-top: 0.3rem;" id="grp-on-schedule-label">--</div>
-                    
-                    <div style="width: 100%; background: rgba(148, 163, 184, 0.1); border-radius: 2px; height: 4px; overflow: hidden; margin-top: 0.4rem;">
-                      <div id="grp-on-schedule-bar" style="height: 100%; width: 0%; background: #94a3b8; transition: width 0.6s ease;"></div>
-                    </div>
-                  </div>
-                  
-                  <!-- 落後進度 -->
-                  <div style="background: rgba(239, 68, 68, 0.04); border: 1px solid rgba(239, 68, 68, 0.12); border-radius: 10px; padding: 0.6rem 0.8rem; display: flex; flex-direction: column; justify-content: space-between;">
-                    <span style="font-size: 0.72rem; font-weight: 800; color: #ef4444; display: flex; align-items: center; gap: 0.2rem;">⚠️ 落後進度</span>
-                    <div style="font-size: 1.1rem; font-weight: 800; color: #ef4444; margin-top: 0.3rem;" id="grp-behind-label">--</div>
-                    
-                    <div style="width: 100%; background: rgba(239, 68, 68, 0.1); border-radius: 2px; height: 4px; overflow: hidden; margin-top: 0.4rem;">
-                      <div id="grp-behind-bar" style="height: 100%; width: 0%; background: #ef4444; transition: width 0.6s ease;"></div>
-                    </div>
-                  </div>
-                  
-                  <!-- 多輪挑戰 -->
-                  <div style="background: rgba(245, 158, 11, 0.04); border: 1px solid rgba(245, 158, 11, 0.12); border-radius: 10px; padding: 0.6rem 0.8rem; display: flex; flex-direction: column; justify-content: space-between;">
-                    <span style="font-size: 0.72rem; font-weight: 800; color: #f59e0b; display: flex; align-items: center; gap: 0.2rem;">🏅 多輪挑戰</span>
-                    <div style="font-size: 1.1rem; font-weight: 800; color: #f59e0b; margin-top: 0.3rem;" id="grp-round2-label">--</div>
-                    
-                    <div style="width: 100%; background: rgba(245, 158, 11, 0.1); border-radius: 2px; height: 4px; overflow: hidden; margin-top: 0.4rem;">
-                      <div id="grp-round2-bar" style="height: 100%; width: 0%; background: #f59e0b; transition: width 0.6s ease;"></div>
-                    </div>
-                  </div>
-                  
-                </div>
-                
-              </div>
-            </div>
+
 
           </div><!-- end subview-plan-members -->
 
