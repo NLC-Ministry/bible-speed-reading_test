@@ -513,9 +513,14 @@
             </div>
 
             <!-- 管理權限統計篩選器 (只在 管理 tab 顯示) -->
-            <div class="stats-admin-scope-bar hidden" id="stats-admin-scope-bar">
-              <label for="ranking-zone-selector">切換統計管理範圍：</label>
-              <select id="ranking-zone-selector" class="form-control" style="width: auto; min-width: 220px; font-size: 0.88rem; padding: 0.4rem 0.8rem; font-weight: 700; border-color: var(--primary-color); border-radius: 8px; background: var(--bg-input); color: var(--text-primary);"></select>
+            <div class="stats-admin-scope-bar hidden" id="stats-admin-scope-bar" style="display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap;">
+              <span style="font-size: 0.82rem; font-weight: 700; color: #d97706; white-space: nowrap;">切換統計管理範圍：</span>
+              <select id="stats-admin-region-select" class="form-control" style="width: auto; min-width: 140px; font-size: 0.82rem; padding: 0.35rem 0.7rem; font-weight: 700; border-color: var(--primary-color); border-radius: 8px; background: var(--bg-input); color: var(--text-primary);"></select>
+              <select id="stats-admin-zone-select" class="form-control" style="width: auto; min-width: 140px; font-size: 0.82rem; padding: 0.35rem 0.7rem; font-weight: 700; border-color: var(--primary-color); border-radius: 8px; background: var(--bg-input); color: var(--text-primary);"></select>
+              <select id="stats-admin-group-select" class="form-control" style="width: auto; min-width: 140px; font-size: 0.82rem; padding: 0.35rem 0.7rem; font-weight: 700; border-color: var(--primary-color); border-radius: 8px; background: var(--bg-input); color: var(--text-primary);"></select>
+              
+              <!-- Hidden master select for backward-compatibility -->
+              <select id="ranking-zone-selector" class="form-control hidden" style="display: none;"></select>
             </div>
             
             <!-- 個人統計部分 -->
@@ -625,7 +630,7 @@
 
               <!-- 團體進度狀態分佈 -->
               <div class="glass-card hidden" id="grp-distribution-card" style="margin-bottom: 1.2rem; display: flex; flex-direction: column; gap: 1rem; padding: 1.2rem;">
-                <h3 class="card-title" style="margin-bottom: 0.2rem; font-size: 1.05rem; font-weight: 800; color: var(--text-primary);">團體進度狀態分佈</h3>
+                <h3 class="card-title" id="grp-distribution-title" style="margin-bottom: 0.2rem; font-size: 1.05rem; font-weight: 800; color: var(--text-primary);">團體進度狀態分佈</h3>
                 
                 <!-- Metrics Grid -->
                 <div style="display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 1rem; flex-wrap: wrap;">
@@ -769,12 +774,17 @@
           <div id="subview-plan-members" class="hidden" style="display: flex; flex-direction: column; gap: 1.2rem; width: 100%;">
 
             <!-- 全域權限統計篩選器 (組員狀況) -->
-            <div class="glass-card" style="padding: 1rem 1.2rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
-              <div style="display: flex; align-items: center; gap: 0.6rem;">
+            <div class="glass-card" style="padding: 1rem 1.2rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+              <div style="display: flex; align-items: center; gap: 0.6rem; margin-right: auto;">
                 <span style="font-size: 1.1rem; font-weight: 800; color: var(--primary-color);">👥</span>
                 <h3 style="margin: 0; font-size: 1.05rem; font-weight: 800; color: var(--text-primary);">切換統計管理範圍</h3>
               </div>
-              <select id="members-zone-selector" class="form-control hidden" style="width: auto; min-width: 220px; font-size: 0.88rem; padding: 0.4rem 0.8rem; font-weight: 700; border-color: var(--primary-color);"></select>
+              <select id="members-admin-region-select" class="form-control" style="width: auto; min-width: 140px; font-size: 0.82rem; padding: 0.35rem 0.7rem; font-weight: 700; border-color: var(--primary-color); border-radius: 8px; background: var(--bg-input); color: var(--text-primary);"></select>
+              <select id="members-admin-zone-select" class="form-control" style="width: auto; min-width: 140px; font-size: 0.82rem; padding: 0.35rem 0.7rem; font-weight: 700; border-color: var(--primary-color); border-radius: 8px; background: var(--bg-input); color: var(--text-primary);"></select>
+              <select id="members-admin-group-select" class="form-control" style="width: auto; min-width: 140px; font-size: 0.82rem; padding: 0.35rem 0.7rem; font-weight: 700; border-color: var(--primary-color); border-radius: 8px; background: var(--bg-input); color: var(--text-primary);"></select>
+              
+              <!-- Hidden master select for backward-compatibility -->
+              <select id="members-zone-selector" class="form-control hidden" style="display: none;"></select>
             </div>
 
             <!-- 參與者總覽 -->

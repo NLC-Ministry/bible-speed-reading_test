@@ -1595,156 +1595,225 @@ window.addEventListener("scroll", async () => {
 
 // ==================== PERSONAL STATS & HEATMAP & ACHIEVEMENTS ====================
 // ==================== PERSONAL STATS & HEATMAP & ACHIEVEMENTS ====================
-// ==================== STATS SELECTOR POPULATOR ====================
-function populateStatsSelector() {
-  const rankingZoneSelector = document.getElementById("ranking-zone-selector");
-  if (!rankingZoneSelector) return;
-  if (rankingZoneSelector.dataset.populated) return; // avoid double populating
+// ==================== CASCADING SELECTORS HELPER ====================
+function setupCascadingSelectors(regionId, zoneId, groupId, masterId) {
+  const regionSelect = document.getElementById(regionId);
+  const zoneSelect = document.getElementById(zoneId);
+  const groupSelect = document.getElementById(groupId);
+  const masterSelect = document.getElementById(masterId);
   
-  rankingZoneSelector.innerHTML = "";
-  const optionsList = [];
-  
+  if (!regionSelect || !zoneSelect || !groupSelect || !masterSelect) return;
+  if (regionSelect.dataset.populated) return; // avoid double populating
+  regionSelect.dataset.populated = "true";
+
   const userRole = (state.currentUser && state.currentUser.role) || "member";
   const isAdmin = userRole === "admin" || userRole === "senior_pastor";
   const isGreatZoneLeader = userRole === "great_zone_leader";
   const isZoneLeader = userRole === "zone_leader";
   const isGroupLeader = userRole === "group_leader";
-  
-  if (isAdmin) {
-    
-    // Regions
-    const regions = state.orgStructure.regions || [];
-    regions.forEach(r => {
-      optionsList.push({ value: `region:${r}`, label: `大區：${r}` });
-    });
-    
-    // Zones
-    let zones = [];
-    if (state.orgStructure.rawZones) {
-      zones = state.orgStructure.rawZones.map(z => z.name);
-    } else if (state.orgStructure.zones) {
-      zones = Object.keys(state.orgStructure.zones);
-    }
-    zones.sort().forEach(z => {
-      optionsList.push({ value: `zone:${z}`, label: `牧區：${z}` });
-    });
-    
-    // Groups
-    let groups = [];
-    if (state.orgStructure.rawGroups) {
-      groups = state.orgStructure.rawGroups.map(g => g.name);
-    } else if (state.orgStructure.groups) {
-      groups = Object.keys(state.orgStructure.groups);
-    }
-    groups.sort().forEach(g => {
-      optionsList.push({ value: `group:${g}`, label: `小組：${g}` });
-    });
-    
-  } else if (isGreatZoneLeader) {
+
+  // Get regions list
+  let regions = state.orgStructure.regions || [];
+  let myRegions = [];
+  if (isGreatZoneLeader) {
     const userGreatRegion = state.currentUser.great_region || "";
-    const myRegions = userGreatRegion.split(",").map(s => s.trim()).filter(Boolean);
-    
-    optionsList.push({ value: "all_great_region", label: `全部 (${myRegions.join(",")})` });
-    
-    myRegions.forEach(r => {
-      optionsList.push({ value: `region:${r}`, label: `大區：${r}` });
-    });
-    
-    let zones = [];
+    myRegions = userGreatRegion.split(",").map(s => s.trim()).filter(Boolean);
+    regions = regions.filter(r => myRegions.includes(r));
+  }
+
+  // Helper to get zones for a region
+  function getZonesForRegion(rName) {
+    if (!rName) return [];
     if (state.isSupabaseMode && state.orgStructure.rawZones && state.orgStructure.rawRegions) {
-      const regionIds = state.orgStructure.rawRegions.filter(r => myRegions.includes(r.name)).map(r => r.id);
-      zones = state.orgStructure.rawZones.filter(z => regionIds.includes(z.great_region_id)).map(z => z.name);
-    } else if (state.orgStructure.zones) {
-      myRegions.forEach(r => {
-        const regionZones = state.orgStructure.zones[r] || [];
-        zones = zones.concat(regionZones);
-      });
+      const regionObj = state.orgStructure.rawRegions.find(r => r.name === rName);
+      if (!regionObj) return [];
+      return state.orgStructure.rawZones.filter(z => z.great_region_id === regionObj.id).map(z => z.name);
     }
-    zones = [...new Set(zones)].sort();
-    zones.forEach(z => {
-      optionsList.push({ value: `zone:${z}`, label: `牧區：${z}` });
-    });
-    
-    let groups = [];
-    if (state.isSupabaseMode && state.orgStructure.rawGroups && state.orgStructure.rawZones && state.orgStructure.rawRegions) {
-      const regionIds = state.orgStructure.rawRegions.filter(r => myRegions.includes(r.name)).map(r => r.id);
-      const zoneIds = state.orgStructure.rawZones.filter(z => regionIds.includes(z.great_region_id)).map(z => z.id);
-      groups = state.orgStructure.rawGroups.filter(g => zoneIds.includes(g.pastoral_zone_id)).map(g => g.name);
-    } else if (state.orgStructure.groups) {
-      zones.forEach(z => {
-        const zoneGroups = state.orgStructure.groups[z] || [];
-        groups = groups.concat(zoneGroups);
-      });
-    }
-    groups = [...new Set(groups)].sort();
-    groups.forEach(g => {
-      optionsList.push({ value: `group:${g}`, label: `小組：${g}` });
-    });
-    
-  } else if (isZoneLeader) {
-    const userZoneStr = state.currentUser.pastoral_zone || "";
-    const myZones = userZoneStr.split(",").map(s => s.trim()).filter(Boolean);
-    
-    optionsList.push({ value: "all_zones", label: `全部 (${myZones.join(",")})` });
-    
-    myZones.forEach(z => {
-      optionsList.push({ value: `zone:${z}`, label: `牧區：${z}` });
-    });
-    
-    let groups = [];
+    return state.orgStructure.zones[rName] || [];
+  }
+
+  // Helper to get groups for a zone
+  function getGroupsForZone(zName) {
+    if (!zName) return [];
     if (state.isSupabaseMode && state.orgStructure.rawGroups && state.orgStructure.rawZones) {
-      const zoneIds = state.orgStructure.rawZones.filter(z => myZones.includes(z.name)).map(z => z.id);
-      groups = state.orgStructure.rawGroups.filter(g => zoneIds.includes(g.pastoral_zone_id)).map(g => g.name);
-    } else if (state.orgStructure.groups) {
-      myZones.forEach(z => {
-        const zoneGroups = state.orgStructure.groups[z] || [];
-        groups = groups.concat(zoneGroups);
-      });
+      const zoneObj = state.orgStructure.rawZones.find(z => z.name === zName);
+      if (!zoneObj) return [];
+      return state.orgStructure.rawGroups.filter(g => g.pastoral_zone_id === zoneObj.id).map(g => g.name);
     }
-    groups = [...new Set(groups)].sort();
-    groups.forEach(g => {
-      optionsList.push({ value: `group:${g}`, label: `小組：${g}` });
-    });
-    
-  } else if (isGroupLeader) {
-    const userGroupStr = state.currentUser.small_group || "";
-    const myGroups = userGroupStr.split(",").map(s => s.trim()).filter(Boolean);
-    
-    optionsList.push({ value: "all_groups", label: `全部 (${myGroups.join(",")})` });
-    
-    myGroups.forEach(g => {
-      optionsList.push({ value: `group:${g}`, label: `小組：${g}` });
-    });
-    
+    return state.orgStructure.groups[zName] || [];
+  }
+
+  // Populate Regions
+  regionSelect.innerHTML = "";
+  if (isAdmin) {
+    regionSelect.options.add(new Option("-- 請選擇大區 --", ""));
+    regions.forEach(r => regionSelect.options.add(new Option(`大區：${r}`, `region:${r}`)));
+  } else if (isGreatZoneLeader) {
+    regionSelect.options.add(new Option(`全部大區 (${myRegions.join(",")})`, ""));
+    myRegions.forEach(r => regionSelect.options.add(new Option(`大區：${r}`, `region:${r}`)));
   } else {
-    // Normal member: only "Myself", "My Pastoral Zone", "All Church"
-    const userZone = state.currentUser.pastoral_zone || "";
-    if (userZone) {
-      optionsList.push({ value: `zone:${userZone}`, label: `我的牧區：${userZone}` });
+    const userReg = state.currentUser.great_region || "";
+    regionSelect.options.add(new Option(userReg ? `大區：${userReg}` : "大區", ""));
+    regionSelect.disabled = true;
+  }
+
+  // Update Master Select Value
+  function updateMasterValue(isInitialCall = false) {
+    let finalVal = "all";
+    if (isGroupLeader) {
+      const userGroup = state.currentUser.small_group || "";
+      finalVal = userGroup ? `group:${userGroup}` : "all_groups";
+    } else if (isZoneLeader) {
+      const userZone = state.currentUser.pastoral_zone || "";
+      const selectedGrp = groupSelect.value;
+      finalVal = selectedGrp ? `group:${selectedGrp}` : (userZone ? `zone:${userZone}` : "all_zones");
+    } else if (isGreatZoneLeader) {
+      const selectedGrp = groupSelect.value;
+      const selectedZone = zoneSelect.value;
+      const selectedReg = regionSelect.value;
+      if (selectedGrp) finalVal = `group:${selectedGrp}`;
+      else if (selectedZone) finalVal = `zone:${selectedZone}`;
+      else if (selectedReg) finalVal = selectedReg;
+      else finalVal = "all_great_region";
+    } else if (isAdmin) {
+      const selectedGrp = groupSelect.value;
+      const selectedZone = zoneSelect.value;
+      const selectedReg = regionSelect.value;
+      if (selectedGrp) finalVal = `group:${selectedGrp}`;
+      else if (selectedZone) finalVal = `zone:${selectedZone}`;
+      else if (selectedReg) finalVal = selectedReg;
+      else finalVal = "all";
     }
-    optionsList.push({ value: "all", label: "全教會統計" });
+    
+    masterSelect.innerHTML = "";
+    masterSelect.options.add(new Option(finalVal, finalVal));
+    masterSelect.value = finalVal;
+    
+    if (!isInitialCall) {
+      masterSelect.dispatchEvent(new Event("change"));
+    }
   }
-  
-  optionsList.forEach(opt => {
-    const el = document.createElement("option");
-    el.value = opt.value;
-    el.textContent = opt.label;
-    rankingZoneSelector.appendChild(el);
-  });
-  
-  // Set default selection value
-  let defaultVal = "me";
-  if (!optionsList.some(o => o.value === "me") && optionsList.length > 0) {
-    defaultVal = optionsList[0].value;
+
+  // Handle Region Change
+  regionSelect.onchange = () => {
+    populateZones();
+    populateGroups();
+    updateMasterValue();
+  };
+
+  // Populate Zones
+  function populateZones() {
+    zoneSelect.innerHTML = "";
+    zoneSelect.disabled = false;
+
+    if (isAdmin) {
+      const regVal = regionSelect.value;
+      if (!regVal || regVal === "all") {
+        zoneSelect.options.add(new Option("-- 請先選擇大區 --", ""));
+        zoneSelect.disabled = true;
+      } else {
+        const rName = regVal.replace("region:", "");
+        zoneSelect.options.add(new Option("全部牧區", ""));
+        const zones = getZonesForRegion(rName);
+        zones.sort().forEach(z => zoneSelect.options.add(new Option(`牧區：${z}`, z)));
+      }
+    } else if (isGreatZoneLeader) {
+      const regVal = regionSelect.value;
+      if (!regVal || regVal === "all_great_region") {
+        zoneSelect.options.add(new Option("-- 請選擇特定大區 --", ""));
+        zoneSelect.disabled = true;
+      } else {
+        const rName = regVal.replace("region:", "");
+        zoneSelect.options.add(new Option("全部牧區", ""));
+        const zones = getZonesForRegion(rName);
+        zones.sort().forEach(z => zoneSelect.options.add(new Option(`牧區：${z}`, z)));
+      }
+    } else if (isZoneLeader) {
+      const userZone = state.currentUser.pastoral_zone || "";
+      const myZones = userZone.split(",").map(s => s.trim()).filter(Boolean);
+      if (myZones.length > 1) {
+        zoneSelect.options.add(new Option(`全部牧區 (${myZones.join(",")})`, ""));
+        myZones.forEach(z => zoneSelect.options.add(new Option(`牧區：${z}`, z)));
+      } else {
+        zoneSelect.options.add(new Option(`牧區：${userZone}`, userZone));
+        zoneSelect.disabled = true;
+      }
+    } else {
+      const userZone = state.currentUser.pastoral_zone || "";
+      zoneSelect.options.add(new Option(userZone ? `牧區：${userZone}` : "牧區", ""));
+      zoneSelect.disabled = true;
+    }
   }
-  rankingZoneSelector.value = defaultVal;
+
+  // Handle Zone Change
+  zoneSelect.onchange = () => {
+    populateGroups();
+    updateMasterValue();
+  };
+
+  // Populate Groups
+  function populateGroups() {
+    groupSelect.innerHTML = "";
+    groupSelect.disabled = false;
+
+    const zoneVal = zoneSelect.value;
+    if (isAdmin || isGreatZoneLeader) {
+      if (!zoneVal) {
+        groupSelect.options.add(new Option("-- 請先選擇牧區 --", ""));
+        groupSelect.disabled = true;
+      } else {
+        groupSelect.options.add(new Option("全部小組", ""));
+        const groups = getGroupsForZone(zoneVal);
+        groups.sort().forEach(g => groupSelect.options.add(new Option(`小組：${g}`, g)));
+      }
+    } else if (isZoneLeader) {
+      const userZone = state.currentUser.pastoral_zone || "";
+      const myZones = userZone.split(",").map(s => s.trim()).filter(Boolean);
+      const activeZone = zoneVal || myZones[0];
+      if (!activeZone) {
+        groupSelect.options.add(new Option("-- 請先選擇牧區 --", ""));
+        groupSelect.disabled = true;
+      } else {
+        groupSelect.options.add(new Option("全部小組", ""));
+        const groups = getGroupsForZone(activeZone);
+        groups.sort().forEach(g => groupSelect.options.add(new Option(`小組：${g}`, g)));
+      }
+    } else if (isGroupLeader) {
+      const userGroup = state.currentUser.small_group || "";
+      const myGroups = userGroup.split(",").map(s => s.trim()).filter(Boolean);
+      if (myGroups.length > 1) {
+        groupSelect.options.add(new Option(`全部小組 (${myGroups.join(",")})`, ""));
+        myGroups.forEach(g => groupSelect.options.add(new Option(`小組：${g}`, g)));
+      } else {
+        groupSelect.options.add(new Option(`小組：${userGroup}`, userGroup));
+        groupSelect.disabled = true;
+      }
+    } else {
+      groupSelect.options.add(new Option("小組", ""));
+      groupSelect.disabled = true;
+    }
+  }
+
+  groupSelect.onchange = () => {
+    updateMasterValue();
+  };
+
+  // Initialize
+  populateZones();
+  populateGroups();
   
-  rankingZoneSelector.dataset.populated = "true";
+  // Set initial master select value mapping without triggering render loop
+  updateMasterValue(true);
+}
+
+// ==================== STATS SELECTOR POPULATOR ====================
+function populateStatsSelector() {
+  setupCascadingSelectors("stats-admin-region-select", "stats-admin-zone-select", "stats-admin-group-select", "ranking-zone-selector");
   
-  if (!rankingZoneSelector.dataset.listenerInitialized) {
+  const rankingZoneSelector = document.getElementById("ranking-zone-selector");
+  if (rankingZoneSelector && !rankingZoneSelector.dataset.listenerInitialized) {
     rankingZoneSelector.dataset.listenerInitialized = "true";
     rankingZoneSelector.addEventListener("change", async () => {
-      // Re-render based on active subview
       const tabStats = document.getElementById("tab-plan-stats");
       const tabRanking = document.getElementById("tab-plan-ranking");
       const tabMembers = document.getElementById("tab-plan-members");
@@ -1758,135 +1827,14 @@ function populateStatsSelector() {
       }
     });
   }
-
 }
 
 // ==================== MEMBERS SELECTOR POPULATOR ====================
 function populateMembersSelector() {
+  setupCascadingSelectors("members-admin-region-select", "members-admin-zone-select", "members-admin-group-select", "members-zone-selector");
+
   const membersZoneSelector = document.getElementById("members-zone-selector");
-  if (!membersZoneSelector) return;
-  if (membersZoneSelector.dataset.populated) return; // avoid double populating
-  
-  membersZoneSelector.innerHTML = "";
-  const optionsList = [];
-  
-  const userRole = (state.currentUser && state.currentUser.role) || "member";
-  const isAdmin = userRole === "admin" || userRole === "senior_pastor";
-  const isGreatZoneLeader = userRole === "great_zone_leader";
-  const isZoneLeader = userRole === "zone_leader";
-  const isGroupLeader = userRole === "group_leader";
-  const userZone = state.currentUser.pastoral_zone || "";
-  
-  if (isAdmin) {
-    // Zones
-    let zones = [];
-    if (state.orgStructure.rawZones) {
-      zones = state.orgStructure.rawZones.map(z => z.name);
-    } else if (state.orgStructure.zones) {
-      zones = Object.keys(state.orgStructure.zones);
-    }
-    zones.sort().forEach(z => {
-      optionsList.push({ value: `zone:${z}`, label: `牧區：${z}` });
-    });
-    
-    // Groups
-    let groups = [];
-    if (state.orgStructure.rawGroups) {
-      groups = state.orgStructure.rawGroups.map(g => g.name);
-    } else if (state.orgStructure.groups) {
-      groups = Object.keys(state.orgStructure.groups);
-    }
-    groups.sort().forEach(g => {
-      optionsList.push({ value: `group:${g}`, label: `小組：${g}` });
-    });
-    
-  } else if (isGreatZoneLeader) {
-    const userGreatRegion = state.currentUser.great_region || "";
-    const myRegions = userGreatRegion.split(",").map(s => s.trim()).filter(Boolean);
-    
-    let zones = [];
-    if (state.isSupabaseMode && state.orgStructure.rawZones && state.orgStructure.rawRegions) {
-      const regionIds = state.orgStructure.rawRegions.filter(r => myRegions.includes(r.name)).map(r => r.id);
-      zones = state.orgStructure.rawZones.filter(z => regionIds.includes(z.great_region_id)).map(z => z.name);
-    } else if (state.orgStructure.zones) {
-      myRegions.forEach(r => {
-        const regionZones = state.orgStructure.zones[r] || [];
-        zones = zones.concat(regionZones);
-      });
-    }
-    zones = [...new Set(zones)].sort();
-    zones.forEach(z => {
-      optionsList.push({ value: `zone:${z}`, label: `牧區：${z}` });
-    });
-    
-    let groups = [];
-    if (state.isSupabaseMode && state.orgStructure.rawGroups && state.orgStructure.rawZones && state.orgStructure.rawRegions) {
-      const regionIds = state.orgStructure.rawRegions.filter(r => myRegions.includes(r.name)).map(r => r.id);
-      const zoneIds = state.orgStructure.rawZones.filter(z => regionIds.includes(z.great_region_id)).map(z => z.id);
-      groups = state.orgStructure.rawGroups.filter(g => zoneIds.includes(g.pastoral_zone_id)).map(g => g.name);
-    } else if (state.orgStructure.groups) {
-      zones.forEach(z => {
-        const zoneGroups = state.orgStructure.groups[z] || [];
-        groups = groups.concat(zoneGroups);
-      });
-    }
-    groups = [...new Set(groups)].sort();
-    groups.forEach(g => {
-      optionsList.push({ value: `group:${g}`, label: `小組：${g}` });
-    });
-    
-  } else if (isZoneLeader) {
-    const userZoneStr = state.currentUser.pastoral_zone || "";
-    const myZones = userZoneStr.split(",").map(s => s.trim()).filter(Boolean);
-    
-    myZones.forEach(z => {
-      optionsList.push({ value: `zone:${z}`, label: `牧區：${z}` });
-    });
-    
-    let groups = [];
-    if (state.isSupabaseMode && state.orgStructure.rawGroups && state.orgStructure.rawZones) {
-      const zoneIds = state.orgStructure.rawZones.filter(z => myZones.includes(z.name)).map(z => z.id);
-      groups = state.orgStructure.rawGroups.filter(g => zoneIds.includes(g.pastoral_zone_id)).map(g => g.name);
-    } else if (state.orgStructure.groups) {
-      myZones.forEach(z => {
-        const zoneGroups = state.orgStructure.groups[z] || [];
-        groups = groups.concat(zoneGroups);
-      });
-    }
-    groups = [...new Set(groups)].sort();
-    groups.forEach(g => {
-      optionsList.push({ value: `group:${g}`, label: `小組：${g}` });
-    });
-    
-  } else if (isGroupLeader) {
-    const userGroupStr = state.currentUser.small_group || "";
-    const myGroups = userGroupStr.split(",").map(s => s.trim()).filter(Boolean);
-    
-    myGroups.forEach(g => {
-      optionsList.push({ value: `group:${g}`, label: `小組：${g}` });
-    });
-    
-  } else {
-    if (userZone) {
-      optionsList.push({ value: `zone:${userZone}`, label: `牧區：${userZone}` });
-    }
-  }
-  
-  optionsList.forEach(opt => {
-    const el = document.createElement("option");
-    el.value = opt.value;
-    el.textContent = opt.label;
-    membersZoneSelector.appendChild(el);
-  });
-  
-  let defaultMemberVal = optionsList[0] ? optionsList[0].value : "";
-  membersZoneSelector.value = defaultMemberVal;
-  membersZoneSelector.dataset.populated = "true";
-  
-  membersZoneSelector.disabled = optionsList.length <= 1;
-  membersZoneSelector.classList.remove("hidden");
-  
-  if (!membersZoneSelector.dataset.listenerInitialized) {
+  if (membersZoneSelector && !membersZoneSelector.dataset.listenerInitialized) {
     membersZoneSelector.dataset.listenerInitialized = "true";
     membersZoneSelector.addEventListener("change", async () => {
       await renderPlanMembersView();
@@ -2199,6 +2147,46 @@ function renderGroupProgressDistribution() {
     return;
   } else {
     if (distCard) distCard.style.display = "";
+  }
+
+  // Update card title to reflect active pastoral zone or group
+  const titleEl = document.getElementById("grp-distribution-title");
+  if (titleEl) {
+    let titleSuffix = "團體進度狀態分佈";
+    const rankingZoneSelector = document.getElementById("ranking-zone-selector");
+    const selectedFilter = window._statsTabScope !== null 
+      ? window._statsTabScope 
+      : (rankingZoneSelector ? rankingZoneSelector.value : null);
+
+    if (selectedFilter) {
+      if (selectedFilter === "all") {
+        titleSuffix = "全教會進度狀態分佈";
+      } else if (selectedFilter === "all_great_region") {
+        titleSuffix = `${state.currentUser.great_region}大區進度狀態分佈`;
+      } else if (selectedFilter === "all_zones") {
+        titleSuffix = `${state.currentUser.pastoral_zone}牧區進度狀態分佈`;
+      } else if (selectedFilter === "all_groups") {
+        titleSuffix = `${state.currentUser.small_group}小組進度狀態分佈`;
+      } else if (selectedFilter.startsWith("region:")) {
+        titleSuffix = `${selectedFilter.replace("region:", "")}大區進度狀態分佈`;
+      } else if (selectedFilter.startsWith("zone:")) {
+        titleSuffix = `${selectedFilter.replace("zone:", "")}牧區進度狀態分佈`;
+      } else if (selectedFilter.startsWith("group:")) {
+        titleSuffix = `${selectedFilter.replace("group:", "")}小組進度狀態分佈`;
+      }
+    } else {
+      const userRole = state.currentUser.role || "member";
+      if (userRole === "admin" || userRole === "senior_pastor") {
+        titleSuffix = "全教會進度狀態分佈";
+      } else if (userRole === "great_zone_leader") {
+        titleSuffix = `${state.currentUser.great_region}大區進度狀態分佈`;
+      } else if (userRole === "zone_leader") {
+        titleSuffix = `${state.currentUser.pastoral_zone}牧區進度狀態分佈`;
+      } else {
+        titleSuffix = `${state.currentUser.small_group}小組進度狀態分佈`;
+      }
+    }
+    titleEl.textContent = titleSuffix;
   }
 
   // Calculate expected progress percentage from activePlan
@@ -2718,12 +2706,27 @@ async function renderGroupParticipantsRankingTable() {
         if (selectedFilter) {
           if (selectedFilter.startsWith("zone:")) {
             const zone = selectedFilter.replace("zone:", "");
-            groupMembers = scopedUsersList.filter(u => u.pastoral_zone === zone);
-            if (rankingTitle) rankingTitle.textContent = `參與者總覽 (${zone}牧區)`;
+            if (zone === "未設定牧區") {
+              groupMembers = scopedUsersList.filter(u => !u.pastoral_zone || u.pastoral_zone.trim() === "");
+              if (rankingTitle) rankingTitle.textContent = "參與者總覽 (未設定牧區成員)";
+            } else {
+              groupMembers = scopedUsersList.filter(u => u.pastoral_zone === zone);
+              if (rankingTitle) rankingTitle.textContent = `參與者總覽 (${zone}牧區)`;
+            }
           } else if (selectedFilter.startsWith("group:")) {
             const group = selectedFilter.replace("group:", "");
             groupMembers = scopedUsersList.filter(u => u.small_group === group);
             if (rankingTitle) rankingTitle.textContent = `參與者總覽 (${group}小組)`;
+          } else if (selectedFilter.startsWith("region:")) {
+            const region = selectedFilter.replace("region:", "");
+            groupMembers = scopedUsersList.filter(u => u.great_region === region);
+            if (rankingTitle) rankingTitle.textContent = `參與者總覽 (${region}大區成員)`;
+          } else if (selectedFilter === "all") {
+            groupMembers = scopedUsersList;
+            if (rankingTitle) rankingTitle.textContent = "參與者總覽 (全教會成員)";
+          } else if (selectedFilter === "all_great_region") {
+            groupMembers = scopedUsersList;
+            if (rankingTitle) rankingTitle.textContent = "參與者總覽 (所屬大區成員)";
           } else {
             const userZones = (userZone || "").split(",").map(s => s.trim()).filter(Boolean);
             groupMembers = scopedUsersList.filter(u => userZones.includes(u.pastoral_zone));
