@@ -105,7 +105,13 @@ function initPlanControls() {
   // Control visibility of inner admin stats tab
   const innerAdminTab = document.getElementById("stats-inner-tab-admin");
   if (innerAdminTab) {
-    innerAdminTab.style.display = _canSeeMembers ? "" : "none";
+    if (_canSeeMembers) {
+      innerAdminTab.style.display = "";
+      innerAdminTab.classList.remove("hidden");
+    } else {
+      innerAdminTab.style.display = "none";
+      innerAdminTab.classList.add("hidden");
+    }
   }
 
   const allTabs = [tabSchedule, tabStats, tabRanking, _canSeeMembers ? tabMembers : null].filter(Boolean);
@@ -680,32 +686,30 @@ async function renderPlanDetailView() {
   if (tabMembers) tabMembers.style.display = _restoreCanSeeMembers ? "" : "none";
   if (subviewPlanMembers) subviewPlanMembers.style.display = _restoreCanSeeMembers ? "" : "none";
 
+  const innerAdminTab = document.getElementById("stats-inner-tab-admin");
+  if (innerAdminTab) {
+    if (_restoreCanSeeMembers) {
+      innerAdminTab.style.display = "";
+      innerAdminTab.classList.remove("hidden");
+    } else {
+      innerAdminTab.style.display = "none";
+      innerAdminTab.classList.add("hidden");
+    }
+  }
+
   const allSubviewsInit = [subviewSchedule, subviewPlanStats, subviewPlanRanking, _restoreCanSeeMembers ? subviewPlanMembers : null].filter(Boolean);
-  const filterCard = document.getElementById("global-stats-filter-card");
 
   if (tabStats && tabStats.classList.contains("active")) {
     allSubviewsInit.forEach(s => s.classList.add("hidden"));
     if (subviewPlanStats) subviewPlanStats.classList.remove("hidden");
-    if (filterCard) {
-      filterCard.classList.remove("hidden");
-      filterCard.style.display = "flex";
-    }
     await renderPlanStatsView();
   } else if (tabRanking && tabRanking.classList.contains("active")) {
     allSubviewsInit.forEach(s => s.classList.add("hidden"));
     if (subviewPlanRanking) subviewPlanRanking.classList.remove("hidden");
-    if (filterCard) {
-      filterCard.classList.add("hidden");
-      filterCard.style.display = "none";
-    }
     await renderPlanRankingView();
   } else if (_restoreCanSeeMembers && tabMembers && tabMembers.classList.contains("active")) {
     allSubviewsInit.forEach(s => s.classList.add("hidden"));
     if (subviewPlanMembers) subviewPlanMembers.classList.remove("hidden");
-    if (filterCard) {
-      filterCard.classList.add("hidden");
-      filterCard.style.display = "none";
-    }
     await renderPlanMembersView();
   } else {
     // Default to Schedule Tab
@@ -715,10 +719,6 @@ async function renderPlanDetailView() {
     if (tabMembers) tabMembers.classList.remove("active");
     allSubviewsInit.forEach(s => s.classList.add("hidden"));
     if (subviewSchedule) subviewSchedule.classList.remove("hidden");
-    if (filterCard) {
-      filterCard.classList.add("hidden");
-      filterCard.style.display = "none";
-    }
     renderPlanScheduleTracker();
   }
 }
@@ -1610,11 +1610,7 @@ function populateStatsSelector() {
   const isZoneLeader = userRole === "zone_leader";
   const isGroupLeader = userRole === "group_leader";
   
-  // Everyone gets "個人統計 (我自己)"
-  optionsList.push({ value: "me", label: "個人統計 (我自己)" });
-  
   if (isAdmin) {
-    optionsList.push({ value: "all", label: "全教會統計" });
     
     // Regions
     const regions = state.orgStructure.regions || [];
