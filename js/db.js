@@ -540,6 +540,7 @@ const db = {
     if (typeof checkAchievements !== 'undefined') {
       await checkAchievements();
     }
+    window._cachedAllUsersList = null;
   },
 
   async syncProfileStatsToSupabase() {
@@ -650,20 +651,38 @@ const db = {
         }
 
         if (usersProfiles) {
-          return usersProfiles.map(profile => {
-            const uPlan = allPlans ? (
-              filterPresetKey
-                ? allPlans.find(p => p.user_id === profile.id && (p.preset_key === filterPresetKey || p.name === filterPresetKey))
-                : allPlans.find(p => p.user_id === profile.id)
-            ) : null;
-
-            const uLogs = allLogs ? allLogs.filter(l => {
-              if (l.user_id !== profile.id) return false;
-              if (filterPresetKey) {
-                return uPlan ? l.plan_id === uPlan.id : false;
+          // Pre-group plans by user_id
+          const plansByUser = {};
+          if (allPlans) {
+            allPlans.forEach(p => {
+              if (p.user_id) {
+                if (!plansByUser[p.user_id]) plansByUser[p.user_id] = [];
+                plansByUser[p.user_id].push(p);
               }
-              return true;
-            }) : [];
+            });
+          }
+
+          // Pre-group logs by user_id
+          const logsByUser = {};
+          if (allLogs) {
+            allLogs.forEach(l => {
+              if (l.user_id) {
+                if (!logsByUser[l.user_id]) logsByUser[l.user_id] = [];
+                logsByUser[l.user_id].push(l);
+              }
+            });
+          }
+
+          return usersProfiles.map(profile => {
+            const userPlans = plansByUser[profile.id] || [];
+            const uPlan = filterPresetKey
+              ? userPlans.find(p => p.preset_key === filterPresetKey || p.name === filterPresetKey)
+              : userPlans[0] || null;
+
+            const uLogs = logsByUser[profile.id] || [];
+            const filteredLogs = filterPresetKey
+              ? uLogs.filter(l => uPlan ? l.plan_id === uPlan.id : false)
+              : uLogs;
 
             let planProgress = 0;
             if (uPlan && uPlan.target_books && uPlan.target_books.length > 0) {
@@ -673,13 +692,13 @@ const db = {
                 if (b) totalChapters += b.chapters;
               });
               if (totalChapters > 0) {
-                planProgress = Math.round((uLogs.length / totalChapters) * 100) || 0;
+                planProgress = Math.round((filteredLogs.length / totalChapters) * 100) || 0;
               }
             }
 
             let lastRead = null;
-            if (uLogs.length > 0) {
-              const sortedLogs = [...uLogs].sort((a, b) => new Date(b.read_at) - new Date(a.read_at));
+            if (filteredLogs.length > 0) {
+              const sortedLogs = [...filteredLogs].sort((a, b) => new Date(b.read_at) - new Date(a.read_at));
               if (sortedLogs[0] && sortedLogs[0].read_at) {
                 lastRead = sortedLogs[0].read_at.substring(0, 10);
               }
@@ -692,7 +711,7 @@ const db = {
               pastoral_zone: profile.pastoral_zone,
               small_group: profile.small_group,
               role: profile.role,
-              chapters_read: uLogs.length,
+              chapters_read: filteredLogs.length,
               plan_progress: planProgress,
               streak: profile.streak || 0,
               last_read: lastRead,

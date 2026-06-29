@@ -222,6 +222,12 @@ CREATE POLICY "允許用戶新增或更新自己的個人資料"
   USING (auth.uid() = id) 
   WITH CHECK (auth.uid() = id);
 
+CREATE POLICY "允許管理員管理所有用戶的個人資料" 
+  ON public.profiles FOR ALL 
+  TO authenticated 
+  USING ((SELECT my_role FROM public.get_my_profile()) IN ('admin', 'senior_pastor'))
+  WITH CHECK ((SELECT my_role FROM public.get_my_profile()) IN ('admin', 'senior_pastor'));
+
 CREATE POLICY "根據角色限制 Profiles 讀取權限" 
   ON public.profiles FOR SELECT 
   TO authenticated 

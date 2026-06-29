@@ -101,6 +101,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+DROP TRIGGER IF EXISTS trigger_sync_profile_text_fields ON public.profiles;
 CREATE OR REPLACE TRIGGER trigger_sync_profile_text_fields
 BEFORE INSERT OR UPDATE
 ON public.profiles

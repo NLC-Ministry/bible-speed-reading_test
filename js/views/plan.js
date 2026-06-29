@@ -43,69 +43,71 @@ function initPlanControls() {
     });
   }
 
-  // Sub-tabs Toggle (Daily Reading vs Stats vs Ranking vs History)
+  // Sub-tabs Toggle (Daily Reading vs Stats vs Ranking vs History vs Members)
   const tabSchedule = document.getElementById("tab-plan-schedule");
   const tabStats = document.getElementById("tab-plan-stats");
   const tabRanking = document.getElementById("tab-plan-ranking");
-  const tabHistory = document.getElementById("tab-plan-history");
+  const tabMembers = document.getElementById("tab-plan-members");
   const subviewSchedule = document.getElementById("subview-plan-schedule");
   const subviewPlanStats = document.getElementById("subview-plan-stats");
   const subviewPlanRanking = document.getElementById("subview-plan-ranking");
-  const subviewPlanHistory = document.getElementById("subview-plan-history");
+  const subviewPlanMembers = document.getElementById("subview-plan-members");
 
-  if (tabSchedule && tabStats && tabRanking && tabHistory) {
+  // Only leaders and above can see the 組員狀況 tab
+  const _initUserRole = (state.currentUser && state.currentUser.role) || "member";
+  const _canSeeMembers = ["admin", "senior_pastor", "great_zone_leader", "zone_leader", "group_leader"].includes(_initUserRole);
+  if (tabMembers) tabMembers.style.display = _canSeeMembers ? "" : "none";
+  if (subviewPlanMembers) subviewPlanMembers.style.display = _canSeeMembers ? "" : "none";
+
+  const allTabs = [tabSchedule, tabStats, tabRanking, _canSeeMembers ? tabMembers : null].filter(Boolean);
+  const allSubviews = [subviewSchedule, subviewPlanStats, subviewPlanRanking, _canSeeMembers ? subviewPlanMembers : null].filter(Boolean);
+
+  const filterCard = document.getElementById("global-stats-filter-card");
+
+  function switchToTab(activeTab, activeSubview) {
+    allTabs.forEach(t => t && t.classList.remove("active"));
+    allSubviews.forEach(s => s && s.classList.add("hidden"));
+    if (activeTab) activeTab.classList.add("active");
+    if (activeSubview) activeSubview.classList.remove("hidden");
+
+    if (activeTab === tabStats) {
+      if (filterCard) {
+        filterCard.classList.remove("hidden");
+        filterCard.style.display = "flex";
+      }
+    } else {
+      if (filterCard) {
+        filterCard.classList.add("hidden");
+        filterCard.style.display = "none";
+      }
+    }
+  }
+
+  if (tabSchedule) {
     tabSchedule.addEventListener("click", () => {
-      tabSchedule.classList.add("active");
-      tabStats.classList.remove("active");
-      tabRanking.classList.remove("active");
-      tabHistory.classList.remove("active");
-      if (subviewSchedule) subviewSchedule.classList.remove("hidden");
-      if (subviewPlanStats) subviewPlanStats.classList.add("hidden");
-      if (subviewPlanRanking) subviewPlanRanking.classList.add("hidden");
-      if (subviewPlanHistory) subviewPlanHistory.classList.add("hidden");
+      switchToTab(tabSchedule, subviewSchedule);
       renderPlanScheduleTracker();
     });
+  }
 
+  if (tabStats) {
     tabStats.addEventListener("click", async () => {
-      tabStats.classList.add("active");
-      tabSchedule.classList.remove("active");
-      tabRanking.classList.remove("active");
-      tabHistory.classList.remove("active");
-      if (subviewSchedule) subviewSchedule.classList.add("hidden");
-      if (subviewPlanStats) subviewPlanStats.classList.remove("hidden");
-      if (subviewPlanRanking) subviewPlanRanking.classList.add("hidden");
-      if (subviewPlanHistory) subviewPlanHistory.classList.add("hidden");
-      if (state.activePlan) {
-        await renderPlanStatsView();
-      }
+      switchToTab(tabStats, subviewPlanStats);
+      if (state.activePlan) await renderPlanStatsView();
     });
+  }
 
+  if (tabRanking) {
     tabRanking.addEventListener("click", async () => {
-      tabRanking.classList.add("active");
-      tabSchedule.classList.remove("active");
-      tabStats.classList.remove("active");
-      tabHistory.classList.remove("active");
-      if (subviewSchedule) subviewSchedule.classList.add("hidden");
-      if (subviewPlanStats) subviewPlanStats.classList.add("hidden");
-      if (subviewPlanRanking) subviewPlanRanking.classList.remove("hidden");
-      if (subviewPlanHistory) subviewPlanHistory.classList.add("hidden");
-      if (state.activePlan) {
-        await renderPlanRankingView();
-      }
+      switchToTab(tabRanking, subviewPlanRanking);
+      if (state.activePlan) await renderPlanRankingView();
     });
+  }
 
-    tabHistory.addEventListener("click", async () => {
-      tabHistory.classList.add("active");
-      tabSchedule.classList.remove("active");
-      tabStats.classList.remove("active");
-      tabRanking.classList.remove("active");
-      if (subviewSchedule) subviewSchedule.classList.add("hidden");
-      if (subviewPlanStats) subviewPlanStats.classList.add("hidden");
-      if (subviewPlanRanking) subviewPlanRanking.classList.add("hidden");
-      if (subviewPlanHistory) subviewPlanHistory.classList.remove("hidden");
-      if (state.activePlan) {
-        await renderPlanHistoryView();
-      }
+  if (tabMembers && _canSeeMembers) {
+    tabMembers.addEventListener("click", async () => {
+      switchToTab(tabMembers, subviewPlanMembers);
+      if (state.activePlan) await renderPlanMembersView();
     });
   }
 
@@ -607,40 +609,57 @@ async function renderPlanDetailView() {
   const tabSchedule = document.getElementById("tab-plan-schedule");
   const tabStats = document.getElementById("tab-plan-stats");
   const tabRanking = document.getElementById("tab-plan-ranking");
-  const tabHistory = document.getElementById("tab-plan-history");
+  const tabMembers = document.getElementById("tab-plan-members");
   const subviewSchedule = document.getElementById("subview-plan-schedule");
   const subviewPlanStats = document.getElementById("subview-plan-stats");
   const subviewPlanRanking = document.getElementById("subview-plan-ranking");
-  const subviewPlanHistory = document.getElementById("subview-plan-history");
+  const subviewPlanMembers = document.getElementById("subview-plan-members");
+
+  // Hide the 組員狀況 tab for regular members
+  const _restoreRole = (state.currentUser && state.currentUser.role) || "member";
+  const _restoreCanSeeMembers = ["admin", "senior_pastor", "great_zone_leader", "zone_leader", "group_leader"].includes(_restoreRole);
+  if (tabMembers) tabMembers.style.display = _restoreCanSeeMembers ? "" : "none";
+  if (subviewPlanMembers) subviewPlanMembers.style.display = _restoreCanSeeMembers ? "" : "none";
+
+  const allSubviewsInit = [subviewSchedule, subviewPlanStats, subviewPlanRanking, _restoreCanSeeMembers ? subviewPlanMembers : null].filter(Boolean);
+  const filterCard = document.getElementById("global-stats-filter-card");
 
   if (tabStats && tabStats.classList.contains("active")) {
-    if (subviewSchedule) subviewSchedule.classList.add("hidden");
+    allSubviewsInit.forEach(s => s.classList.add("hidden"));
     if (subviewPlanStats) subviewPlanStats.classList.remove("hidden");
-    if (subviewPlanRanking) subviewPlanRanking.classList.add("hidden");
-    if (subviewPlanHistory) subviewPlanHistory.classList.add("hidden");
+    if (filterCard) {
+      filterCard.classList.remove("hidden");
+      filterCard.style.display = "flex";
+    }
     await renderPlanStatsView();
   } else if (tabRanking && tabRanking.classList.contains("active")) {
-    if (subviewSchedule) subviewSchedule.classList.add("hidden");
-    if (subviewPlanStats) subviewPlanStats.classList.add("hidden");
+    allSubviewsInit.forEach(s => s.classList.add("hidden"));
     if (subviewPlanRanking) subviewPlanRanking.classList.remove("hidden");
-    if (subviewPlanHistory) subviewPlanHistory.classList.add("hidden");
+    if (filterCard) {
+      filterCard.classList.add("hidden");
+      filterCard.style.display = "none";
+    }
     await renderPlanRankingView();
-  } else if (tabHistory && tabHistory.classList.contains("active")) {
-    if (subviewSchedule) subviewSchedule.classList.add("hidden");
-    if (subviewPlanStats) subviewPlanStats.classList.add("hidden");
-    if (subviewPlanRanking) subviewPlanRanking.classList.add("hidden");
-    if (subviewPlanHistory) subviewPlanHistory.classList.remove("hidden");
-    await renderPlanHistoryView();
+  } else if (_restoreCanSeeMembers && tabMembers && tabMembers.classList.contains("active")) {
+    allSubviewsInit.forEach(s => s.classList.add("hidden"));
+    if (subviewPlanMembers) subviewPlanMembers.classList.remove("hidden");
+    if (filterCard) {
+      filterCard.classList.add("hidden");
+      filterCard.style.display = "none";
+    }
+    await renderPlanMembersView();
   } else {
     // Default to Schedule Tab
     if (tabSchedule) tabSchedule.classList.add("active");
     if (tabStats) tabStats.classList.remove("active");
     if (tabRanking) tabRanking.classList.remove("active");
-    if (tabHistory) tabHistory.classList.remove("active");
+    if (tabMembers) tabMembers.classList.remove("active");
+    allSubviewsInit.forEach(s => s.classList.add("hidden"));
     if (subviewSchedule) subviewSchedule.classList.remove("hidden");
-    if (subviewPlanStats) subviewPlanStats.classList.add("hidden");
-    if (subviewPlanRanking) subviewPlanRanking.classList.add("hidden");
-    if (subviewPlanHistory) subviewPlanHistory.classList.add("hidden");
+    if (filterCard) {
+      filterCard.classList.add("hidden");
+      filterCard.style.display = "none";
+    }
     renderPlanScheduleTracker();
   }
 }
@@ -1418,86 +1437,321 @@ window.addEventListener("scroll", async () => {
 
 
 // ==================== PERSONAL STATS & HEATMAP & ACHIEVEMENTS ====================
+// ==================== PERSONAL STATS & HEATMAP & ACHIEVEMENTS ====================
+// ==================== STATS SELECTOR POPULATOR ====================
+function populateStatsSelector() {
+  const rankingZoneSelector = document.getElementById("ranking-zone-selector");
+  if (!rankingZoneSelector) return;
+  if (rankingZoneSelector.dataset.populated) return; // avoid double populating
+  
+  rankingZoneSelector.innerHTML = "";
+  const optionsList = [];
+  
+  const userRole = (state.currentUser && state.currentUser.role) || "member";
+  const isAdmin = userRole === "admin" || userRole === "senior_pastor";
+  const isGreatZoneLeader = userRole === "great_zone_leader";
+  const isZoneLeader = userRole === "zone_leader";
+  const isGroupLeader = userRole === "group_leader";
+  
+  // Everyone gets "個人統計 (我自己)"
+  optionsList.push({ value: "me", label: "個人統計 (我自己)" });
+  
+  if (isAdmin) {
+    optionsList.push({ value: "all", label: "全教會統計" });
+    
+    // Regions
+    const regions = state.orgStructure.regions || [];
+    regions.forEach(r => {
+      optionsList.push({ value: `region:${r}`, label: `大區：${r}` });
+    });
+    
+    // Zones
+    let zones = [];
+    if (state.orgStructure.rawZones) {
+      zones = state.orgStructure.rawZones.map(z => z.name);
+    } else if (state.orgStructure.zones) {
+      zones = Object.keys(state.orgStructure.zones);
+    }
+    zones.sort().forEach(z => {
+      optionsList.push({ value: `zone:${z}`, label: `牧區：${z}` });
+    });
+    
+    // Groups
+    let groups = [];
+    if (state.orgStructure.rawGroups) {
+      groups = state.orgStructure.rawGroups.map(g => g.name);
+    } else if (state.orgStructure.groups) {
+      groups = Object.keys(state.orgStructure.groups);
+    }
+    groups.sort().forEach(g => {
+      optionsList.push({ value: `group:${g}`, label: `小組：${g}` });
+    });
+    
+  } else if (isGreatZoneLeader) {
+    const userGreatRegion = state.currentUser.great_region || "";
+    const myRegions = userGreatRegion.split(",").map(s => s.trim()).filter(Boolean);
+    
+    optionsList.push({ value: "all_great_region", label: `全部 (${myRegions.join(",")})` });
+    
+    myRegions.forEach(r => {
+      optionsList.push({ value: `region:${r}`, label: `大區：${r}` });
+    });
+    
+    let zones = [];
+    if (state.isSupabaseMode && state.orgStructure.rawZones && state.orgStructure.rawRegions) {
+      const regionIds = state.orgStructure.rawRegions.filter(r => myRegions.includes(r.name)).map(r => r.id);
+      zones = state.orgStructure.rawZones.filter(z => regionIds.includes(z.great_region_id)).map(z => z.name);
+    } else if (state.orgStructure.zones) {
+      myRegions.forEach(r => {
+        const regionZones = state.orgStructure.zones[r] || [];
+        zones = zones.concat(regionZones);
+      });
+    }
+    zones = [...new Set(zones)].sort();
+    zones.forEach(z => {
+      optionsList.push({ value: `zone:${z}`, label: `牧區：${z}` });
+    });
+    
+    let groups = [];
+    if (state.isSupabaseMode && state.orgStructure.rawGroups && state.orgStructure.rawZones && state.orgStructure.rawRegions) {
+      const regionIds = state.orgStructure.rawRegions.filter(r => myRegions.includes(r.name)).map(r => r.id);
+      const zoneIds = state.orgStructure.rawZones.filter(z => regionIds.includes(z.great_region_id)).map(z => z.id);
+      groups = state.orgStructure.rawGroups.filter(g => zoneIds.includes(g.pastoral_zone_id)).map(g => g.name);
+    } else if (state.orgStructure.groups) {
+      zones.forEach(z => {
+        const zoneGroups = state.orgStructure.groups[z] || [];
+        groups = groups.concat(zoneGroups);
+      });
+    }
+    groups = [...new Set(groups)].sort();
+    groups.forEach(g => {
+      optionsList.push({ value: `group:${g}`, label: `小組：${g}` });
+    });
+    
+  } else if (isZoneLeader) {
+    const userZoneStr = state.currentUser.pastoral_zone || "";
+    const myZones = userZoneStr.split(",").map(s => s.trim()).filter(Boolean);
+    
+    optionsList.push({ value: "all_zones", label: `全部 (${myZones.join(",")})` });
+    
+    myZones.forEach(z => {
+      optionsList.push({ value: `zone:${z}`, label: `牧區：${z}` });
+    });
+    
+    let groups = [];
+    if (state.isSupabaseMode && state.orgStructure.rawGroups && state.orgStructure.rawZones) {
+      const zoneIds = state.orgStructure.rawZones.filter(z => myZones.includes(z.name)).map(z => z.id);
+      groups = state.orgStructure.rawGroups.filter(g => zoneIds.includes(g.pastoral_zone_id)).map(g => g.name);
+    } else if (state.orgStructure.groups) {
+      myZones.forEach(z => {
+        const zoneGroups = state.orgStructure.groups[z] || [];
+        groups = groups.concat(zoneGroups);
+      });
+    }
+    groups = [...new Set(groups)].sort();
+    groups.forEach(g => {
+      optionsList.push({ value: `group:${g}`, label: `小組：${g}` });
+    });
+    
+  } else if (isGroupLeader) {
+    const userGroupStr = state.currentUser.small_group || "";
+    const myGroups = userGroupStr.split(",").map(s => s.trim()).filter(Boolean);
+    
+    optionsList.push({ value: "all_groups", label: `全部 (${myGroups.join(",")})` });
+    
+    myGroups.forEach(g => {
+      optionsList.push({ value: `group:${g}`, label: `小組：${g}` });
+    });
+    
+  } else {
+    // Normal member: only "Myself", "My Pastoral Zone", "All Church"
+    const userZone = state.currentUser.pastoral_zone || "";
+    if (userZone) {
+      optionsList.push({ value: `zone:${userZone}`, label: `我的牧區：${userZone}` });
+    }
+    optionsList.push({ value: "all", label: "全教會統計" });
+  }
+  
+  optionsList.forEach(opt => {
+    const el = document.createElement("option");
+    el.value = opt.value;
+    el.textContent = opt.label;
+    rankingZoneSelector.appendChild(el);
+  });
+  
+  // Set default selection value
+  let defaultVal = "me"; // Default to Myself
+  rankingZoneSelector.value = defaultVal;
+  
+  rankingZoneSelector.dataset.populated = "true";
+  
+  if (!rankingZoneSelector.dataset.listenerInitialized) {
+    rankingZoneSelector.dataset.listenerInitialized = "true";
+    rankingZoneSelector.addEventListener("change", async () => {
+      // Sync members selector if visible and option exists
+      const membersSelector = document.getElementById("members-zone-selector");
+      if (membersSelector && [...membersSelector.options].some(o => o.value === rankingZoneSelector.value)) {
+        membersSelector.value = rankingZoneSelector.value;
+      }
+      
+      // Re-render based on active subview
+      const tabStats = document.getElementById("tab-plan-stats");
+      const tabRanking = document.getElementById("tab-plan-ranking");
+      const tabMembers = document.getElementById("tab-plan-members");
+      
+      if (tabStats && tabStats.classList.contains("active")) {
+        await renderPlanStatsView();
+      } else if (tabRanking && tabRanking.classList.contains("active")) {
+        await renderPlanRankingView();
+      } else if (tabMembers && tabMembers.classList.contains("active")) {
+        await renderPlanMembersView();
+      }
+    });
+  }
+
+  // Populate members-zone-selector separately without 'me' (Myself) and aggregate/region scopes
+  const membersZoneSelector = document.getElementById("members-zone-selector");
+  if (membersZoneSelector) {
+    if (!membersZoneSelector.dataset.populated) {
+      membersZoneSelector.innerHTML = "";
+      
+      const memberOptions = optionsList.filter(opt => {
+        const val = opt.value;
+        return val !== "me" && 
+               val !== "all" && 
+               val !== "all_great_region" && 
+               val !== "all_zones" && 
+               val !== "all_groups" && 
+               !val.startsWith("region:");
+      });
+      memberOptions.forEach(opt => {
+        const el = document.createElement("option");
+        el.value = opt.value;
+        el.textContent = opt.label.replace("我的牧區：", "牧區：");
+        membersZoneSelector.appendChild(el);
+      });
+      
+      let defaultMemberVal = memberOptions[0] ? memberOptions[0].value : "";
+      membersZoneSelector.value = defaultMemberVal;
+      membersZoneSelector.dataset.populated = "true";
+    }
+
+    membersZoneSelector.disabled = membersZoneSelector.options.length <= 1;
+    membersZoneSelector.classList.remove("hidden");
+    
+    if (!membersZoneSelector.dataset.listenerInitialized) {
+      membersZoneSelector.dataset.listenerInitialized = "true";
+      membersZoneSelector.addEventListener("change", async () => {
+        const rankingSel = document.getElementById("ranking-zone-selector");
+        if (rankingSel && rankingSel.value !== membersZoneSelector.value) {
+          rankingSel.value = membersZoneSelector.value;
+        }
+        await renderPlanMembersView();
+      });
+    }
+  }
+}
+
 async function renderPlanStatsView() {
   if (!state.activePlan) return;
   
-  // Set User Profile names
-  const statsUserName = document.getElementById("stats-user-name");
-  const reportPlanTitle = document.getElementById("report-plan-title");
+  // Make sure stats selector is populated
+  populateStatsSelector();
   
-  const userName = state.currentUser.name || "弟兄姊妹";
-  if (statsUserName) statsUserName.textContent = userName;
-  if (reportPlanTitle) reportPlanTitle.textContent = state.activePlan.name;
+  const rankingZoneSelector = document.getElementById("ranking-zone-selector");
+  const selectedVal = rankingZoneSelector ? rankingZoneSelector.value : "me";
+  
+  const personalSec = document.getElementById("stats-personal-section");
+  const groupSec = document.getElementById("stats-group-section");
+  
+  if (selectedVal === "me") {
+    // Show personal, hide group
+    if (personalSec) personalSec.classList.remove("hidden");
+    if (groupSec) groupSec.classList.add("hidden");
+    
+    // Set User Profile names
+    const statsUserName = document.getElementById("stats-user-name");
+    const reportPlanTitle = document.getElementById("report-plan-title");
+    
+    const userName = state.currentUser.name || "弟兄姊妹";
+    if (statsUserName) statsUserName.textContent = userName;
+    if (reportPlanTitle) reportPlanTitle.textContent = state.activePlan.name;
 
-  // Personal Streak val
-  const personalStreak = state.currentUser.streak || 0;
+    // Personal Streak val
+    const personalStreak = state.currentUser.streak || 0;
 
-  // 1. Highest streak (最高連續)
-  const reportStatStreak = document.getElementById("report-stat-streak");
-  if (reportStatStreak) reportStatStreak.textContent = personalStreak;
+    // 1. Highest streak (最高連續)
+    const reportStatStreak = document.getElementById("report-stat-streak");
+    if (reportStatStreak) reportStatStreak.textContent = personalStreak;
 
-  // 2. Total completed (累計完成)
-  const completedDaysCount = state.activePlan.days.filter(d => {
-    if (!d.chapters || d.chapters.length === 0) return false;
-    return d.chapters.every(ch => ch.isRead);
-  }).length;
-  const reportStatCompleted = document.getElementById("report-stat-completed");
-  if (reportStatCompleted) reportStatCompleted.textContent = completedDaysCount;
+    // 2. Total completed (累計完成)
+    const completedDaysCount = state.activePlan.days.filter(d => {
+      if (!d.chapters || d.chapters.length === 0) return false;
+      return d.chapters.every(ch => ch.isRead);
+    }).length;
+    const reportStatCompleted = document.getElementById("report-stat-completed");
+    if (reportStatCompleted) reportStatCompleted.textContent = completedDaysCount;
 
-  const reportStatStartDate = document.getElementById("report-stat-start-date");
-  if (reportStatStartDate) {
-    const pDate = new Date(state.activePlan.startDate);
-    if (!isNaN(pDate)) {
-      reportStatStartDate.textContent = `從 ${pDate.getFullYear()}年${pDate.getMonth() + 1}月${pDate.getDate()}日起`;
-    } else {
-      reportStatStartDate.textContent = `從 ${state.activePlan.startDate} 起`;
+    const reportStatStartDate = document.getElementById("report-stat-start-date");
+    if (reportStatStartDate) {
+      const pDate = new Date(state.activePlan.startDate);
+      if (!isNaN(pDate)) {
+        reportStatStartDate.textContent = `從 ${pDate.getFullYear()}年${pDate.getMonth() + 1}月${pDate.getDate()}日起`;
+      } else {
+        reportStatStartDate.textContent = `從 ${state.activePlan.startDate} 起`;
+      }
     }
-  }
 
-  // Calculate expected days up to today
-  const planStart = new Date(state.activePlan.startDate);
-  const today = new Date();
-  const diffTime = today.getTime() - planStart.getTime();
-  const diffDays = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1);
-  const expectedDaysCount = Math.min(state.activePlan.days.length, diffDays);
+    // Calculate expected days up to today
+    const planStart = new Date(state.activePlan.startDate);
+    const today = new Date();
+    const diffTime = today.getTime() - planStart.getTime();
+    const diffDays = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1);
+    const expectedDaysCount = Math.min(state.activePlan.days.length, diffDays);
 
-  // 3. Progress Status (進度狀態)
-  const reportStatProgressStatus = document.getElementById("report-stat-progress-status");
-  if (reportStatProgressStatus) {
-    const diff = completedDaysCount - expectedDaysCount;
-    if (diff > 0) {
-      reportStatProgressStatus.textContent = `超前 ${diff}天`;
-      reportStatProgressStatus.style.color = "#10b981"; // Green
-    } else if (diff < 0) {
-      reportStatProgressStatus.textContent = `落後 ${Math.abs(diff)}天`;
-      reportStatProgressStatus.style.color = "#ef4444"; // Red
-    } else {
-      reportStatProgressStatus.textContent = "進度一致";
-      reportStatProgressStatus.style.color = "var(--text-primary)";
+    // 3. Progress Status (進度狀態)
+    const reportStatProgressStatus = document.getElementById("report-stat-progress-status");
+    if (reportStatProgressStatus) {
+      const diff = completedDaysCount - expectedDaysCount;
+      if (diff > 0) {
+        reportStatProgressStatus.textContent = `超前 ${diff}天`;
+        reportStatProgressStatus.style.color = "#10b981"; // Green
+      } else if (diff < 0) {
+        reportStatProgressStatus.textContent = `落後 ${Math.abs(diff)}天`;
+        reportStatProgressStatus.style.color = "#ef4444"; // Red
+      } else {
+        reportStatProgressStatus.textContent = "進度一致";
+        reportStatProgressStatus.style.color = "var(--text-primary)";
+      }
     }
+
+    // 4. Makeup/Catch up days (補讀)
+    const makeupDays = Math.max(0, expectedDaysCount - completedDaysCount);
+    const reportStatMakeup = document.getElementById("report-stat-makeup");
+    if (reportStatMakeup) reportStatMakeup.textContent = makeupDays;
+
+    // Render heatmap, trend chart, and badges wall
+    renderPersonalHeatmap();
+    renderPersonalTrendChart();
+    renderPersonalUnlockedBadges();
+  } else {
+    // Show group, hide personal
+    if (personalSec) personalSec.classList.add("hidden");
+    if (groupSec) groupSec.classList.remove("hidden");
+    
+    // Render Group Stats
+    await renderPlanHistoryView();
   }
-
-  // 4. Makeup/Catch up days (補讀)
-  const makeupDays = Math.max(0, expectedDaysCount - completedDaysCount);
-  const reportStatMakeup = document.getElementById("report-stat-makeup");
-  if (reportStatMakeup) reportStatMakeup.textContent = makeupDays;
-
-  // Render heatmap and badges wall
-  renderPersonalHeatmap();
-  renderPersonalUnlockedBadges();
 }
 
 async function renderPlanHistoryView() {
   if (!state.activePlan) return;
   
-  // 1. Render Group Rankings/Participants table at top
+  // 1. Render Group Rankings/Participants table at top (Wait, the ranking table is no longer at top of stats, but we still trigger it to update scoped user list)
   await renderGroupParticipantsRankingTable();
 
   // 2. Render group mini-cards and stats
   await renderGroupMiniStats();
-
-  // 3. Render group progress distribution bars
-  renderGroupProgressDistribution();
 
   // 4. Render pastoral ranking bar chart
   renderGroupPastoralChart();
@@ -1512,20 +1766,24 @@ async function renderPlanHistoryView() {
   renderGroupTeamHeatmap();
 
   // 8. Render Bible Pilgrimage Trail canvas
-  if (typeof renderPilgrimageTrail === 'function') {
-    await renderPilgrimageTrail();
-  }
-  if (typeof initPilgrimageControls === 'function' && !state.pilgrimageControlsInit) {
-    initPilgrimageControls();
-    state.pilgrimageControlsInit = true;
+  const pilgrimageCard = document.getElementById("grp-pilgrimage-card");
+  const currentScopeUsers = window._grpScopedUsers || [];
+  if (currentScopeUsers.length === 0) {
+    if (pilgrimageCard) pilgrimageCard.style.display = "none";
+  } else {
+    if (pilgrimageCard) pilgrimageCard.style.display = "";
+    if (typeof renderPilgrimageTrail === 'function') {
+      await renderPilgrimageTrail();
+    }
+    if (typeof initPilgrimageControls === 'function' && !state.pilgrimageControlsInit) {
+      initPilgrimageControls();
+      state.pilgrimageControlsInit = true;
+    }
   }
 }
 
 async function renderGroupMiniStats() {
   if (!state.activePlan) return;
-
-  const userZone = state.currentUser.pastoral_zone || '';
-  const isAdmin = getIsAdmin(state.currentUser);
 
   let allUsers = [];
   try {
@@ -1534,8 +1792,12 @@ async function renderGroupMiniStats() {
     console.warn('Failed to fetch users for group stats mini-cards', e);
   }
 
-  let scopedUsers = getScopedUsers(allUsers, state.currentUser);
-  if (scopedUsers.length === 0) scopedUsers = allUsers;
+  // Use the selector's scoped users if available, otherwise fallback to user's scope
+  let scopedUsers = window._grpScopedUsers;
+  if (scopedUsers === undefined) {
+    scopedUsers = getScopedUsers(allUsers, state.currentUser);
+  }
+  if (!scopedUsers) scopedUsers = [];
 
   const totalChapters = scopedUsers.reduce((sum, u) => sum + (u.chapters_read || 0), 0);
   const totalMembers = scopedUsers.length;
@@ -1546,14 +1808,49 @@ async function renderGroupMiniStats() {
     return new Date(u.last_read) >= twoAgo;
   }).length;
 
+  // Determine current scope label from selector
+  let scopeLabel = "全教會";
+  const rankingZoneSelector = document.getElementById("ranking-zone-selector");
+  const selectedFilter = rankingZoneSelector ? rankingZoneSelector.value : null;
+
+  if (selectedFilter) {
+    if (selectedFilter === "all") {
+      scopeLabel = "全教會";
+    } else if (selectedFilter === "all_great_region") {
+      scopeLabel = state.currentUser.great_region || "大區";
+    } else if (selectedFilter === "all_zones") {
+      scopeLabel = state.currentUser.pastoral_zone || "牧區";
+    } else if (selectedFilter === "all_groups") {
+      scopeLabel = state.currentUser.small_group || "小組";
+    } else if (selectedFilter.startsWith("region:")) {
+      scopeLabel = selectedFilter.replace("region:", "");
+    } else if (selectedFilter.startsWith("zone:")) {
+      scopeLabel = selectedFilter.replace("zone:", "");
+    } else if (selectedFilter.startsWith("group:")) {
+      scopeLabel = selectedFilter.replace("group:", "");
+    }
+  } else {
+    // If no selector filter is loaded yet, guess label from user role
+    const userRole = state.currentUser.role || "member";
+    if (userRole === "admin" || userRole === "senior_pastor") {
+      scopeLabel = "全教會";
+    } else if (userRole === "great_zone_leader") {
+      scopeLabel = state.currentUser.great_region || "大區";
+    } else if (userRole === "zone_leader") {
+      scopeLabel = state.currentUser.pastoral_zone || "牧區";
+    } else {
+      scopeLabel = state.currentUser.small_group || "小組";
+    }
+  }
+
   // Update labels based on scope
   const labelTotal = document.getElementById('grp-label-total-read');
   const labelMembers = document.getElementById('grp-label-members');
   const labelActive = document.getElementById('grp-label-active');
 
-  if (labelTotal) labelTotal.textContent = isAdmin ? '全教會總閱讀章數' : `「${userZone}」總閱讀章數`;
-  if (labelMembers) labelMembers.textContent = isAdmin ? '全教會參與人數' : `「${userZone}」參與人數`;
-  if (labelActive) labelActive.textContent = isAdmin ? '本週全教會活躍人數' : `「${userZone}」本週活躍人數`;
+  if (labelTotal) labelTotal.textContent = scopeLabel === "全教會" ? '全教會總閱讀章數' : `「${scopeLabel}」總閱讀章數`;
+  if (labelMembers) labelMembers.textContent = scopeLabel === "全教會" ? '全教會參與人數' : `「${scopeLabel}」參與人數`;
+  if (labelActive) labelActive.textContent = scopeLabel === "全教會" ? '本週全教會活躍人數' : `「${scopeLabel}」本週活躍人數`;
 
   const elTotal = document.getElementById('grp-total-read');
   const elMembers = document.getElementById('grp-total-members');
@@ -1571,7 +1868,14 @@ async function renderGroupMiniStats() {
 function renderGroupProgressDistribution() {
   const scopedUsers = window._grpScopedUsers || [];
   const totalCount = scopedUsers.length;
-  if (totalCount === 0) return;
+  const distCard = document.getElementById("grp-distribution-card");
+
+  if (totalCount === 0) {
+    if (distCard) distCard.style.display = "none";
+    return;
+  } else {
+    if (distCard) distCard.style.display = "";
+  }
 
   // Calculate expected progress percentage from activePlan
   let expectedPct = 50;
@@ -1621,162 +1925,84 @@ function renderGroupProgressDistribution() {
 }
 
 function renderGroupPastoralChart() {
-  const canvas = document.getElementById('grp-pastoral-rank-chart');
-  if (!canvas) return;
-
-  const allUsers = window._grpAllUsers || [];
-  const zoneMap = {};
-  allUsers.forEach(u => {
-    const zone = u.pastoral_zone || '未知';
-    if (!zoneMap[zone]) zoneMap[zone] = { name: zone, total_chapters: 0 };
-    zoneMap[zone].total_chapters += (u.chapters_read || 0);
-  });
-  const zoneStats = Object.values(zoneMap).sort((a, b) => b.total_chapters - a.total_chapters);
-
-  const isDark = document.body.classList.contains('dark-theme');
-  const fontColor = isDark ? '#cbd5e1' : '#475569';
-  const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
-
-  if (window._grpPastoralChart) window._grpPastoralChart.destroy();
-  window._grpPastoralChart = new Chart(canvas.getContext('2d'), {
-    type: 'bar',
-    data: {
-      labels: zoneStats.map(z => z.name),
-      datasets: [{
-        label: '累計速讀章數',
-        data: zoneStats.map(z => z.total_chapters),
-        backgroundColor: ['rgba(99,102,241,0.85)','rgba(16,185,129,0.85)','rgba(245,158,11,0.85)','rgba(239,68,68,0.85)','rgba(59,130,246,0.85)','rgba(168,85,247,0.85)'],
-        borderRadius: 8, borderWidth: 0
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { ticks: { color: fontColor }, grid: { display: false } },
-        y: { ticks: { color: fontColor }, grid: { color: gridColor } }
-      }
-    }
-  });
+  return; // Disabled
 }
 
 function renderGroupZoneChartWithSelector() {
-  const selector = document.getElementById('grp-zone-selector');
-  if (!selector) return;
-
-  const allUsers = window._grpAllUsers || [];
-  const zones = [...new Set(allUsers.map(u => u.pastoral_zone || '未知'))].sort();
-  selector.innerHTML = zones.map(z => `<option value="${z}">${z}</option>`).join('');
-
-  const userZone = state.currentUser.pastoral_zone || zones[0];
-  if (userZone && zones.includes(userZone)) selector.value = userZone;
-
-  const drawGroupChart = (zoneName) => {
-    const canvas = document.getElementById('grp-group-stats-chart');
-    if (!canvas) return;
-
-    const usersInZone = allUsers.filter(u => u.pastoral_zone === zoneName);
-    const groupMap = {};
-    usersInZone.forEach(u => {
-      const grp = u.small_group || '未知';
-      if (!groupMap[grp]) groupMap[grp] = 0;
-      groupMap[grp] += (u.chapters_read || 0);
-    });
-    const groupStats = Object.entries(groupMap).sort((a, b) => b[1] - a[1]);
-
-    const isDark = document.body.classList.contains('dark-theme');
-    const fontColor = isDark ? '#cbd5e1' : '#475569';
-    const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
-
-    if (window._grpGroupChart) window._grpGroupChart.destroy();
-    window._grpGroupChart = new Chart(canvas.getContext('2d'), {
-      type: 'bar',
-      data: {
-        labels: groupStats.map(g => g[0]),
-        datasets: [{
-          label: '累計章數',
-          data: groupStats.map(g => g[1]),
-          backgroundColor: 'rgba(16,185,129,0.8)', borderRadius: 6
-        }]
-      },
-      options: {
-        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          x: { ticks: { color: fontColor }, grid: { color: gridColor } },
-          y: { ticks: { color: fontColor }, grid: { display: false } }
-        }
-      }
-    });
-  };
-
-  drawGroupChart(selector.value);
-  selector.onchange = () => drawGroupChart(selector.value);
+  // Merged into renderGroupPastoralChart above
+  return;
 }
 
 function renderGroupGrowthTrend() {
-  const canvas = document.getElementById('grp-team-growth-chart');
-  if (!canvas) return;
-
-  const scopedUsers = window._grpScopedUsers || [];
-  const totalActive = scopedUsers.filter(u => u.chapters_read > 0).length;
-  const labels = [];
-  const data = [];
-  const today = new Date();
-
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(today.getDate() - i);
-    labels.push(d.toISOString().substring(5, 10).replace('-', '/'));
-    const factor = 0.8 + (6 - i) * 0.033;
-    data.push(Math.round(totalActive * factor));
-  }
-
-  const isDark = document.body.classList.contains('dark-theme');
-  const fontColor = isDark ? '#cbd5e1' : '#475569';
-  const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
-
-  if (window._grpGrowthChart) window._grpGrowthChart.destroy();
-  window._grpGrowthChart = new Chart(canvas.getContext('2d'), {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [{
-        label: '參與人數',
-        data,
-        borderColor: 'rgba(99,102,241,1)',
-        backgroundColor: 'rgba(99,102,241,0.1)',
-        borderWidth: 2, fill: true, tension: 0.3,
-        pointBackgroundColor: 'rgba(99,102,241,1)'
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { ticks: { color: fontColor }, grid: { display: false } },
-        y: { ticks: { color: fontColor, stepSize: 1 }, grid: { color: gridColor } }
-      }
-    }
-  });
+  return; // Disabled
 }
 
 function renderGroupTeamHeatmap() {
   const scopedUsers = window._grpScopedUsers || [];
-  const userZone = state.currentUser.pastoral_zone || '';
-  const isAdmin = getIsAdmin(state.currentUser);
+  const heatmapCard = document.getElementById("grp-heatmap-card");
+
+  if (scopedUsers.length === 0) {
+    if (heatmapCard) heatmapCard.style.display = "none";
+    return;
+  } else {
+    if (heatmapCard) heatmapCard.style.display = "";
+  }
+
+  // Determine current scope label from selector
+  let scopeLabel = "全教會";
+  const rankingZoneSelector = document.getElementById("ranking-zone-selector");
+  const selectedFilter = rankingZoneSelector ? rankingZoneSelector.value : null;
+
+  if (selectedFilter) {
+    if (selectedFilter === "all") {
+      scopeLabel = "全教會";
+    } else if (selectedFilter === "all_great_region") {
+      scopeLabel = state.currentUser.great_region || "大區";
+    } else if (selectedFilter === "all_zones") {
+      scopeLabel = state.currentUser.pastoral_zone || "牧區";
+    } else if (selectedFilter === "all_groups") {
+      scopeLabel = state.currentUser.small_group || "小組";
+    } else if (selectedFilter.startsWith("region:")) {
+      scopeLabel = selectedFilter.replace("region:", "");
+    } else if (selectedFilter.startsWith("zone:")) {
+      scopeLabel = selectedFilter.replace("zone:", "");
+    } else if (selectedFilter.startsWith("group:")) {
+      scopeLabel = selectedFilter.replace("group:", "");
+    }
+  } else {
+    const userRole = state.currentUser.role || "member";
+    if (userRole === "admin" || userRole === "senior_pastor") {
+      scopeLabel = "全教會";
+    } else if (userRole === "great_zone_leader") {
+      scopeLabel = state.currentUser.great_region || "大區";
+    } else if (userRole === "zone_leader") {
+      scopeLabel = state.currentUser.pastoral_zone || "牧區";
+    } else {
+      scopeLabel = state.currentUser.small_group || "小組";
+    }
+  }
 
   const titleEl = document.getElementById('grp-heatmap-title');
   if (titleEl) {
-    titleEl.textContent = isAdmin
+    titleEl.textContent = scopeLabel === "全教會"
       ? '全教會讀經熱點地圖 (365天打卡活躍度)'
-      : `「${userZone}」團隊讀經熱點地圖 (365天打卡活躍度)`;
+      : `「${scopeLabel}」團隊讀經熱點地圖 (365天打卡活躍度)`;
   }
+
+  const userIds = new Set(scopedUsers.map(u => u.id).filter(Boolean));
+  const userNames = new Set(scopedUsers.map(u => u.name).filter(Boolean));
 
   const logsByDate = {};
   if (state.readingLogs) {
     state.readingLogs.forEach(log => {
-      if (log.read_at) {
+      let match = false;
+      if (state.isSupabaseMode && state.supabase) {
+        match = log.user_id && userIds.has(log.user_id);
+      } else {
+        // Mock fallback or local mode: match by name
+        match = log.name ? userNames.has(log.name) : true;
+      }
+      if (match && log.read_at) {
         const dStr = log.read_at.substring(0, 10);
         logsByDate[dStr] = (logsByDate[dStr] || 0) + 1;
       }
@@ -1796,11 +2022,227 @@ function renderPersonalHeatmap() {
   buildHeatmapGrid("bible-heatmap-container", logsByDate, 1, "章");
 }
 
+function renderPersonalTrendChart() {
+  const canvas = document.getElementById("personal-reading-trend-chart");
+  if (!canvas) return;
+
+  const range = state.personalTrendRange || "month";
+
+  // Style buttons according to range selection
+  const btnWeek = document.getElementById("trend-range-week");
+  const btnMonth = document.getElementById("trend-range-month");
+  const btnYear = document.getElementById("trend-range-year");
+  
+  const activeStyle = { background: "var(--primary-color)", color: "white" };
+  const inactiveStyle = { background: "none", color: "var(--text-muted)" };
+  
+  [btnWeek, btnMonth, btnYear].forEach(btn => {
+    if (btn) Object.assign(btn.style, inactiveStyle);
+  });
+  
+  const activeBtn = document.getElementById(`trend-range-${range}`);
+  if (activeBtn) Object.assign(activeBtn.style, activeStyle);
+
+  let labels = [];
+  let chartData = [];
+  
+  if (range === "week") {
+    // 7 days starting from Sunday of the current week
+    const dates = [];
+    const today = new Date();
+    const dayOfWeek = today.getDay(); // 0 (Sunday) to 6 (Saturday)
+    const sunday = new Date(today);
+    sunday.setDate(today.getDate() - dayOfWeek); // Back to Sunday
+    
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(sunday);
+      d.setDate(sunday.getDate() + i);
+      const dStr = d.toISOString().substring(0, 10);
+      dates.push(dStr);
+      labels.push(`${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`);
+    }
+    const logsByDate = {};
+    if (state.readingLogs) {
+      state.readingLogs.forEach(log => {
+        if (log.read_at) {
+          const dStr = log.read_at.substring(0, 10);
+          logsByDate[dStr] = (logsByDate[dStr] || 0) + 1;
+        }
+      });
+    }
+    chartData = dates.map(dStr => logsByDate[dStr] || 0);
+    
+  } else if (range === "year") {
+    // 12 months
+    const months = [];
+    const today = new Date();
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      const yStr = d.getFullYear();
+      const mStr = String(d.getMonth() + 1).padStart(2, '0');
+      months.push(`${yStr}-${mStr}`);
+      labels.push(`${yStr}/${mStr}`);
+    }
+    const logsByMonth = {};
+    if (state.readingLogs) {
+      state.readingLogs.forEach(log => {
+        if (log.read_at) {
+          const mStr = log.read_at.substring(0, 7); // "YYYY-MM"
+          logsByMonth[mStr] = (logsByMonth[mStr] || 0) + 1;
+        }
+      });
+    }
+    chartData = months.map(mStr => logsByMonth[mStr] || 0);
+    
+  } else {
+    // 30 days (default)
+    const dates = [];
+    const today = new Date();
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      const dStr = d.toISOString().substring(0, 10);
+      dates.push(dStr);
+      labels.push(`${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`);
+    }
+    const logsByDate = {};
+    if (state.readingLogs) {
+      state.readingLogs.forEach(log => {
+        if (log.read_at) {
+          const dStr = log.read_at.substring(0, 10);
+          logsByDate[dStr] = (logsByDate[dStr] || 0) + 1;
+        }
+      });
+    }
+    chartData = dates.map(dStr => logsByDate[dStr] || 0);
+  }
+
+  // Render Chart.js
+  const isDark = document.body.classList.contains('dark-theme');
+  const fontColor = isDark ? '#cbd5e1' : '#475569';
+  const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
+
+  if (window._personalTrendChart) window._personalTrendChart.destroy();
+  
+  window._personalTrendChart = new Chart(canvas.getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: '每日讀經章數',
+        data: chartData,
+        borderColor: 'rgba(99, 102, 241, 1)',
+        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+        fill: true,
+        tension: 0.35,
+        borderWidth: 2.5,
+        pointBackgroundColor: 'rgba(99, 102, 241, 1)',
+        pointHoverRadius: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: function(context) {
+              return `讀經章數: ${context.raw} 章`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { color: fontColor, font: { size: 9 } },
+          grid: { display: false }
+        },
+        y: {
+          ticks: { color: fontColor, stepSize: range === "year" ? 20 : 5 },
+          grid: { color: gridColor },
+          min: 0
+        }
+      }
+    }
+  });
+}
+
+// Window actions
+window.changePersonalTrendRange = function(range) {
+  state.personalTrendRange = range;
+  renderPersonalTrendChart();
+};
+
 function renderPersonalUnlockedBadges() {
   renderBadgeWall("stats-badge-wall-container");
 }
 
+async function renderMyPersonalRankings() {
+  if (!state.activePlan) return;
+  
+  // Calculate completedDaysCount
+  const completedDaysCount = state.activePlan.days.filter(d => {
+    if (!d.chapters || d.chapters.length === 0) return false;
+    return d.chapters.every(ch => ch.isRead);
+  }).length;
+
+  const planStart = new Date(state.activePlan.startDate);
+  const today = new Date();
+  const diffTime = today.getTime() - planStart.getTime();
+  const diffDays = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1);
+  const expectedDaysCount = Math.min(state.activePlan.days.length, diffDays);
+
+  let allUsers = [];
+  try {
+    allUsers = await db.fetchMergedUsersList();
+  } catch(e) {
+    console.warn("Failed to fetch users list for personal ranking", e);
+  }
+  
+  const myName = state.currentUser.name;
+  const myZone = state.currentUser.pastoral_zone || "";
+  
+  const userProgressList = allUsers.map(u => {
+    let pct = u.plan_progress || 0;
+    if (u.name === myName) {
+      pct = state.activePlan ? Math.round((completedDaysCount / state.activePlan.days.length) * 100) : 0;
+    }
+    return {
+      name: u.name,
+      pastoral_zone: u.pastoral_zone,
+      progress: pct
+    };
+  });
+  
+  // Sort for All Church Rank
+  const sortedAll = [...userProgressList].sort((a, b) => b.progress - a.progress);
+  const myIndexAll = sortedAll.findIndex(u => u.name === myName);
+  const myRankAll = myIndexAll !== -1 ? myIndexAll + 1 : sortedAll.length;
+  
+  const elRankAll = document.getElementById("my-rank-all");
+  const elRankAllTotal = document.getElementById("my-rank-all-total");
+  if (elRankAll) elRankAll.textContent = `第 ${myRankAll} 名`;
+  if (elRankAllTotal) elRankAllTotal.textContent = `共 ${sortedAll.length} 人`;
+  
+  // Sort for Pastoral Zone Rank
+  const zoneUsers = userProgressList.filter(u => u.pastoral_zone === myZone);
+  const sortedZone = [...zoneUsers].sort((a, b) => b.progress - a.progress);
+  const myIndexZone = sortedZone.findIndex(u => u.name === myName);
+  const myRankZone = myIndexZone !== -1 ? myIndexZone + 1 : sortedZone.length;
+  const elRankZoneTitle = document.getElementById("my-rank-zone-title");
+  const elRankZone = document.getElementById("my-rank-zone");
+  const elRankZoneTotal = document.getElementById("my-rank-zone-total");
+  
+  if (elRankZoneTitle && myZone) elRankZoneTitle.textContent = `「${myZone}」個人排行`;
+  if (elRankZone) elRankZone.textContent = myZone ? `第 ${myRankZone} 名` : "未選牧區";
+  if (elRankZoneTotal) elRankZoneTotal.textContent = myZone ? `共 ${sortedZone.length} 人` : "請設定所屬牧區";
+}
+
 async function renderPlanRankingView() {
+  // Render my personal rankings
+  await renderMyPersonalRankings();
+
   const container = document.getElementById("pastoral-ranking-list-container");
   if (!container) return;
 
@@ -1863,113 +2305,134 @@ async function renderGroupParticipantsRankingTable() {
     return d.chapters.every(ch => ch.isRead);
   }).length;
 
-  const userName = state.currentUser.name || "弟兄姊妹";
-
-  // Calculate expected days up to today
   const planStart = new Date(state.activePlan.startDate);
   const today = new Date();
   const diffTime = today.getTime() - planStart.getTime();
   const diffDays = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1);
   const expectedDaysCount = Math.min(state.activePlan.days.length, diffDays);
 
-  const userZone = state.currentUser.pastoral_zone || "大安1";
+  const userZone = state.currentUser.pastoral_zone || "";
   const userRole = state.currentUser.role || "member";
   const isAdmin = userRole === "admin" || userRole === "senior_pastor";
   const isGreatZoneLeader = userRole === "great_zone_leader";
-  const hasFilterPermission = isAdmin || isGreatZoneLeader;
+  const isZoneLeader = userRole === "zone_leader";
+  const isGroupLeader = userRole === "group_leader";
 
   const listContainer = document.getElementById("ranking-participants-list");
   if (listContainer) {
     listContainer.innerHTML = `<div style="text-align: center; padding: 1.5rem; color: var(--text-muted); font-size: 0.82rem;">載入成員數據中...</div>`;
     
-    // Fetch group users
     let allUsers = [];
     try {
-      allUsers = await db.fetchMergedUsersList();
+      if (window._cachedAllUsersList && window._cachedAllUsersList.length > 0) {
+        allUsers = window._cachedAllUsersList;
+      } else {
+        allUsers = await db.fetchMergedUsersList();
+        window._cachedAllUsersList = allUsers;
+      }
     } catch(e) {
       console.warn("Failed to fetch merged users, fallback to empty array", e);
     }
 
-    // Handle Zone Filter Dropdown Population (Only for admin, senior_pastor, great_zone_leader)
-    const rankingZoneSelector = document.getElementById("ranking-zone-selector");
-    if (rankingZoneSelector) {
-      if (hasFilterPermission) {
-        rankingZoneSelector.classList.remove("hidden");
-        
-        // Rebuild options on each render to support demo profile switching correctly
-        const currentValue = rankingZoneSelector.value;
-        rankingZoneSelector.innerHTML = "";
-        
-        let zones = [];
-        if (isAdmin) {
-          zones = [...new Set(allUsers.map(u => u.pastoral_zone).filter(Boolean))].sort();
-          
-          const defaultOpt = document.createElement("option");
-          defaultOpt.value = "all";
-          defaultOpt.textContent = "全教會排行";
-          rankingZoneSelector.appendChild(defaultOpt);
-        } else if (isGreatZoneLeader) {
-          const userGreatRegion = state.currentUser.great_region;
-          const userRegions = (userGreatRegion || "").split(",");
-          zones = [...new Set(allUsers.filter(u => userRegions.includes(u.great_region)).map(u => u.pastoral_zone).filter(Boolean))].sort();
-          
-          const defaultOpt = document.createElement("option");
-          defaultOpt.value = "all_great_region";
-          defaultOpt.textContent = `全部 (${userGreatRegion || '大區'})`;
-          rankingZoneSelector.appendChild(defaultOpt);
-        }
-        
-        zones.forEach(zone => {
-          const opt = document.createElement("option");
-          opt.value = zone;
-          opt.textContent = `${zone}牧區`;
-          rankingZoneSelector.appendChild(opt);
-        });
-
-        // Try to restore previous selection
-        if (currentValue && [...rankingZoneSelector.options].some(o => o.value === currentValue)) {
-          rankingZoneSelector.value = currentValue;
-        } else {
-          rankingZoneSelector.value = isGreatZoneLeader ? "all_great_region" : "all";
-        }
-        
-        // Setup change listener if not set
-        if (!rankingZoneSelector.dataset.listenerInitialized) {
-          rankingZoneSelector.dataset.listenerInitialized = "true";
-          rankingZoneSelector.addEventListener("change", () => {
-            renderGroupParticipantsRankingTable();
-          });
-        }
-      } else {
-        rankingZoneSelector.classList.add("hidden");
-      }
+    let scopedUsersList = allUsers;
+    if (isAdmin) {
+      scopedUsersList = allUsers;
+    } else if (isGreatZoneLeader) {
+      const userGreatRegion = state.currentUser.great_region || "";
+      const myRegions = userGreatRegion.split(",").map(s => s.trim()).filter(Boolean);
+      scopedUsersList = allUsers.filter(u => myRegions.includes(u.great_region));
+    } else if (isZoneLeader) {
+      const userZoneStr = state.currentUser.pastoral_zone || "";
+      const myZones = userZoneStr.split(",").map(s => s.trim()).filter(Boolean);
+      scopedUsersList = allUsers.filter(u => myZones.includes(u.pastoral_zone));
+    } else if (isGroupLeader) {
+      const userGroupStr = state.currentUser.small_group || "";
+      const myGroups = userGroupStr.split(",").map(s => s.trim()).filter(Boolean);
+      scopedUsersList = allUsers.filter(u => myGroups.includes(u.small_group));
+    } else {
+      const userZones = (userZone || "").split(",").map(s => s.trim()).filter(Boolean);
+      scopedUsersList = allUsers.filter(u => userZones.includes(u.pastoral_zone));
     }
 
-    // Determine Group Members based on filter selection
-    let groupMembers = allUsers;
-    const selectedFilter = rankingZoneSelector ? rankingZoneSelector.value : null;
+    populateStatsSelector();
+    const rankingZoneSelector = document.getElementById("ranking-zone-selector");
+    const membersZoneSelector = document.getElementById("members-zone-selector");
+    const tabMembers = document.getElementById("tab-plan-members");
+    const isMembersActive = tabMembers && tabMembers.classList.contains("active");
+    const searchInput = document.getElementById("member-search-input");
+    const query = searchInput ? searchInput.value.trim().toLowerCase() : "";
 
-    if (hasFilterPermission && selectedFilter) {
-      if (selectedFilter === "all") {
-        groupMembers = allUsers;
-        if (rankingTitle) rankingTitle.textContent = "參與者總覽 (全教會排行)";
-      } else if (selectedFilter === "all_great_region") {
-        const userGreatRegion = state.currentUser.great_region;
-        const userRegions = (userGreatRegion || "").split(",");
-        groupMembers = allUsers.filter(u => userRegions.includes(u.great_region));
-        if (rankingTitle) rankingTitle.textContent = `參與者總覽 (${userGreatRegion || '大區'}排行)`;
+    let groupMembers = scopedUsersList;
+
+    if (isMembersActive) {
+      if (query) {
+        groupMembers = scopedUsersList.filter(u => u.name.toLowerCase().includes(query));
+        if (rankingTitle) rankingTitle.textContent = `搜尋結果:「${query}」`;
       } else {
-        groupMembers = allUsers.filter(u => u.pastoral_zone === selectedFilter);
-        if (rankingTitle) rankingTitle.textContent = `參與者總覽 (${selectedFilter}牧區排行)`;
+        const selectedFilter = membersZoneSelector ? membersZoneSelector.value : null;
+        if (selectedFilter) {
+          if (selectedFilter.startsWith("zone:")) {
+            const zone = selectedFilter.replace("zone:", "");
+            groupMembers = scopedUsersList.filter(u => u.pastoral_zone === zone);
+            if (rankingTitle) rankingTitle.textContent = `參與者總覽 (${zone}牧區)`;
+          } else if (selectedFilter.startsWith("group:")) {
+            const group = selectedFilter.replace("group:", "");
+            groupMembers = scopedUsersList.filter(u => u.small_group === group);
+            if (rankingTitle) rankingTitle.textContent = `參與者總覽 (${group}小組)`;
+          } else {
+            const userZones = (userZone || "").split(",").map(s => s.trim()).filter(Boolean);
+            groupMembers = scopedUsersList.filter(u => userZones.includes(u.pastoral_zone));
+            if (rankingTitle) rankingTitle.textContent = `參與者總覽 (${userZone}牧區)`;
+          }
+        } else {
+          const userZones = (userZone || "").split(",").map(s => s.trim()).filter(Boolean);
+          groupMembers = scopedUsersList.filter(u => userZones.includes(u.pastoral_zone));
+          if (rankingTitle) rankingTitle.textContent = `參與者總覽 (${userZone}牧區)`;
+        }
       }
     } else {
-      // Regular user or pastoral zone leader with no filter permission: only show their own zone members
-      const userZones = (userZone || "").split(",");
-      groupMembers = allUsers.filter(u => userZones.includes(u.pastoral_zone));
-      if (rankingTitle) rankingTitle.textContent = `參與者總覽 (${userZone}牧區排行)`;
+      const selectedFilter = rankingZoneSelector ? rankingZoneSelector.value : null;
+      if (selectedFilter) {
+        if (selectedFilter === "all") {
+          groupMembers = allUsers;
+          if (rankingTitle) rankingTitle.textContent = "參與者總覽 (全教會排行)";
+        } else if (selectedFilter === "all_great_region") {
+          const userGreatRegion = state.currentUser.great_region || "";
+          const userRegions = userGreatRegion.split(",").map(s => s.trim()).filter(Boolean);
+          groupMembers = allUsers.filter(u => userRegions.includes(u.great_region));
+          if (rankingTitle) rankingTitle.textContent = `參與者總覽 (${userGreatRegion}排行)`;
+        } else if (selectedFilter === "all_zones") {
+          const userZoneStr = state.currentUser.pastoral_zone || "";
+          const userZones = userZoneStr.split(",").map(s => s.trim()).filter(Boolean);
+          groupMembers = allUsers.filter(u => userZones.includes(u.pastoral_zone));
+          if (rankingTitle) rankingTitle.textContent = `參與者總覽 (${userZoneStr}排行)`;
+        } else if (selectedFilter === "all_groups") {
+          const userGroupStr = state.currentUser.small_group || "";
+          const userGroups = userGroupStr.split(",").map(s => s.trim()).filter(Boolean);
+          groupMembers = allUsers.filter(u => userGroups.includes(u.small_group));
+          if (rankingTitle) rankingTitle.textContent = `參與者總覽 (${userGroupStr}排行)`;
+        } else if (selectedFilter.startsWith("region:")) {
+          const region = selectedFilter.replace("region:", "");
+          groupMembers = allUsers.filter(u => u.great_region === region);
+          if (rankingTitle) rankingTitle.textContent = `參與者總覽 (${region}大區排行)`;
+        } else if (selectedFilter.startsWith("zone:")) {
+          const zone = selectedFilter.replace("zone:", "");
+          groupMembers = allUsers.filter(u => u.pastoral_zone === zone);
+          if (rankingTitle) rankingTitle.textContent = `參與者總覽 (${zone}牧區排行)`;
+        } else if (selectedFilter.startsWith("group:")) {
+          const group = selectedFilter.replace("group:", "");
+          groupMembers = allUsers.filter(u => u.small_group === group);
+          if (rankingTitle) rankingTitle.textContent = `參與者總覽 (${group}小組排行)`;
+        }
+      } else {
+        const userZones = (userZone || "").split(",").map(s => s.trim()).filter(Boolean);
+        groupMembers = allUsers.filter(u => userZones.includes(u.pastoral_zone));
+        if (rankingTitle) rankingTitle.textContent = `參與者總覽 (${userZone}牧區排行)`;
+      }
     }
 
-    // Map list to values and calculate progress status (ahead/behind days)
+    window._grpScopedUsers = groupMembers;
+
     groupMembers = groupMembers.map(u => {
       const isMe = u.name === state.currentUser.name;
       const streak = isMe ? personalStreak : (u.streak || 0);
@@ -1993,10 +2456,10 @@ async function renderGroupParticipantsRankingTable() {
       let statusColor = "var(--text-muted)";
       if (diff > 0) {
         statusStr = `超前 ${diff}天`;
-        statusColor = "#10b981"; // Green
+        statusColor = "#10b981";
       } else if (diff < 0) {
         statusStr = `落後 ${Math.abs(diff)}天`;
-        statusColor = "#ef4444"; // Red
+        statusColor = "#ef4444";
       }
       
       return {
@@ -2010,51 +2473,137 @@ async function renderGroupParticipantsRankingTable() {
       };
     });
 
-    // Sort group members by Completed Days descending
     groupMembers.sort((a, b) => b.completed - a.completed);
+    window._grpScopedProcessedMembers = groupMembers;
 
-    listContainer.innerHTML = "";
-    
-    if (groupMembers.length === 0) {
-      groupMembers = [{
-        name: userName,
-        streak: personalStreak,
-        completed: completedDaysCount,
-        makeup: Math.max(0, expectedDaysCount - completedDaysCount),
-        statusStr: completedDaysCount - expectedDaysCount >= 0 ? "超前 " + (completedDaysCount - expectedDaysCount) + "天" : "落後 " + Math.abs(completedDaysCount - expectedDaysCount) + "天",
-        statusColor: completedDaysCount - expectedDaysCount >= 0 ? "#10b981" : "#ef4444",
-        isMe: true
-      }];
+    if (searchInput && !searchInput.dataset.listenerInitialized) {
+      searchInput.dataset.listenerInitialized = "true";
+      searchInput.addEventListener("input", async () => {
+        await renderGroupParticipantsRankingTable();
+      });
     }
 
-    groupMembers.forEach(m => {
-      const itemRow = document.createElement("div");
-      itemRow.style.cssText = `
-        display: grid;
-        grid-template-columns: 1fr 80px 80px 70px 90px;
-        gap: 0.4rem;
-        align-items: center;
-        padding: 0.6rem 0.2rem;
-        border-bottom: 1px solid var(--border-card);
-        font-size: 0.88rem;
-        font-weight: 700;
-        text-align: center;
-      `;
-      if (m.isMe) {
-        itemRow.style.background = "rgba(99, 102, 241, 0.08)";
-        itemRow.style.borderRadius = "8px";
-      }
-
-      itemRow.innerHTML = `
-        <div style="text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: ${m.isMe ? 'var(--primary-color)' : 'var(--text-primary)'};">
-          ${escapeHTML(m.name)}
-        </div>
-        <div style="color: #ef4444;">${m.streak}</div>
-        <div style="color: #10b981;">${m.completed}</div>
-        <div style="color: #f59e0b;">${m.makeup}</div>
-        <div style="color: ${m.statusColor}; font-size: 0.8rem;">${m.statusStr}</div>
-      `;
-      listContainer.appendChild(itemRow);
-    });
+    window.displayParticipantsList(100);
   }
+}
+
+window.displayParticipantsList = function(limit = 100) {
+  const listContainer = document.getElementById("ranking-participants-list");
+  if (!listContainer) return;
+
+  const searchInput = document.getElementById("member-search-input");
+  const query = searchInput ? searchInput.value.trim().toLowerCase() : "";
+
+  // Filter based on search query
+  let items = window._grpScopedProcessedMembers || [];
+  if (query) {
+    items = items.filter(m => m.name.toLowerCase().includes(query));
+  }
+
+  listContainer.innerHTML = "";
+
+  if (items.length === 0) {
+    listContainer.innerHTML = `<div style="text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.88rem;">無符合搜尋條件的成員</div>`;
+    return;
+  }
+
+  // Slice items to show only the specified limit
+  const visibleItems = items.slice(0, limit);
+
+  visibleItems.forEach(m => {
+    const itemRow = document.createElement("div");
+    itemRow.style.cssText = `
+      display: grid;
+      grid-template-columns: 1fr 80px 80px 70px 90px;
+      gap: 0.4rem;
+      align-items: center;
+      padding: 0.6rem 0.2rem;
+      border-bottom: 1px solid var(--border-card);
+      font-size: 0.88rem;
+      font-weight: 700;
+      text-align: center;
+    `;
+    if (m.isMe) {
+      itemRow.style.background = "rgba(99, 102, 241, 0.08)";
+      itemRow.style.borderRadius = "8px";
+    }
+
+    itemRow.innerHTML = `
+      <div style="text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: ${m.isMe ? 'var(--primary-color)' : 'var(--text-primary)'};">
+        ${escapeHTML(m.name)}
+      </div>
+      <div style="color: #ef4444;">${m.streak}</div>
+      <div style="color: #10b981;">${m.completed}</div>
+      <div style="color: #f59e0b;">${m.makeup}</div>
+      <div style="color: ${m.statusColor}; font-size: 0.8rem;">${m.statusStr}</div>
+    `;
+    listContainer.appendChild(itemRow);
+  });
+
+  // If there are remaining items, append a "Load More" button at the bottom of the list
+  if (items.length > limit) {
+    const loadMoreRow = document.createElement("div");
+    loadMoreRow.style.cssText = `
+      text-align: center;
+      padding: 0.8rem;
+      margin-top: 0.4rem;
+    `;
+    
+    const loadMoreBtn = document.createElement("button");
+    loadMoreBtn.className = "btn-secondary";
+    loadMoreBtn.style.cssText = `
+      padding: 0.4rem 1.2rem;
+      font-size: 0.8rem;
+      font-weight: 800;
+      border-radius: 20px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-card);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s;
+    `;
+    loadMoreBtn.textContent = `載入更多成員 (剩餘 ${items.length - limit} 人)`;
+    loadMoreBtn.onclick = () => {
+      window.displayParticipantsList(limit + 100);
+    };
+    
+    loadMoreRow.appendChild(loadMoreBtn);
+    listContainer.appendChild(loadMoreRow);
+  }
+}
+
+// ==================== 組員狀況 TAB ====================
+async function renderPlanMembersView() {
+  if (!state.activePlan) return;
+
+  // Make sure selectors are populated correctly
+  populateStatsSelector();
+
+  // Sync members-zone-selector value to ranking-zone-selector so the
+  // shared renderGroupParticipantsRankingTable() reads the correct scope.
+  const membersZoneSel = document.getElementById("members-zone-selector");
+  const rankingZoneSel = document.getElementById("ranking-zone-selector");
+
+  // If the members selector already has a value that differs, push it to ranking.
+  if (membersZoneSel && rankingZoneSel && membersZoneSel.value) {
+    rankingZoneSel.value = membersZoneSel.value;
+  }
+
+  // Use members-ranking-title element instead of ranking-title so the title
+  // updates show up in the members subview card.
+  const membersTitleEl = document.getElementById("members-ranking-title");
+  if (membersTitleEl) {
+    // Temporarily swap the id so the shared function writes to the right element
+    const rankingTitleEl = document.getElementById("ranking-title");
+    if (rankingTitleEl) rankingTitleEl.id = "_ranking-title-backup";
+    membersTitleEl.id = "ranking-title";
+    await renderGroupParticipantsRankingTable();
+    membersTitleEl.id = "members-ranking-title";
+    if (rankingTitleEl) rankingTitleEl.id = "ranking-title";
+  } else {
+    await renderGroupParticipantsRankingTable();
+  }
+
+  // Render group progress distribution bars (since it was moved to Members view)
+  renderGroupProgressDistribution();
 }

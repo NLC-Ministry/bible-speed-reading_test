@@ -11,6 +11,21 @@ ALTER TABLE public.great_regions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.pastoral_zones ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.small_groups ENABLE ROW LEVEL SECURITY;
 
+-- 先刪除已存在的策略以避免重複建立報錯
+DROP POLICY IF EXISTS "允許已驗證用戶讀取大區資料" ON public.great_regions;
+DROP POLICY IF EXISTS "允許已驗證用戶讀取牧區資料" ON public.pastoral_zones;
+DROP POLICY IF EXISTS "允許已驗證用戶讀取小組資料" ON public.small_groups;
+DROP POLICY IF EXISTS "允許管理員管理大區資料" ON public.great_regions;
+DROP POLICY IF EXISTS "允許管理員管理牧區資料" ON public.pastoral_zones;
+DROP POLICY IF EXISTS "允許管理員管理小組資料" ON public.small_groups;
+DROP POLICY IF EXISTS "允許用戶新增或更新自己的個人資料" ON public.profiles;
+DROP POLICY IF EXISTS "允許管理員管理所有用戶的個人資料" ON public.profiles;
+DROP POLICY IF EXISTS "根據角色限制 Profiles 讀取權限" ON public.profiles;
+DROP POLICY IF EXISTS "允許用戶管理自己的讀經計畫" ON public.reading_plans;
+DROP POLICY IF EXISTS "根據角色限制 Reading Plans 讀取權限" ON public.reading_plans;
+DROP POLICY IF EXISTS "允許用戶管理自己的讀經紀錄" ON public.reading_logs;
+DROP POLICY IF EXISTS "根據角色限制 Reading Logs 讀取權限" ON public.reading_logs;
+
 -- 2. 組織架構資料表讀取與管理策略
 CREATE POLICY "允許已驗證用戶讀取大區資料" ON public.great_regions FOR SELECT TO authenticated USING (true);
 CREATE POLICY "允許已驗證用戶讀取牧區資料" ON public.pastoral_zones FOR SELECT TO authenticated USING (true);
@@ -32,6 +47,12 @@ CREATE POLICY "允許用戶新增或更新自己的個人資料"
   TO authenticated 
   USING (auth.uid() = id) 
   WITH CHECK (auth.uid() = id);
+
+CREATE POLICY "允許管理員管理所有用戶的個人資料" 
+  ON public.profiles FOR ALL 
+  TO authenticated 
+  USING ((SELECT my_role FROM public.get_my_profile()) IN ('admin', 'senior_pastor'))
+  WITH CHECK ((SELECT my_role FROM public.get_my_profile()) IN ('admin', 'senior_pastor'));
 
 CREATE POLICY "根據角色限制 Profiles 讀取權限" 
   ON public.profiles FOR SELECT 

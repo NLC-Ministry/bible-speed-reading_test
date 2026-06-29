@@ -351,12 +351,23 @@ async function renderAdminUserManagement() {
         { value: "admin", label: "系統管理員" }
       ];
 
-      let selectHtml = `<select class="form-control" style="font-size: 0.82rem; padding: 0.25rem 0.5rem; height: auto; width: 100%;" ${isDemo ? "disabled title=\"示範帳號不可更改角色\"" : ""}>`;
+      let selectHtml = `<div style="display: flex; align-items: center; gap: 0.4rem;">`;
+      selectHtml += `<select class="form-control" style="font-size: 0.82rem; padding: 0.25rem 0.5rem; height: auto; flex: 1;" ${isDemo ? "disabled title=\"示範帳號不可更改角色\"" : ""}>`;
       roleOptions.forEach(opt => {
         const selected = user.role === opt.value ? "selected" : "";
         selectHtml += `<option value="${opt.value}" ${selected}>${opt.label}</option>`;
       });
       selectHtml += `</select>`;
+
+      const isLeader = ["great_zone_leader", "zone_leader", "group_leader"].includes(user.role);
+      if (isLeader && !isDemo) {
+        selectHtml += `
+          <button class="pill-btn edit-scope-btn" data-userid="${user.id}" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; white-space: nowrap;">
+            ✏️ 範圍
+          </button>
+        `;
+      }
+      selectHtml += `</div>`;
 
       const demoBadge = isDemo
         ? `<span style="display:inline-block;margin-left:0.4rem;padding:0.1rem 0.45rem;border-radius:99px;font-size:0.65rem;font-weight:700;background:rgba(251,191,36,0.18);color:#d97706;border:1px solid rgba(251,191,36,0.4);">示範</span>`
@@ -381,7 +392,7 @@ async function renderAdminUserManagement() {
           let additionalFields = {};
 
           if (["great_zone_leader", "zone_leader", "group_leader"].includes(newRole)) {
-            const resp = await showResponsibilityModal(newRole);
+            const resp = await showResponsibilityModal(newRole, user);
             if (!resp) {
               select.value = user.role;
               return;
@@ -398,16 +409,16 @@ async function renderAdminUserManagement() {
           if (success) {
             statusCell.innerHTML = `<span style="font-size: 0.8rem; color: #10b981; font-weight: bold;">✓ 已儲存</span>`;
             user.role = newRole;
-            if (additionalFields.great_region) user.great_region = additionalFields.great_region;
-            if (additionalFields.pastoral_zone) user.pastoral_zone = additionalFields.pastoral_zone;
-            if (additionalFields.small_group) user.small_group = additionalFields.small_group;
+            if (additionalFields.great_region !== undefined) user.great_region = additionalFields.great_region;
+            if (additionalFields.pastoral_zone !== undefined) user.pastoral_zone = additionalFields.pastoral_zone;
+            if (additionalFields.small_group !== undefined) user.small_group = additionalFields.small_group;
 
             if (user.name === state.currentUser.name) {
               state.currentUser.role = newRole;
               state.realRole = newRole;
-              if (additionalFields.great_region) state.currentUser.great_region = additionalFields.great_region;
-              if (additionalFields.pastoral_zone) state.currentUser.pastoral_zone = additionalFields.pastoral_zone;
-              if (additionalFields.small_group) state.currentUser.small_group = additionalFields.small_group;
+              if (additionalFields.great_region !== undefined) state.currentUser.great_region = additionalFields.great_region;
+              if (additionalFields.pastoral_zone !== undefined) state.currentUser.pastoral_zone = additionalFields.pastoral_zone;
+              if (additionalFields.small_group !== undefined) state.currentUser.small_group = additionalFields.small_group;
               renderProfileView();
             }
 
@@ -423,6 +434,37 @@ async function renderAdminUserManagement() {
             select.value = user.role;
           }
         };
+
+        // Event listener for edit scope button (if exists)
+        const editBtn = tr.querySelector(".edit-scope-btn");
+        if (editBtn) {
+          editBtn.onclick = async () => {
+            const resp = await showResponsibilityModal(user.role, user);
+            if (!resp) return;
+
+            statusCell.innerHTML = `<span style="font-size: 0.8rem; color: var(--primary-color); font-weight: bold;">更新中...</span>`;
+            
+            const success = await db.updateUserRole(user.id, user.role, user.name, resp);
+            
+            if (success) {
+              statusCell.innerHTML = `<span style="font-size: 0.8rem; color: #10b981; font-weight: bold;">✓ 已儲存</span>`;
+              if (resp.great_region !== undefined) user.great_region = resp.great_region;
+              if (resp.pastoral_zone !== undefined) user.pastoral_zone = resp.pastoral_zone;
+              if (resp.small_group !== undefined) user.small_group = resp.small_group;
+
+              if (user.name === state.currentUser.name) {
+                if (resp.great_region !== undefined) state.currentUser.great_region = resp.great_region;
+                if (resp.pastoral_zone !== undefined) state.currentUser.pastoral_zone = resp.pastoral_zone;
+                if (resp.small_group !== undefined) state.currentUser.small_group = resp.small_group;
+                renderProfileView();
+              }
+
+              renderAdminUserManagement();
+            } else {
+              statusCell.innerHTML = `<span style="font-size: 0.8rem; color: #ef4444; font-weight: bold;">✕ 失敗</span>`;
+            }
+          };
+        }
       }
 
       tableBody.appendChild(tr);
@@ -985,8 +1027,8 @@ function initAvatarDropdown() {
   }
 }
 
-// Responsibility selection modal helper (supporting multi-select checkboxes)
-function showResponsibilityModal(role) {
+// Responsibility selection modal helper (supporting multi-select checkboxes based on user's current hierarchy)
+function showResponsibilityModal(role, user) {
   return new Promise((resolve) => {
     // Create the modal overlay
     const overlay = document.createElement("div");
@@ -1039,7 +1081,7 @@ function showResponsibilityModal(role) {
       </div>
       
       <div style="display: flex; flex-direction: column; gap: 0.8rem; max-height: 380px; overflow-y: auto; padding-right: 0.2rem;">
-        <!-- Region selection -->
+        <!-- Region selection (Always rendered to avoid null and enable cascading) -->
         <div class="form-group" style="margin-bottom: 0;">
           <label style="display: block; font-size: 0.8rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 0.3rem;">負責大區 (可複選)</label>
           <div id="modal-regions-container" style="background: var(--bg-input); border: 1px solid var(--border-card); border-radius: 6px; padding: 0.6rem; max-height: 110px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.3rem;">
@@ -1090,7 +1132,11 @@ function showResponsibilityModal(role) {
       container.style.transform = "translateY(0)";
     }, 10);
     
-    // Dynamic updates
+    // Parse current values for pre-checking
+    const currentRegions = (user.great_region || "").split(",").map(s => s.trim()).filter(Boolean);
+    const currentZones = (user.pastoral_zone || "").split(",").map(s => s.trim()).filter(Boolean);
+    const currentGroups = (user.small_group || "").split(",").map(s => s.trim()).filter(Boolean);
+    
     const regionContainer = overlay.querySelector("#modal-regions-container");
     const zoneContainer = overlay.querySelector("#modal-zones-container");
     const groupContainer = overlay.querySelector("#modal-groups-container");
@@ -1105,9 +1151,10 @@ function showResponsibilityModal(role) {
     
     let regionsHtml = "";
     regions.forEach(r => {
+      const isChecked = currentRegions.includes(r.name) ? "checked" : "";
       regionsHtml += `
         <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-primary); cursor: pointer; padding: 0.15rem 0;">
-          <input type="checkbox" name="region-checkbox" value="${r.id}" data-name="${r.name}" style="cursor: pointer;">
+          <input type="checkbox" name="region-checkbox" value="${r.id}" data-name="${r.name}" ${isChecked} style="cursor: pointer;">
           <span>${r.name}</span>
         </label>
       `;
@@ -1129,7 +1176,6 @@ function showResponsibilityModal(role) {
       if (state.isSupabaseMode && state.orgStructure.rawZones) {
         zones = state.orgStructure.rawZones.filter(z => checkedRegions.includes(z.great_region_id));
       } else if (state.orgStructure.zones) {
-        // Local mode regions are the values
         checkedRegions.forEach(rName => {
           const regionZones = state.orgStructure.zones[rName] || [];
           regionZones.forEach(zName => {
@@ -1140,9 +1186,10 @@ function showResponsibilityModal(role) {
       
       let zonesHtml = "";
       zones.forEach(z => {
+        const isChecked = currentZones.includes(z.name) ? "checked" : "";
         zonesHtml += `
           <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-primary); cursor: pointer; padding: 0.15rem 0;">
-            <input type="checkbox" name="zone-checkbox" value="${z.id}" data-name="${z.name}" style="cursor: pointer;">
+            <input type="checkbox" name="zone-checkbox" value="${z.id}" data-name="${z.name}" ${isChecked} style="cursor: pointer;">
             <span>${z.name}</span>
           </label>
         `;
@@ -1180,9 +1227,10 @@ function showResponsibilityModal(role) {
       
       let groupsHtml = "";
       groups.forEach(g => {
+        const isChecked = currentGroups.includes(g.name) ? "checked" : "";
         groupsHtml += `
           <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-primary); cursor: pointer; padding: 0.15rem 0;">
-            <input type="checkbox" name="group-checkbox" value="${g.id}" data-name="${g.name}" style="cursor: pointer;">
+            <input type="checkbox" name="group-checkbox" value="${g.id}" data-name="${g.name}" ${isChecked} style="cursor: pointer;">
             <span>${g.name}</span>
           </label>
         `;
@@ -1194,6 +1242,9 @@ function showResponsibilityModal(role) {
     regionContainer.querySelectorAll("input[name='region-checkbox']").forEach(cb => {
       cb.onchange = updateZones;
     });
+    
+    // Initialize cascading trigger
+    updateZones();
     
     // Close modal helper
     const closeModal = (result) => {

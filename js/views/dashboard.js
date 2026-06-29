@@ -446,12 +446,12 @@ function renderProgressListFiltered(searchText) {
 state.pilgrimageZoom = 1.0;
 state.pilgrimageControlsInit = false;
 
-function getBookCoords(index) {
+function getTileCoords(index) {
   const cols = 8;
-  const spacingX = 110;
-  const spacingY = 90;
-  const startX = 65;
-  const startY = 65;
+  const spacingX = 85;
+  const spacingY = 85;
+  const startX = 50;
+  const startY = 50;
   
   const row = Math.floor(index / cols);
   const col = index % cols;
@@ -464,183 +464,252 @@ function getBookCoords(index) {
   };
 }
 
+function getMemberColor(name) {
+  if (name === state.currentUser.name) return "#6366f1"; // Indigo for Me
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const colors = [
+    "#10b981", // Emerald
+    "#f59e0b", // Amber
+    "#ef4444", // Red
+    "#3b82f6", // Blue
+    "#ec4899", // Pink
+    "#8b5cf6", // Purple
+    "#14b8a6", // Teal
+    "#f43f5e", // Rose
+    "#06b6d4"  // Cyan
+  ];
+  const index = Math.abs(hash) % colors.length;
+  return colors[index];
+}
+
 async function renderPilgrimageTrail() {
   const canvas = document.getElementById("pilgrimage-canvas");
   if (!canvas) return;
   
   const ctx = canvas.getContext("2d");
   
-  const width = 900;
-  const height = 900;
+  // Build cumulative chapter offsets per book
+  const TOTAL_CHAPTERS = BIBLE_BOOKS.reduce((s, b) => s + b.chapters, 0); // 1189
+  const bookCumulative = []; // bookCumulative[i] = first chapter index of BIBLE_BOOKS[i]
+  let cum = 0;
+  BIBLE_BOOKS.forEach(b => {
+    bookCumulative.push(cum);
+    cum += b.chapters;
+  });
+
+  // Flat array of all 1189 chapters
+  const allChapters = [];
+  BIBLE_BOOKS.forEach(book => {
+    for (let c = 1; c <= book.chapters; c++) {
+      allChapters.push({
+        bookName: book.name,
+        abbrev: book.abbrev,
+        chapterNum: c
+      });
+    }
+  });
+
+  // --- Fetch group members first so we can compute max reach ---
+  let allUsers = await db.fetchMergedUsersList();
+
+  // 屬靈旅程 always shows the current user's pastoral zone — ignores permission filter selector
+  const myZone = state.currentUser.pastoral_zone || "";
+  let groupMembers = myZone
+    ? allUsers.filter(u => u.pastoral_zone === myZone)
+    : [];
+  if (!groupMembers || groupMembers.length === 0) {
+    groupMembers = [{ name: state.currentUser.name, chapters_read: state.currentUser.chapters_read }];
+  }
+
+  // Ensure current user is in the list
+  const currentUserInList = groupMembers.some(m => m.name === state.currentUser.name);
+  if (!currentUserInList) {
+    groupMembers = [{ name: state.currentUser.name, chapters_read: state.currentUser.chapters_read }, ...groupMembers];
+  }
+
+  // Find furthest position reached by anyone in the pastoral zone
+  const maxChaptersRead = groupMembers.reduce((max, m) => Math.max(max, m.chapters_read || 0), 0);
+  const myChaptersRead = state.currentUser.chapters_read || 0;
+
+  // Reveal path up to max chapters + 16 preview chapters (2 rows), clamped to total chapters
+  const maxDrawIndex = Math.min(Math.max(0, maxChaptersRead - 1) + 16, TOTAL_CHAPTERS - 1);
+
+  // Dynamic canvas sizing based on drawn index
+  const cols = 8;
+  const spacingX = 85;
+  const spacingY = 85;
+  const rowsCount = Math.ceil((maxDrawIndex + 1) / cols);
+  
+  const width = cols * spacingX + 15;
+  const height = rowsCount * spacingY + 15;
+  
   canvas.width = width;
   canvas.height = height;
-  
   ctx.clearRect(0, 0, width, height);
-  
-  // Calculate completed chapters per book
-  const bookCompletion = BIBLE_BOOKS.map(book => {
-    const readChapters = state.readingLogs.filter(l => l.book === book.name);
-    const count = readChapters.length;
-    return {
-      name: book.name,
-      abbrev: book.abbrev,
-      chapters: book.chapters,
-      readCount: count,
-      isCompleted: count >= book.chapters,
-      isStarted: count > 0
-    };
-  });
-  
-  // 1. Draw Winding Path Background
-  ctx.beginPath();
-  ctx.strokeStyle = "var(--border-card)"; // themed grey/border color
-  ctx.lineWidth = 10;
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
-  
-  for (let i = 0; i < 66; i++) {
-    const coords = getBookCoords(i);
-    if (i === 0) ctx.moveTo(coords.x, coords.y);
-    else ctx.lineTo(coords.x, coords.y);
+
+  // Update Legend text/color code dynamically
+  const legendEl = document.getElementById("pilgrimage-legend");
+  if (legendEl) {
+    legendEl.innerHTML = `
+      <span style="display:flex; align-items:center; gap:4px; margin-right:8px;"><span style="display:inline-block; width:10px; height:10px; background:#e0e7ff; border:1px solid #6366f1; border-radius:50%;"></span>我已讀</span>
+      <span style="display:flex; align-items:center; gap:4px; margin-right:8px;"><span style="display:inline-block; width:10px; height:10px; background:#eff6ff; border:1px solid #3b82f6; border-radius:50%;"></span>組員已讀</span>
+      <span style="display:flex; align-items:center; gap:4px;"><span style="display:inline-block; width:10px; height:10px; background:#f8fafc; border:1px solid #cbd5e1; border-radius:50%;"></span>後續道路</span>
+    `;
   }
-  ctx.stroke();
-  
-  // 2. Draw Active/Completed Path Progress
-  let lastCompletedIndex = -1;
-  for (let i = 0; i < 66; i++) {
-    if (bookCompletion[i].isStarted || bookCompletion[i].isCompleted) {
-      lastCompletedIndex = i;
-    }
-  }
-  
-  if (lastCompletedIndex >= 0) {
+
+  // Helper: draw a path line segment between chapter index ranges
+  function drawPathLine(startIndex, endIndex, strokeStyle) {
+    if (endIndex < startIndex) return;
     ctx.beginPath();
-    ctx.strokeStyle = "rgba(99, 102, 241, 0.4)"; // Translucent Indigo
-    ctx.lineWidth = 10;
+    ctx.strokeStyle = strokeStyle;
+    ctx.lineWidth = 8;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
-    
-    for (let i = 0; i <= lastCompletedIndex; i++) {
-      const coords = getBookCoords(i);
-      if (i === 0) ctx.moveTo(coords.x, coords.y);
-      else ctx.lineTo(coords.x, coords.y);
+    const startPos = getTileCoords(startIndex);
+    ctx.moveTo(startPos.x, startPos.y);
+    for (let i = startIndex + 1; i <= endIndex; i++) {
+      const p = getTileCoords(i);
+      ctx.lineTo(p.x, p.y);
     }
     ctx.stroke();
   }
 
-  // 3. Draw Book Stepping Stones (Nodes)
-  for (let i = 0; i < 66; i++) {
-    const coords = getBookCoords(i);
-    const status = bookCompletion[i];
-    
-    const isActive = i === lastCompletedIndex;
-    
-    ctx.beginPath();
-    ctx.arc(coords.x, coords.y, 16, 0, Math.PI * 2);
-    
-    let fillStyle = "var(--border-card)"; // Locked/Gray
-    if (status.isCompleted) {
-      fillStyle = "#10b981"; // Completed/Green
-    } else if (status.isStarted) {
-      fillStyle = "#3b82f6"; // In progress/Blue
-    }
-    
-    ctx.fillStyle = fillStyle;
-    ctx.fill();
-    
-    // Draw active glow
-    if (isActive) {
-      ctx.beginPath();
-      ctx.arc(coords.x, coords.y, 22, 0, Math.PI * 2);
-      ctx.strokeStyle = "rgba(99, 102, 241, 0.6)";
-      ctx.lineWidth = 3;
-      ctx.stroke();
-    }
-    
-    // Text Abbreviation
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 10px sans-serif";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(status.abbrev, coords.x, coords.y);
+  // --- 1. Draw Winding Path Background Line (grey) ---
+  drawPathLine(0, maxDrawIndex, "rgba(226, 232, 240, 0.8)");
+
+  // --- 2. Draw Unlocked Group Path Line (light blue) ---
+  if (maxChaptersRead > 1) {
+    drawPathLine(0, Math.min(maxChaptersRead - 1, maxDrawIndex), "#93c5fd");
   }
 
-  // 4. Fetch Group Members and draw their Avatars
-  let allUsers = await db.fetchMergedUsersList();
-  
-  const mockUser = {
-    name: state.currentUser.name,
-    great_region: state.currentUser.great_region || "東區",
-    pastoral_zone: state.currentUser.pastoral_zone || "大安1",
-    small_group: state.currentUser.small_group || "馬鈴",
-    role: state.currentUser.role || "member"
-  };
-  
-  let groupMembers = allUsers.filter(u => 
-    u.pastoral_zone === mockUser.pastoral_zone && 
-    u.small_group === mockUser.small_group
-  );
-  if (groupMembers.length === 0) {
-    groupMembers = [ { name: state.currentUser.name, chapters_read: state.currentUser.chapters_read } ];
+  // --- 3. Draw My Progress Path Line (vibrant indigo) ---
+  if (myChaptersRead > 1) {
+    drawPathLine(0, Math.min(myChaptersRead - 1, maxDrawIndex), "#818cf8");
   }
-  
-  const nodeOccupancy = {};
-  
-  groupMembers.forEach(member => {
-    let chaptersCount = member.chapters_read || 0;
-    let bookIndex = 0;
-    let sum = 0;
+
+  // --- 4. Draw Tile Nodes ---
+  for (let i = 0; i <= maxDrawIndex; i++) {
+    const pos = getTileCoords(i);
+    const ch = allChapters[i];
+    if (!ch) continue;
     
-    for (let i = 0; i < BIBLE_BOOKS.length; i++) {
-      sum += BIBLE_BOOKS[i].chapters;
-      if (sum >= chaptersCount) {
-        bookIndex = i;
-        break;
-      }
+    // Determine colors based on reading status
+    let fillStyle = "#f8fafc";
+    let strokeStyle = "#cbd5e1";
+    let textColor = "#64748b";
+    let isBold = false;
+    
+    if (i < myChaptersRead) {
+      fillStyle = "#e0e7ff"; // indigo light
+      strokeStyle = "#6366f1"; // indigo line
+      textColor = "#4338ca"; // indigo text
+      isBold = true;
+    } else if (i < maxChaptersRead) {
+      fillStyle = "#eff6ff"; // blue light
+      strokeStyle = "#3b82f6"; // blue line
+      textColor = "#1d4ed8"; // blue text
     }
-    if (sum < chaptersCount) {
-      bookIndex = 65;
-    }
     
-    const baseCoords = getBookCoords(bookIndex);
-    
-    if (!nodeOccupancy[bookIndex]) {
-      nodeOccupancy[bookIndex] = 0;
-    }
-    const offsetNum = nodeOccupancy[bookIndex];
-    nodeOccupancy[bookIndex] += 1;
-    
-    // Shift slightly to avoid stacking overlapping text
-    const offsetX = offsetNum * 12;
-    const offsetY = offsetNum * -12;
-    
-    const x = baseCoords.x + offsetX;
-    const y = baseCoords.y + offsetY - 25;
-    
-    const isMe = member.name === state.currentUser.name;
-    
-    // Draw label background
+    // Tile circle
     ctx.beginPath();
-    ctx.fillStyle = isMe ? "#4f46e5" : "#475569";
-    ctx.roundRect(x - 22, y - 18, 44, 18, 5);
+    ctx.arc(pos.x, pos.y, 20, 0, Math.PI * 2);
+    ctx.fillStyle = fillStyle;
     ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = strokeStyle;
+    ctx.stroke();
     
-    // Little arrow pointing down
-    ctx.beginPath();
-    ctx.moveTo(x - 4, y);
-    ctx.lineTo(x, y + 4);
-    ctx.lineTo(x + 4, y);
-    ctx.fillStyle = isMe ? "#4f46e5" : "#475569";
-    ctx.fill();
-    
-    // Text Name
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "bold 9px sans-serif";
+    // Text drawing inside tile
+    ctx.fillStyle = textColor;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    const displayName = member.name.substring(0, 3);
-    ctx.fillText(displayName, x, y - 9);
+    
+    if (ch.chapterNum === 1) {
+      // First chapter of a book -> draw book name abbrev
+      ctx.font = "bold 11px sans-serif";
+      ctx.fillText(ch.abbrev, pos.x, pos.y);
+    } else {
+      // Regular chapter number
+      ctx.font = isBold ? "bold 10px sans-serif" : "9px sans-serif";
+      ctx.fillText(ch.chapterNum, pos.x, pos.y);
+    }
+  }
+
+  // --- 5. Group and Draw Member Avatars ---
+  const membersByPosition = {};
+  groupMembers.forEach(m => {
+    const cr = m.chapters_read || 0;
+    const posIndex = Math.max(0, cr - 1);
+    if (!membersByPosition[posIndex]) {
+      membersByPosition[posIndex] = [];
+    }
+    membersByPosition[posIndex].push(m);
   });
+
+  Object.keys(membersByPosition).forEach(posStr => {
+    const posIndex = parseInt(posStr, 10);
+    if (posIndex > maxDrawIndex) return; // safety clamp
+    
+    const tilePos = getTileCoords(posIndex);
+    const list = membersByPosition[posStr];
+    const count = list.length;
+    
+    list.forEach((m, idx) => {
+      let ox = 0;
+      let oy = 0;
+      if (count > 1) {
+        // Arrange avatars in a neat circle surrounding the tile node
+        const angle = (idx * 2 * Math.PI) / count;
+        const radius = 15;
+        ox = Math.cos(angle) * radius;
+        oy = Math.sin(angle) * radius;
+      }
+      
+      const x = tilePos.x + ox;
+      const y = tilePos.y + oy;
+      const isMe = m.name === state.currentUser.name;
+      
+      ctx.save();
+      ctx.shadowColor = "rgba(0, 0, 0, 0.2)";
+      ctx.shadowBlur = 4;
+      ctx.shadowOffsetY = 2;
+      
+      // Avatar Outer Circle
+      ctx.beginPath();
+      ctx.arc(x, y, 15, 0, Math.PI * 2);
+      ctx.fillStyle = getMemberColor(m.name);
+      ctx.fill();
+      
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = isMe ? "#ffffff" : "rgba(255, 255, 255, 0.85)";
+      ctx.stroke();
+      ctx.restore();
+
+      // Avatar Initial Text
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 9px sans-serif";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      const displayName = m.name.substring(0, 2);
+      ctx.fillText(displayName, x, y);
+    });
+  });
+
+  // --- 6. Smooth Auto-Scroll to Current User's Tile position ---
+  const wrapper = canvas.closest(".trail-scroll-wrapper");
+  if (wrapper) {
+    const myTilePos = getTileCoords(Math.max(0, myChaptersRead - 1));
+    setTimeout(() => {
+      wrapper.scrollTo({
+        top: Math.max(0, myTilePos.y - wrapper.clientHeight / 2),
+        left: Math.max(0, myTilePos.x - wrapper.clientWidth / 2),
+        behavior: "smooth"
+      });
+    }, 120);
+  }
 }
 
 function initPilgrimageControls() {
