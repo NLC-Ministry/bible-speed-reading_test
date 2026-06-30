@@ -2,9 +2,9 @@
 
 
 async function updateStatsView(filterPresetKey = null) {
-  // If no filterPresetKey is provided, fallback to current activePlan's key
+  // If no filter is provided, fallback to the current active plan's global key.
   if (!filterPresetKey && state.activePlan) {
-    filterPresetKey = state.activePlan.presetKey;
+    filterPresetKey = state.activePlan.globalPlanId || state.activePlan.presetKey || state.activePlan.name || state.activePlan.id;
   }
   window.currentStatsFilterPresetKey = filterPresetKey;
 

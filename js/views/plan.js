@@ -95,7 +95,7 @@ function initPlanControls() {
   const subviewPlanStats = document.getElementById("subview-plan-stats");
   const subviewPlanRanking = document.getElementById("subview-plan-ranking");
   const subviewPlanMembers = document.getElementById("subview-plan-members");
-
+  const subviewPlanLevel = document.getElementById("subview-plan-level");
   // Only leaders and above can see the 組員狀況 tab
   const _initUserRole = (state.currentUser && state.currentUser.role) || "member";
   const _canSeeMembers = ["admin", "senior_pastor", "great_zone_leader", "zone_leader", "group_leader"].includes(_initUserRole);
@@ -107,7 +107,7 @@ function initPlanControls() {
   if (innerAdminTab) { innerAdminTab.style.display = ""; innerAdminTab.classList.remove("hidden"); }
 
   const allTabs = [tabSchedule, tabStats, tabRanking, _canSeeMembers ? tabMembers : null].filter(Boolean);
-  const allSubviews = [subviewSchedule, subviewPlanStats, subviewPlanRanking, _canSeeMembers ? subviewPlanMembers : null].filter(Boolean);
+  const allSubviews = [subviewSchedule, subviewPlanStats, subviewPlanRanking, subviewPlanLevel, _canSeeMembers ? subviewPlanMembers : null].filter(Boolean);
 
   function switchToTab(activeTab, activeSubview) {
     allTabs.forEach(t => t && t.classList.remove("active"));
@@ -116,6 +116,21 @@ function initPlanControls() {
     if (activeSubview) activeSubview.classList.remove("hidden");
   }
 
+  function closePlanOptionsMenu() {
+    const menu = document.getElementById("plan-options-dropdown");
+    if (menu) menu.classList.add("hidden");
+  }
+
+  function bindPlanMenuItem(id, handler) {
+    const item = document.getElementById(id);
+    if (!item) return;
+    item.addEventListener("click", async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      await handler();
+      closePlanOptionsMenu();
+    });
+  }
   if (tabSchedule) {
     tabSchedule.addEventListener("click", () => {
       switchToTab(tabSchedule, subviewSchedule);
@@ -144,7 +159,44 @@ function initPlanControls() {
       if (state.activePlan) await renderPlanMembersView();
     });
   }
+bindPlanMenuItem("menu-plan-stats", async () => {
+    switchToTab(tabStats, subviewPlanStats);
+    await window.switchStatTab("personal");
+  });
 
+  bindPlanMenuItem("menu-plan-ranking", async () => {
+    switchToTab(tabRanking, subviewPlanRanking);
+    if (state.activePlan) await renderPlanRankingView();
+  });
+
+  bindPlanMenuItem("menu-plan-level", async () => {
+    switchToTab(null, subviewPlanLevel);
+    renderPlanLevelEditor();
+  });
+
+  const planLevelBackBtn = document.getElementById("btn-plan-level-back");
+  if (planLevelBackBtn) {
+    planLevelBackBtn.addEventListener("click", () => {
+      switchToTab(tabSchedule, subviewSchedule);
+      renderPlanScheduleTracker();
+    });
+  }
+
+  document.querySelectorAll("#plan-level-options .plan-level-option").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const level = btn.dataset.level || "normal";
+      await window.changePlanLevel(level);
+      switchToTab(tabSchedule, subviewSchedule);
+      renderPlanScheduleTracker();
+    });
+  });
+  const membersMenuItem = document.getElementById("menu-plan-members");
+  if (membersMenuItem) membersMenuItem.style.display = _canSeeMembers ? "" : "none";
+  bindPlanMenuItem("menu-plan-members", async () => {
+    if (!_canSeeMembers) return;
+    switchToTab(tabMembers, subviewPlanMembers);
+    if (state.activePlan) await renderPlanMembersView();
+  });
   // Category Pills filters inside Plan List Page
   const listPills = document.querySelectorAll("#plan-list-status-pills .pill-btn");
   listPills.forEach(pill => {
@@ -194,7 +246,7 @@ function initPlanControls() {
       if (!day || !day.chapters || day.chapters.length === 0) return;
       
       const firstUnread = day.chapters.find(ch => !ch.isRead) || day.chapters[0];
-      window.openPlanInlineReader(firstUnread.book, firstUnread.chapter, state.selectedPlanDay);
+      window.openPlanInlineReader(firstUnread.book, firstUnread.chapter, state.selectedPlanDay, firstUnread.round || 1);
     });
   }
 
@@ -205,7 +257,62 @@ function initPlanControls() {
 }
 
 
-function generatePlanObject(name, startDate, endDate, selectedBooks, presetKey = null) {
+function getPlanLevelRounds(level) {
+  if (level === "breakthrough") return 2;
+  if (level === "super") return 3;
+  return 1;
+}
+
+function expandChaptersForLevel(chapters, level) {
+  const rounds = getPlanLevelRounds(level);
+  const expanded = [];
+  for (let round = 1; round <= rounds; round++) {
+    chapters.forEach(ch => expanded.push({ ...ch, round }));
+  }
+  return expanded;
+}
+
+function distributeChaptersAcrossDays(chapters, readingDays) {
+  const dailyChapters = Array.from({ length: readingDays }, () => []);
+  const chsPerDay = Math.floor(chapters.length / readingDays);
+  let remainder = chapters.length % readingDays;
+  let chIdx = 0;
+
+  for (let d = 0; d < readingDays; d++) {
+    const todayCount = chsPerDay + (remainder > 0 ? 1 : 0);
+    remainder--;
+    for (let c = 0; c < todayCount; c++) {
+      if (chIdx < chapters.length) {
+        dailyChapters[d].push(chapters[chIdx]);
+        chIdx++;
+      }
+    }
+  }
+
+  return dailyChapters;
+}
+
+function rebuildPlanScheduleForLevel(plan, level) {
+  if (!plan) return plan;
+  const rebuilt = generatePlanObject(
+    plan.name,
+    plan.startDate,
+    plan.endDate,
+    plan.target_books || plan.targetBooks || [],
+    plan.presetKey,
+    level
+  );
+  Object.assign(plan, {
+    totalDays: rebuilt.totalDays,
+    totalChapters: rebuilt.totalChapters,
+    days: rebuilt.days,
+    level,
+    target_books: plan.target_books || rebuilt.target_books,
+    targetBooks: plan.targetBooks || rebuilt.targetBooks
+  });
+  return plan;
+}
+function generatePlanObject(name, startDate, endDate, selectedBooks, presetKey = null, level = "normal") {
   const preset = presetKey ? CHURCH_PLAN_PRESETS[presetKey] : null;
 
   if (preset && preset.months) {
@@ -235,25 +342,12 @@ function generatePlanObject(name, startDate, endDate, selectedBooks, presetKey =
         }
       });
 
-      const totalChapters = allChapters.length;
+      const expandedChapters = expandChaptersForLevel(allChapters, level);
+      const totalChapters = expandedChapters.length;
       totalChaptersCount += totalChapters;
 
       const readingDays = mSpec.readingDays;
-      const dailyChapters = Array.from({ length: readingDays }, () => []);
-      const chsPerDay = Math.floor(totalChapters / readingDays);
-      let remainder = totalChapters % readingDays;
-      let chIdx = 0;
-
-      for (let d = 0; d < readingDays; d++) {
-        const todayCount = chsPerDay + (remainder > 0 ? 1 : 0);
-        remainder--;
-        for (let c = 0; c < todayCount; c++) {
-          if (chIdx < totalChapters) {
-            dailyChapters[d].push(allChapters[chIdx]);
-            chIdx++;
-          }
-        }
-      }
+      const dailyChapters = distributeChaptersAcrossDays(expandedChapters, readingDays);
 
       // 2. Generate calendar days for this month
       const daysInMonth = new Date(mSpec.year, mSpec.month, 0).getDate();
@@ -269,7 +363,8 @@ function generatePlanObject(name, startDate, endDate, selectedBooks, presetKey =
           chapters = dailyChapters[dayOffset].map(ch => ({
             book: ch.book,
             chapter: ch.chapter,
-            key: `${ch.book}_${ch.chapter}`
+            key: `${ch.book}_${ch.chapter}_${ch.round || 1}`,
+            round: ch.round || 1
           }));
         }
 
@@ -293,7 +388,8 @@ function generatePlanObject(name, startDate, endDate, selectedBooks, presetKey =
       progress: 0,
       days,
       presetKey,
-      level: 'normal',
+      target_books: selectedBooks,
+      level,
       currentRound: 1,
       wasDowngraded: false
     };
@@ -328,24 +424,9 @@ function generatePlanObject(name, startDate, endDate, selectedBooks, presetKey =
     }
   });
 
-  const totalChapters = allChapters.length;
-  const dailyChapters = Array.from({ length: totalDays }, () => []);
-
-  const chsPerDay = Math.floor(totalChapters / totalDays);
-  let remainder = totalChapters % totalDays;
-  let chIdx = 0;
-
-  for (let d = 0; d < totalDays; d++) {
-    const todayCount = chsPerDay + (remainder > 0 ? 1 : 0);
-    remainder--;
-    
-    for (let c = 0; c < todayCount; c++) {
-      if (chIdx < totalChapters) {
-        dailyChapters[d].push(allChapters[chIdx]);
-        chIdx++;
-      }
-    }
-  }
+  const expandedChapters = expandChaptersForLevel(allChapters, level);
+  const totalChapters = expandedChapters.length;
+  const dailyChapters = distributeChaptersAcrossDays(expandedChapters, totalDays);
 
   const days = dailyChapters.map((chapters, index) => {
     const dayDate = new Date(start);
@@ -362,7 +443,8 @@ function generatePlanObject(name, startDate, endDate, selectedBooks, presetKey =
       chapters: chapters.map(ch => ({
         book: ch.book,
         chapter: ch.chapter,
-        key: `${ch.book}_${ch.chapter}`
+        key: `${ch.book}_${ch.chapter}_${ch.round || 1}`,
+        round: ch.round || 1
       }))
     };
   });
@@ -377,7 +459,8 @@ function generatePlanObject(name, startDate, endDate, selectedBooks, presetKey =
     progress: 0,
     days,
     presetKey,
-    level: 'normal',
+    target_books: selectedBooks,
+    level,
     currentRound: 1,
     wasDowngraded: false
   };
@@ -400,14 +483,20 @@ function isPlanStarted(plan) {
 }
 
 function calculateAllPlansProgress() {
-  if (!state.activePlans || state.activePlans.length === 0) {
+  const visibleActivePlans = getVisiblePlans(state.activePlans || []);
+
+  if (visibleActivePlans.length === 0) {
     state.activePlan = null;
     return;
   }
 
-  state.activePlans.forEach(plan => {
+  visibleActivePlans.forEach(plan => {
+    const targetRounds = getPlanLevelRounds(plan.level || "normal");
+    const hasMatchingRoundSchedule = plan.days && plan.days.some(day => day.chapters && day.chapters.some(ch => (ch.round || 1) === targetRounds));
+    if (!hasMatchingRoundSchedule && targetRounds > 1) {
+      rebuildPlanScheduleForLevel(plan, plan.level || "normal");
+    }
     let completed = 0;
-    const currentRound = plan.currentRound || 1;
     plan.days.forEach(day => {
       day.chapters.forEach(ch => {
         const checkRoundLog = (rTarget) => {
@@ -428,7 +517,8 @@ function calculateAllPlansProgress() {
         ch.isReadR2 = checkRoundLog(2);
         ch.isReadR3 = checkRoundLog(3);
 
-        const isRead = currentRound === 3 ? ch.isReadR3 : (currentRound === 2 ? ch.isReadR2 : ch.isReadR1);
+        const targetRound = ch.round || plan.currentRound || 1;
+        const isRead = targetRound === 3 ? ch.isReadR3 : (targetRound === 2 ? ch.isReadR2 : ch.isReadR1);
         ch.isRead = isRead;
         if (isRead) completed++;
       });
@@ -444,7 +534,46 @@ function calculateAllPlansProgress() {
 
 
 
+function getPlanVisibilityKey(plan) {
+  return plan ? String(plan.id || plan.presetKey || plan.globalPlanId || plan.name || '') : '';
+}
+
+function getHiddenPlanKeys() {
+  try {
+    return JSON.parse(localStorage.getItem('hidden_global_plan_keys') || '[]');
+  } catch (e) {
+    return [];
+  }
+}
+
+function isPlanHidden(plan) {
+  if (!plan) return false;
+  const hiddenKeys = getHiddenPlanKeys();
+  const keys = [plan.id, plan.presetKey, plan.globalPlanId, plan.name].filter(Boolean).map(String);
+  return Boolean(plan.isHidden || plan.is_hidden || keys.some(key => hiddenKeys.includes(key)));
+}
+
+function canManageHiddenPlans() {
+  const role = (state.currentUser && state.currentUser.role) || 'member';
+  const realRole = state.realRole || role;
+  return role === 'admin' || role === 'senior_pastor' || realRole === 'admin' || realRole === 'senior_pastor';
+}
+
+function getVisiblePlans(plans) {
+  const list = plans || [];
+  if (canManageHiddenPlans()) return list;
+  return list.filter(plan => !isPlanHidden(plan));
+}
+
+
 async function renderPlanView() {
+  if (state.activePlan && isPlanHidden(state.activePlan) && !canManageHiddenPlans()) {
+    const nextVisiblePlan = (state.activePlans || []).find(plan => !isPlanHidden(plan));
+    state.activePlan = nextVisiblePlan || null;
+    if (state.activePlan) localStorage.setItem("selected_plan_key", state.activePlan.presetKey || state.activePlan.id || "");
+    else localStorage.removeItem("selected_plan_key");
+  }
+
   renderJoinedPlansList();
   renderPresetPlansList();
 
@@ -489,6 +618,10 @@ async function renderPlanView() {
 
   if (isRealAdmin && isSimulatedAdmin && typeof renderAdminPlanManagement === 'function') {
     renderAdminPlanManagement();
+  }
+
+  if (state.activePlan && isPlanHidden(state.activePlan) && canManageHiddenPlans()) {
+    showToast("????????????????????");
   }
 }
 
@@ -578,7 +711,7 @@ function renderPresetPlansList() {
 
   let plans = [];
   if (state.globalPlans && state.globalPlans.length > 0) {
-    plans = state.globalPlans;
+    plans = getVisiblePlans(state.globalPlans);
   } else {
     plans = Object.entries(CHURCH_PLAN_PRESETS).map(([key, p]) => ({
       id: key,
@@ -589,6 +722,8 @@ function renderPresetPlansList() {
       presetKey: key
     }));
   }
+
+  plans = getVisiblePlans(plans);
 
   plans.forEach(plan => {
     const key = plan.presetKey || plan.id;
@@ -674,7 +809,7 @@ async function renderPlanDetailView() {
   const subviewPlanStats = document.getElementById("subview-plan-stats");
   const subviewPlanRanking = document.getElementById("subview-plan-ranking");
   const subviewPlanMembers = document.getElementById("subview-plan-members");
-
+  const subviewPlanLevel = document.getElementById("subview-plan-level");
   // Hide the 組員狀況 tab for regular members
   const _restoreRole = (state.currentUser && state.currentUser.role) || "member";
   const _restoreCanSeeMembers = ["admin", "senior_pastor", "great_zone_leader", "zone_leader", "group_leader"].includes(_restoreRole);
@@ -692,32 +827,17 @@ async function renderPlanDetailView() {
     }
   }
 
-  const allSubviewsInit = [subviewSchedule, subviewPlanStats, subviewPlanRanking, _restoreCanSeeMembers ? subviewPlanMembers : null].filter(Boolean);
+  const allSubviewsInit = [subviewSchedule, subviewPlanStats, subviewPlanRanking, subviewPlanLevel, _restoreCanSeeMembers ? subviewPlanMembers : null].filter(Boolean);
 
-  if (tabStats && tabStats.classList.contains("active")) {
-    allSubviewsInit.forEach(s => s.classList.add("hidden"));
-    if (subviewPlanStats) subviewPlanStats.classList.remove("hidden");
-    await renderPlanStatsView();
-  } else if (tabRanking && tabRanking.classList.contains("active")) {
-    allSubviewsInit.forEach(s => s.classList.add("hidden"));
-    if (subviewPlanRanking) subviewPlanRanking.classList.remove("hidden");
-    await renderPlanRankingView();
-  } else if (_restoreCanSeeMembers && tabMembers && tabMembers.classList.contains("active")) {
-    allSubviewsInit.forEach(s => s.classList.add("hidden"));
-    if (subviewPlanMembers) subviewPlanMembers.classList.remove("hidden");
-    await renderPlanMembersView();
-  } else {
-    // Default to Schedule Tab
-    if (tabSchedule) tabSchedule.classList.add("active");
-    if (tabStats) tabStats.classList.remove("active");
-    if (tabRanking) tabRanking.classList.remove("active");
-    if (tabMembers) tabMembers.classList.remove("active");
-    allSubviewsInit.forEach(s => s.classList.add("hidden"));
-    if (subviewSchedule) subviewSchedule.classList.remove("hidden");
-    renderPlanScheduleTracker();
-  }
+  // Always enter the plan on the daily reading screen; other screens are opened from the top-right menu.
+  if (tabSchedule) tabSchedule.classList.add("active");
+  if (tabStats) tabStats.classList.remove("active");
+  if (tabRanking) tabRanking.classList.remove("active");
+  if (tabMembers) tabMembers.classList.remove("active");
+  allSubviewsInit.forEach(s => s.classList.add("hidden"));
+  if (subviewSchedule) subviewSchedule.classList.remove("hidden");
+  renderPlanScheduleTracker();
 }
-
 function renderHorizontalDateStrip() {
   const carousel = document.getElementById("plan-date-carousel");
   if (!carousel || !state.activePlan) return;
@@ -894,22 +1014,23 @@ async function renderPlanScheduleTracker(skipCarouselUpdate = false) {
     const taskItem = document.createElement("div");
     taskItem.className = "plan-task-item";
 
-    const { cssClass, content } = getChapterCheckboxState(ch, currentRound);
-    const roundLabelHtml = currentRound >= 2
-      ? `<div class="task-round-label round-${currentRound}">第${currentRound}遍</div>`
-      : '';
+    const taskRound = ch.round || currentRound;
+    const { cssClass, content } = getChapterCheckboxState(ch, taskRound);
+    const roundLabelHtml = taskRound >= 2
+      ? `<div class="task-round-label round-${taskRound}">第${taskRound}遍</div>`
+      : "";
 
     taskItem.innerHTML = `
       <div class="task-checkbox ${cssClass}"
            data-is-current-read="${ch.isRead ? 'true' : 'false'}"
-           onclick="event.stopPropagation(); window.toggleYouVersionChapter(this, '${ch.book}', ${ch.chapter})">
+           onclick="event.stopPropagation(); window.toggleYouVersionChapter(this, '${ch.book}', ${ch.chapter}, ${ch.round || currentRound})">
         ${content}
       </div>
-      <div class="task-title" onclick="window.openPlanInlineReader('${ch.book}', ${ch.chapter}, ${state.selectedPlanDay})">
+      <div class="task-title" onclick="window.openPlanInlineReader('${ch.book}', ${ch.chapter}, ${state.selectedPlanDay}, ${ch.round || currentRound})">
         ${ch.book} ${ch.chapter}章
       </div>
       ${roundLabelHtml}
-      <div class="task-arrow" onclick="window.openPlanInlineReader('${ch.book}', ${ch.chapter}, ${state.selectedPlanDay})">
+      <div class="task-arrow" onclick="window.openPlanInlineReader('${ch.book}', ${ch.chapter}, ${state.selectedPlanDay}, ${ch.round || currentRound})">
         <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="9 18 15 12 9 6"></polyline></svg>
       </div>
     `;
@@ -947,17 +1068,17 @@ function getRoundBadge(ch, currentRound) {
   return '';
 }
 
-window.toggleYouVersionChapter = async function(checkboxEl, book, chapter) {
+window.toggleYouVersionChapter = async function(checkboxEl, book, chapter, taskRound = null) {
   if (checkboxEl.dataset.saving === "true") return;
 
   const isCurrentlyRead = checkboxEl.dataset.isCurrentRead === 'true';
   const willBeChecked = !isCurrentlyRead;
-  const currentRound = state.activePlan ? (state.activePlan.currentRound || 1) : 1;
+  const currentRound = taskRound || (state.activePlan ? (state.activePlan.currentRound || 1) : 1);
   const selectedDay = state.activePlan && state.activePlan.days
     ? state.activePlan.days.find(d => d.dayNum === state.selectedPlanDay)
     : null;
   const chapterObj = selectedDay && selectedDay.chapters
-    ? selectedDay.chapters.find(ch => ch.book === book && Number(ch.chapter) === Number(chapter))
+    ? selectedDay.chapters.find(ch => ch.book === book && Number(ch.chapter) === Number(chapter) && (ch.round || currentRound) === currentRound)
     : null;
 
   const applyLocalReadState = (ch, checked) => {
@@ -975,7 +1096,7 @@ window.toggleYouVersionChapter = async function(checkboxEl, book, chapter) {
   renderPlanScheduleTracker(true);
 
   try {
-    await db.logChapterRead(book, chapter, willBeChecked);
+    await db.logChapterRead(book, chapter, willBeChecked, currentRound);
     calculatePlanProgress();
     db.saveLocalUserStats();
 
@@ -991,18 +1112,25 @@ window.toggleYouVersionChapter = async function(checkboxEl, book, chapter) {
   }
 };
 
+function renderPlanLevelEditor() {
+  const currentLevel = state.activePlan ? (state.activePlan.level || "normal") : "normal";
+  const options = document.querySelectorAll("#plan-level-options .plan-level-option");
+  options.forEach(option => {
+    option.classList.toggle("active", option.dataset.level === currentLevel);
+  });
+}
 window.showPlanLevelModal = async function() {
-  if (!state.activePlan) return;
-  const level = state.activePlan.level || 'normal';
-  const newLevel = prompt(
-    "變更計畫進度等級：\n- normal: 一般進度 (讀1遍)\n- breakthrough: 突破進度 (讀2遍)\n- super: 超強進度 (讀3遍)\n\n請輸入 normal、breakthrough 或 super：",
-    level
-  );
-  if (newLevel && ['normal', 'breakthrough', 'super'].includes(newLevel)) {
-    await window.changePlanLevel(newLevel);
-  } else if (newLevel !== null) {
-    alert("輸入無效，請輸入 normal、breakthrough 或 super。");
-  }
+  const subviewPlanLevel = document.getElementById("subview-plan-level");
+  const subviews = [
+    document.getElementById("subview-plan-schedule"),
+    document.getElementById("subview-plan-stats"),
+    document.getElementById("subview-plan-ranking"),
+    document.getElementById("subview-plan-members"),
+    subviewPlanLevel
+  ].filter(Boolean);
+  subviews.forEach(view => view.classList.add("hidden"));
+  if (subviewPlanLevel) subviewPlanLevel.classList.remove("hidden");
+  renderPlanLevelEditor();
 };
 function readChapterDirect(bookName, chapter) {
   const book = BIBLE_BOOKS.find(b => b.name === bookName);
@@ -1050,7 +1178,7 @@ async function checkPlanSchedule(plan) {
   if (level === 'breakthrough') targetRounds = 2;
   else if (level === 'super') targetRounds = 3;
 
-  const expectedTotalChapters = progressFactor * targetRounds * plan.totalChapters;
+  const expectedTotalChapters = progressFactor * plan.totalChapters;
 
   // Calculate actual total completed chapters across all rounds
   let actualCompletedChapters = 0;
@@ -1091,7 +1219,7 @@ async function checkPlanSchedule(plan) {
         localStorage.setItem("active_reading_plans", JSON.stringify(state.activePlans));
       }
 
-      alert(message);
+      showToast(message);
       calculatePlanProgress();
     }
   }
@@ -1146,20 +1274,24 @@ async function handleRoundCompletion(plan) {
   }
 
   calculatePlanProgress();
-  alert(message);
+  showToast(message);
 }
 
 window.changePlanLevel = async function(newLevel) {
   if (!state.activePlan) return;
 
   if (state.activePlan.wasDowngraded && state.activePlan.level === 'normal' && newLevel !== 'normal') {
-    alert("您目前因進度落後降為一般進度，需要先讀完第一遍後才可以重新升級！");
+    showToast("需要先讀完第一遍，才可以重新升級進度。");
     return;
   }
 
   loader.show("正在變更進度等級...");
 
-  state.activePlan.level = newLevel;
+  rebuildPlanScheduleForLevel(state.activePlan, newLevel);
+  if (state.activePlans) {
+    const planInList = state.activePlans.find(p => p === state.activePlan || (p.id && p.id === state.activePlan.id) || (p.presetKey && p.presetKey === state.activePlan.presetKey));
+    if (planInList && planInList !== state.activePlan) rebuildPlanScheduleForLevel(planInList, newLevel);
+  }
 
   if (state.isSupabaseMode && state.supabase) {
     const { error } = await state.supabase.from("reading_plans")
@@ -1339,10 +1471,11 @@ async function renderAdminPlanManagement() {
 
       const bookListText = plan.books.join(", ");
       const bookCount = plan.books.length;
+      const hidden = isPlanHidden(plan);
 
       tr.innerHTML = `
         <td>
-          <strong style="display: block; margin-bottom: 0.15rem; font-size: 0.82rem; word-break: break-all;">${escapeHTML(plan.name)}</strong>
+          <strong style="display: block; margin-bottom: 0.15rem; font-size: 0.82rem; word-break: break-all;">${escapeHTML(plan.name)}${hidden ? ' <span style="color:#f59e0b; font-size:0.68rem; font-weight:800;">???</span>' : ''}</strong>
           <span title="${escapeHTML(bookListText)}" style="font-size: 0.7rem; color: var(--text-muted); cursor: help; text-decoration: underline dashed; text-underline-offset: 2px;">
             共 ${bookCount} 卷書卷
           </span>
@@ -1375,6 +1508,21 @@ async function renderAdminPlanManagement() {
         document.getElementById("admin-plan-form-container").classList.remove("hidden");
         document.getElementById("admin-plan-form-container").scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       };
+
+      const toggleHiddenBtn = tr.querySelector(".admin-toggle-hidden-plan-btn");
+      if (toggleHiddenBtn) {
+        toggleHiddenBtn.onclick = async () => {
+          loader.show(hidden ? "正在恢復計畫..." : "正在隱藏計畫...");
+          const success = await db.setGlobalPlanHidden(plan, !hidden);
+          loader.hide();
+          if (success) {
+            showToast(hidden ? "計畫已恢復顯示。" : "計畫已隱藏，一般使用者不會看到。");
+            renderAdminPlanManagement();
+            if (typeof renderPresetPlansList === 'function') renderPresetPlansList();
+            if (typeof renderJoinedPlansList === 'function') renderJoinedPlansList();
+          }
+        };
+      }
 
       // Bind delete event
       tr.querySelector(".admin-delete-plan-btn").onclick = async () => {
@@ -1411,7 +1559,7 @@ state.inlineReader = {
   autoMarked: false
 };
 
-window.openPlanInlineReader = function(bookName, chapter, dayNum) {
+window.openPlanInlineReader = function(bookName, chapter, dayNum, round = null) {
   if (!state.activePlan) return;
   const day = state.activePlan.days.find(d => d.dayNum === dayNum);
   if (!day || !day.chapters || day.chapters.length === 0) return;
@@ -1419,7 +1567,11 @@ window.openPlanInlineReader = function(bookName, chapter, dayNum) {
   state.inlineReader.active = true;
   state.inlineReader.dayNum = dayNum;
   state.inlineReader.chaptersList = day.chapters;
-  state.inlineReader.currentIndex = day.chapters.findIndex(ch => ch.book === bookName && ch.chapter === chapter);
+  state.inlineReader.currentIndex = day.chapters.findIndex(ch =>
+    ch.book === bookName &&
+    Number(ch.chapter) === Number(chapter) &&
+    (round == null || Number(ch.round || 1) === Number(round))
+  );
   if (state.inlineReader.currentIndex === -1) state.inlineReader.currentIndex = 0;
 
   // Hide checklist interface elements
@@ -1557,11 +1709,18 @@ window.addEventListener("scroll", async () => {
     const currentCh = state.inlineReader.chaptersList[state.inlineReader.currentIndex];
     if (!currentCh) return;
 
-    // Check if already read
-    const isAlreadyRead = state.readingLogs.some(l => l.book === currentCh.book && l.chapter === currentCh.chapter);
+    const readRound = currentCh.round || (state.activePlan ? (state.activePlan.currentRound || 1) : 1);
+    const isAlreadyRead = state.readingLogs.some(l =>
+      l.book === currentCh.book &&
+      Number(l.chapter) === Number(currentCh.chapter) &&
+      Number(l.round || 1) === Number(readRound)
+    );
     if (!isAlreadyRead) {
-      await db.logChapterRead(currentCh.book, currentCh.chapter, true);
+      await db.logChapterRead(currentCh.book, currentCh.chapter, true, readRound);
       
+      if (readRound === 1) currentCh.isReadR1 = true;
+      else if (readRound === 2) currentCh.isReadR2 = true;
+      else if (readRound === 3) currentCh.isReadR3 = true;
       currentCh.isRead = true;
       calculatePlanProgress();
       db.saveLocalUserStats();
@@ -2394,6 +2553,7 @@ function renderGroupTeamHeatmap() {
 
   const userIds = new Set(scopedUsers.map(u => u.id).filter(Boolean));
   const userNames = new Set(scopedUsers.map(u => u.name).filter(Boolean));
+  const scopedPlanIds = new Set(scopedUsers.map(u => u.plan_id).filter(Boolean));
   const currentPlanId = state.activePlan && state.activePlan.id;
   const currentPresetKey = state.activePlan && state.activePlan.presetKey;
 
@@ -2404,10 +2564,12 @@ function renderGroupTeamHeatmap() {
     state.allLogsCache.forEach(log => {
       if (!log.read_at) return;
       if (!userIds.has(log.user_id)) return;
-      // Only count logs belonging to this plan
-      const matchesPlan = (currentPlanId && log.plan_id === currentPlanId) ||
-                          (!currentPlanId && !log.plan_id);
-      if (!matchesPlan) return;
+      // Each participant has their own reading_plans.id for the same global plan.
+      if (scopedPlanIds.size > 0) {
+        if (!scopedPlanIds.has(log.plan_id)) return;
+      } else if (!logMatchesPlan(log, currentPlanId, currentPresetKey)) {
+        return;
+      }
       const dStr = log.read_at.substring(0, 10);
       logsByDate[dStr] = (logsByDate[dStr] || 0) + 1;
     });
@@ -2786,12 +2948,15 @@ async function renderGroupParticipantsRankingTable() {
     
     let allUsers = [];
     try {
-      if (window._cachedAllUsersList && window._cachedAllUsersList.length > 0) {
+      const activeKey = state.activePlan
+        ? (state.activePlan.globalPlanId || state.activePlan.presetKey || state.activePlan.name || state.activePlan.id)
+        : null;
+      if (window._cachedAllUsersList && window._cachedAllUsersListKey === activeKey && window._cachedAllUsersList.length > 0) {
         allUsers = window._cachedAllUsersList;
       } else {
-        const activeKey = state.activePlan ? state.activePlan.presetKey : null;
         allUsers = await db.fetchMergedUsersList(activeKey);
         window._cachedAllUsersList = allUsers;
+        window._cachedAllUsersListKey = activeKey;
       }
     } catch(e) {
       console.warn("Failed to fetch merged users, fallback to empty array", e);

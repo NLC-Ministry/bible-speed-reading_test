@@ -109,6 +109,11 @@ function assertCompleteEnough(result, sourceName) {
     throw new Error(`${sourceName} 沒有回傳經文`);
   }
 
+  const combinedText = result.verses.map(v => v.text).join("");
+  if (!/[\u3400-\u9fff]/.test(combinedText)) {
+    throw new Error(`${sourceName} 回傳的不是中文聖經`);
+  }
+
   const lastVerse = result.verses[result.verses.length - 1].verse;
   const uniqueCount = new Set(result.verses.map(v => v.verse)).size;
   if (result.verses.length === 10 && lastVerse === 10 && uniqueCount === 10) {
@@ -180,9 +185,9 @@ const BIBLE_FALLBACK = {
 async function fetchBibleChapter(bookEngName, chapter) {
   const sources = [
     () => fetchFromBolls(bookEngName, chapter, "CUV"),
-    () => fetchFromBolls(bookEngName, chapter, "CUVS"),
-    () => fetchFromBibleApi(bookEngName, chapter, "cuv"),
-    () => fetchFromBibleApi(bookEngName, chapter, "web")
+    () => fetchFromBolls(bookEngName, chapter, "CUNP"),
+    () => fetchFromBolls(bookEngName, chapter, "CUNPS"),
+    () => fetchFromBibleApi(bookEngName, chapter, "cuv")
   ];
 
   const errors = [];
@@ -200,5 +205,5 @@ async function fetchBibleChapter(bookEngName, chapter) {
     return fallback;
   }
 
-  throw new Error(`目前無法載入完整章節，請稍後再試。${errors.length ? "來源錯誤：" + errors.join("；") : ""}`);
+  throw new Error(`目前無法載入中文完整章節，請稍後再試。${errors.length ? "來源錯誤：" + errors.join("；") : ""}`);
 }

@@ -12,12 +12,14 @@ function initReaderControls() {
   populateBookSelector("all");
   populateChapterSelector();
   updatePillLabels();
+  renderReaderPicker();
 
-  // ── Pill badge → toggle drawer ──
   function toggleDrawer(forceOpen) {
+    if (!drawer) return;
     const isOpen = drawer.classList.contains("open");
     const shouldOpen = forceOpen !== undefined ? forceOpen : !isOpen;
     drawer.classList.toggle("open", shouldOpen);
+    if (shouldOpen) renderReaderPicker();
     if (bookBadge) bookBadge.classList.toggle("active", shouldOpen);
     if (chapterBadge) chapterBadge.classList.toggle("active", shouldOpen);
   }
@@ -25,35 +27,55 @@ function initReaderControls() {
   if (bookBadge) bookBadge.addEventListener("click", () => toggleDrawer());
   if (chapterBadge) chapterBadge.addEventListener("click", () => toggleDrawer());
 
-  // Close drawer when clicking outside
   document.addEventListener("click", (e) => {
     if (!e.target.closest("#reader-nav-drawer") && !e.target.closest("#reader-pill-bar")) {
       toggleDrawer(false);
     }
   }, true);
 
-  // ── Select changes ──
-  testamentSelect.addEventListener("change", (e) => {
-    populateBookSelector(e.target.value);
-    populateChapterSelector();
-    updatePillLabels();
+  // Reader picker controls
+  const testamentButtons = document.querySelectorAll("#reader-testament-buttons .reader-picker-tab");
+  testamentButtons.forEach(btn => {
+    btn.addEventListener("click", () => {
+      const filter = btn.dataset.testament || "all";
+      if (testamentSelect) testamentSelect.value = filter;
+      populateBookSelector(filter);
+      populateChapterSelector();
+      renderReaderPicker();
+      updatePillLabels();
+    });
   });
 
-  bookSelect.addEventListener("change", () => {
-    populateChapterSelector();
-    saveReaderPreferences();
-    renderReaderText();
-    updatePillLabels();
-    toggleDrawer(false);
-  });
+  if (testamentSelect) {
+    testamentSelect.addEventListener("change", (e) => {
+      populateBookSelector(e.target.value);
+      populateChapterSelector();
+      renderReaderPicker();
+      updatePillLabels();
+    });
+  }
 
-  chapterSelect.addEventListener("change", () => {
-    state.readerState.chapter = parseInt(chapterSelect.value);
-    saveReaderPreferences();
-    renderReaderText();
-    updatePillLabels();
-    toggleDrawer(false);
-  });
+  if (bookSelect) {
+    bookSelect.addEventListener("change", () => {
+      populateChapterSelector();
+      saveReaderPreferences();
+      renderReaderText();
+      renderReaderPicker();
+      updatePillLabels();
+      toggleDrawer(false);
+    });
+  }
+
+  if (chapterSelect) {
+    chapterSelect.addEventListener("change", () => {
+      state.readerState.chapter = parseInt(chapterSelect.value);
+      saveReaderPreferences();
+      renderReaderText();
+      renderReaderPicker();
+      updatePillLabels();
+      toggleDrawer(false);
+    });
+  }
 
   // ── Font size buttons (new pill bar IDs) ──
   const incFont = document.getElementById("reader-font-increase");
@@ -75,8 +97,10 @@ function initReaderControls() {
   });
 
   // ── Prev / Next Chapter Buttons ──
-  document.getElementById("prev-chapter-btn").addEventListener("click", () => navigateToChapter(-1));
-  document.getElementById("next-chapter-btn").addEventListener("click", () => navigateToChapter(1));
+  const prevChapterBtn = document.getElementById("prev-chapter-btn");
+  const nextChapterBtn = document.getElementById("next-chapter-btn");
+  if (prevChapterBtn) prevChapterBtn.addEventListener("click", () => navigateToChapter(-1));
+  if (nextChapterBtn) nextChapterBtn.addEventListener("click", () => navigateToChapter(1));
 
   // ── Floating Prev / Next Chapter Buttons ──
   const floatPrev = document.getElementById("floating-prev-btn");
@@ -164,6 +188,81 @@ function initReaderControls() {
       }
     }
   });
+}
+
+function renderReaderPicker() {
+  renderReaderTestamentTabs();
+  renderReaderBookGrid();
+  renderReaderChapterGrid();
+}
+
+function renderReaderTestamentTabs() {
+  const testamentSelect = document.getElementById("reader-testament-select");
+  const currentFilter = testamentSelect ? testamentSelect.value : "all";
+  document.querySelectorAll("#reader-testament-buttons .reader-picker-tab").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.testament === currentFilter);
+  });
+}
+
+function renderReaderBookGrid() {
+  const grid = document.getElementById("reader-book-grid");
+  const bookSelect = document.getElementById("reader-book-select");
+  const testamentSelect = document.getElementById("reader-testament-select");
+  if (!grid || !bookSelect) return;
+
+  const filter = testamentSelect ? testamentSelect.value : "all";
+  grid.innerHTML = "";
+
+  BIBLE_BOOKS.forEach(book => {
+    if (filter !== "all" && book.section !== filter) return;
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "reader-book-choice";
+    btn.classList.toggle("active", Number(book.id) === Number(state.readerState.bookId));
+    btn.textContent = book.name;
+    btn.addEventListener("click", () => {
+      state.readerState.bookId = book.id;
+      state.readerState.chapter = 1;
+      bookSelect.value = String(book.id);
+      populateChapterSelector();
+      saveReaderPreferences();
+      renderReaderPicker();
+      updatePillLabels();
+    });
+    grid.appendChild(btn);
+  });
+}
+
+function renderReaderChapterGrid() {
+  const grid = document.getElementById("reader-chapter-grid");
+  const chapterSelect = document.getElementById("reader-chapter-select");
+  const book = BIBLE_BOOKS.find(b => Number(b.id) === Number(state.readerState.bookId));
+  if (!grid || !chapterSelect || !book) return;
+
+  grid.innerHTML = "";
+  for (let chapter = 1; chapter <= book.chapters; chapter++) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "reader-chapter-choice";
+    btn.classList.toggle("active", Number(chapter) === Number(state.readerState.chapter));
+    btn.textContent = chapter;
+    btn.addEventListener("click", () => {
+      state.readerState.chapter = chapter;
+      chapterSelect.value = String(chapter);
+      saveReaderPreferences();
+      renderReaderText();
+      renderReaderPicker();
+      updatePillLabels();
+      const drawer = document.getElementById("reader-nav-drawer");
+      const bookBadge = document.getElementById("reader-book-badge");
+      const chapterBadge = document.getElementById("reader-chapter-badge");
+      if (drawer) drawer.classList.remove("open");
+      if (bookBadge) bookBadge.classList.remove("active");
+      if (chapterBadge) chapterBadge.classList.remove("active");
+    });
+    grid.appendChild(btn);
+  }
 }
 
 function populateBookSelector(filter) {
@@ -293,6 +392,7 @@ async function renderReaderText() {
 
   heading.textContent = `${book.name} ${chapter}章`;
   updatePillLabels();
+  renderReaderPicker();
   container.innerHTML = `<div class="loader-inline">讀取經文中...</div>`;
   
   // Set checked button status

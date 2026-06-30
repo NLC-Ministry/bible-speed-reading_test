@@ -335,7 +335,9 @@ const db = {
 
             const planObj = generatePlanObject(dbPlan.name, dbPlan.start_date, dbPlan.end_date, dbPlan.target_books, key);
             planObj.id = dbPlan.id;
-            planObj.globalPlanId = globalPlanId;  // 保存 UUID 關聯
+            planObj.globalPlanId = globalPlanId;  // ?? UUID ??
+            const linkedGlobalPlan = (state.globalPlans || []).find(p => p.id === globalPlanId || p.presetKey === key || p.name === dbPlan.name);
+            planObj.isHidden = Boolean(linkedGlobalPlan && (linkedGlobalPlan.isHidden || linkedGlobalPlan.is_hidden));
             planObj.level = dbPlan.level || 'normal';
             planObj.currentRound = dbPlan.current_round || 1;
             planObj.wasDowngraded = dbPlan.was_downgraded || false;
@@ -621,11 +623,11 @@ const db = {
   },
 
   // Save log to DB/LocalStorage
-  async logChapterRead(book, chapter, isChecked) {
+  async logChapterRead(book, chapter, isChecked, roundOverride = null) {
     const todayISO = new Date().toISOString();
     const planId = state.activePlan ? state.activePlan.id : null;
     const presetKey = state.activePlan ? state.activePlan.presetKey : null;
-    const round = state.activePlan ? (state.activePlan.currentRound || 1) : 1;
+    const round = roundOverride || (state.activePlan ? (state.activePlan.currentRound || 1) : 1);
     const isSamePlanLog = (log) => {
       const logPlanId = log.plan_id || null;
       const logPresetKey = log.presetKey || log.preset_key || null;
@@ -786,9 +788,10 @@ const db = {
   },
 
   async fetchMergedUsersList(filterPresetKey = null) {
-    // If no filterPresetKey is provided, automatically default to the active plan's presetKey or ID
+    // If no filter is provided, default to the active global plan first.
+    // Each participant has their own reading_plans.id, so group stats must match by global_plan_id/preset_key, not the current user's plan id.
     if (!filterPresetKey && state.activePlan) {
-      filterPresetKey = state.activePlan.presetKey || state.activePlan.id;
+      filterPresetKey = state.activePlan.globalPlanId || state.activePlan.presetKey || state.activePlan.name || state.activePlan.id;
     }
 
     const mockUser = {
@@ -847,8 +850,10 @@ const db = {
           return usersProfiles.map(profile => {
             const userPlans = plansByUser[profile.id] || [];
             const uPlan = filterPresetKey
-              ? userPlans.find(p => p.preset_key === filterPresetKey || p.global_plan_id === filterPresetKey || p.name === filterPresetKey)
+              ? userPlans.find(p => p.preset_key === filterPresetKey || p.global_plan_id === filterPresetKey || p.name === filterPresetKey || p.id === filterPresetKey)
               : userPlans[0] || null;
+
+            if (filterPresetKey && !uPlan) return null;
 
             const uLogs = logsByUser[profile.id] || [];
             const filteredLogs = filterPresetKey
@@ -873,8 +878,10 @@ const db = {
                 const b = BIBLE_BOOKS.find(book => book.name === bName);
                 if (b) totalChapters += b.chapters;
               });
+              const levelRounds = uPlan.level === 'super' ? 3 : (uPlan.level === 'breakthrough' ? 2 : 1);
+              totalChapters *= levelRounds;
               if (totalChapters > 0) {
-                planProgress = Math.round((uniqueLogs.length / totalChapters) * 100) || 0;
+                planProgress = Math.min(100, Math.round((uniqueLogs.length / totalChapters) * 100) || 0);
               }
             }
 
@@ -897,10 +904,13 @@ const db = {
               plan_progress: planProgress,
               streak: profile.streak || 0,
               last_read: lastRead,
+              plan_id: uPlan ? uPlan.id : null,
+              presetKey: uPlan ? uPlan.preset_key : null,
+              globalPlanId: uPlan ? uPlan.global_plan_id : null,
               current_round: uPlan ? (uPlan.current_round || 1) : 1,
               level: uPlan ? (uPlan.level || 'normal') : 'normal'
             };
-          });
+          }).filter(Boolean);
         }
       } catch (err) {
         console.error("Failed to fetch merged users:", err);
@@ -1357,7 +1367,8 @@ const db = {
             startDate: dbPlan.start_date,
             endDate: dbPlan.end_date,
             books: dbPlan.target_books,
-            presetKey: dbPlan.id   // 用 UUID 作為 key
+            presetKey: dbPlan.id,
+            isHidden: Boolean(dbPlan.is_hidden)
           }));
           return;
         }
@@ -1375,11 +1386,15 @@ const db = {
         startDate: p.startDate,
         endDate: p.endDate,
         books: p.books,
-        presetKey: key
+        presetKey: key,
+        isHidden: Boolean(p.isHidden || p.is_hidden)
       }));
       // 自訂計畫：排除掉 presetKey 為 q1~q4 的項目避免重複
       const customPlans = loadedList.filter(p => !presetKeys.includes(p.presetKey) && !presetKeys.includes(p.id));
-      return [...presetPlans, ...customPlans];
+      return [...presetPlans, ...customPlans].map(plan => ({
+        ...plan,
+        isHidden: Boolean(plan.isHidden || plan.is_hidden)
+      }));
     };
 
     const localGlobal = localStorage.getItem("global_plans_presets");
@@ -1440,6 +1455,55 @@ const db = {
         plan.presetKey = plan.id;
         list.push(plan);
       }
+      localStorage.setItem("global_plans_presets", JSON.stringify(list));
+    }
+
+    await this.loadGlobalPlans();
+    return true;
+  },
+
+  async setGlobalPlanHidden(plan, isHidden) {
+    const key = String(plan.id || plan.presetKey || plan.globalPlanId || plan.name || "");
+    const saveLocalHiddenKey = () => {
+      const keys = JSON.parse(localStorage.getItem("hidden_global_plan_keys") || "[]");
+      const nextKeys = isHidden
+        ? Array.from(new Set([...keys, key]))
+        : keys.filter(item => item !== key);
+      localStorage.setItem("hidden_global_plan_keys", JSON.stringify(nextKeys));
+    };
+
+    if (state.isSupabaseMode && state.supabase && !(state.currentUser && state.currentUser.is_demo) && key && key.includes("-")) {
+      try {
+        const { error } = await state.supabase
+          .from("global_plans")
+          .update({ is_hidden: isHidden })
+          .eq("id", key);
+
+        if (error) {
+          console.warn("Failed to update global plan hidden state in Supabase, falling back to local hidden list:", error);
+          saveLocalHiddenKey();
+        }
+      } catch (e) {
+        console.warn("Error updating global plan hidden state, falling back to local hidden list:", e);
+        saveLocalHiddenKey();
+      }
+    } else {
+      saveLocalHiddenKey();
+    }
+
+    if (state.globalPlans) {
+      state.globalPlans = state.globalPlans.map(p => {
+        const matches = [p.id, p.presetKey, p.globalPlanId, p.name].filter(Boolean).map(String).includes(key);
+        return matches ? { ...p, isHidden } : p;
+      });
+    }
+
+    const localGlobal = localStorage.getItem("global_plans_presets");
+    if (localGlobal) {
+      const list = JSON.parse(localGlobal).map(p => {
+        const matches = [p.id, p.presetKey, p.globalPlanId, p.name].filter(Boolean).map(String).includes(key);
+        return matches ? { ...p, isHidden } : p;
+      });
       localStorage.setItem("global_plans_presets", JSON.stringify(list));
     }
 

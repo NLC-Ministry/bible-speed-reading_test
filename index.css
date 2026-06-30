@@ -669,6 +669,37 @@ body {
   transform: translateY(-1px);
 }
 
+.reader-menu-button {
+  gap: 0.4rem;
+  max-width: none;
+  flex-shrink: 0;
+}
+.reader-menu-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+.reader-current-reference {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  color: var(--text-primary);
+  font-weight: 900;
+  overflow: hidden;
+}
+.reader-current-reference #reader-pill-book-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.95rem;
+}
+.reader-current-reference #reader-pill-chapter-label {
+  flex-shrink: 0;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
 .reader-pill-sep {
   color: var(--text-muted);
   font-size: 0.9rem;
@@ -2825,26 +2856,28 @@ button.logout-btn:hover {
   }
 }
 
-/* Personal stats: combine the first two rows into one scan-friendly row */
+/* Personal stats: 3 cards on the first row, 2 cards on the second row */
 #stats-personal-section > div:first-child {
   display: grid !important;
-  grid-template-columns: repeat(5, minmax(150px, 1fr)) !important;
+  grid-template-columns: repeat(3, minmax(180px, 1fr)) !important;
   gap: 1rem !important;
+  align-items: stretch;
 }
 #stats-personal-section > div:first-child > div {
   min-width: 0;
+  min-height: 132px;
 }
 .stats-inner-tab.active[data-tab="admin"] {
   background: rgba(245, 158, 11, 0.14);
   color: #f59e0b;
   border-color: rgba(245, 158, 11, 0.35);
 }
-@media (max-width: 1100px) {
+@media (max-width: 900px) {
   #stats-personal-section > div:first-child {
-    grid-template-columns: repeat(3, minmax(150px, 1fr)) !important;
+    grid-template-columns: repeat(2, minmax(160px, 1fr)) !important;
   }
 }
-@media (max-width: 720px) {
+@media (max-width: 560px) {
   #stats-personal-section > div:first-child {
     grid-template-columns: 1fr !important;
   }
@@ -2858,4 +2891,426 @@ button.logout-btn:hover {
   padding: 1rem;
   line-height: 1.7;
   font-weight: 700;
+}
+
+/* Clear plan detail return action */
+.plan-back-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 38px;
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid rgba(99, 102, 241, 0.32);
+  background: rgba(99, 102, 241, 0.12);
+  color: var(--primary-color);
+  font-size: 0.84rem;
+  font-weight: 900;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease;
+}
+.plan-back-button:hover {
+  transform: translateY(-1px);
+  background: rgba(99, 102, 241, 0.18);
+  border-color: var(--primary-color);
+}
+.plan-back-button svg {
+  flex-shrink: 0;
+}
+
+/* Reader picker uses large tap targets instead of native dropdowns */
+.reader-native-selects-hidden {
+  display: none !important;
+}
+.reader-nav-drawer.open {
+  max-height: min(72vh, 620px);
+}
+.reader-picker-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+.reader-picker-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.4rem;
+  padding: 0.2rem;
+  background: var(--bg-input);
+  border: 1px solid var(--border-card);
+  border-radius: 12px;
+}
+.reader-picker-tab,
+.reader-book-choice,
+.reader-chapter-choice {
+  border: 1px solid var(--border-card);
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.12s ease;
+}
+.reader-picker-tab {
+  min-height: 36px;
+  border-radius: 9px;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+.reader-picker-tab.active,
+.reader-book-choice.active,
+.reader-chapter-choice.active {
+  background: rgba(99, 102, 241, 0.16);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+.reader-picker-tab:hover,
+.reader-book-choice:hover,
+.reader-chapter-choice:hover {
+  transform: translateY(-1px);
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+.reader-picker-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+.reader-picker-title {
+  font-size: 0.78rem;
+  font-weight: 900;
+  color: var(--text-muted);
+}
+.reader-book-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  gap: 0.45rem;
+  max-height: 210px;
+  overflow-y: auto;
+  padding-right: 0.15rem;
+}
+.reader-book-choice {
+  min-height: 38px;
+  border-radius: 10px;
+  padding: 0.45rem 0.55rem;
+  font-size: 0.82rem;
+  font-weight: 850;
+  text-align: center;
+}
+.reader-chapter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(42px, 1fr));
+  gap: 0.4rem;
+  max-height: 160px;
+  overflow-y: auto;
+  padding-right: 0.15rem;
+}
+.reader-chapter-choice {
+  aspect-ratio: 1;
+  min-height: 38px;
+  border-radius: 10px;
+  font-size: 0.86rem;
+  font-weight: 900;
+}
+@media (max-width: 560px) {
+  .plan-back-button span {
+    max-width: 88px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .reader-nav-drawer.open {
+    max-height: 76vh;
+  }
+  .reader-book-grid {
+    grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
+    max-height: 240px;
+  }
+}
+/* Compact plan detail layout: keep the daily checklist visible without vertical scrolling */
+.plan-detail-compact {
+  gap: 0.65rem !important;
+}
+.plan-detail-compact .youversion-detail-header {
+  margin-bottom: 0.35rem;
+  padding-bottom: 0.2rem;
+}
+.plan-detail-compact #plan-detail-title {
+  font-size: clamp(0.95rem, 2.8vw, 1.12rem) !important;
+}
+.plan-detail-compact .plan-back-button {
+  min-height: 34px;
+  padding: 0.34rem 0.65rem;
+  font-size: 0.78rem;
+}
+.plan-detail-compact .circular-action-btn {
+  width: 34px;
+  height: 34px;
+}
+.plan-detail-compact .plan-cover-card {
+  aspect-ratio: 16 / 7.2;
+  min-height: 138px;
+  max-height: 230px;
+  margin-bottom: 0.35rem;
+  border-radius: 14px;
+  padding: 1rem;
+}
+.plan-detail-compact .plan-cover-card .cover-title {
+  font-size: clamp(1rem, 3vw, 1.25rem);
+}
+.plan-detail-compact .plan-cover-card .cover-subtitle {
+  font-size: 0.74rem;
+}
+.plan-detail-tabs {
+  margin-bottom: 0.35rem !important;
+  padding-bottom: 0.35rem !important;
+  gap: 0.4rem !important;
+}
+.plan-detail-tabs .pill-btn {
+  padding: 0.35rem 0.65rem;
+  font-size: 0.78rem;
+}
+.plan-detail-compact .date-carousel {
+  gap: 0.45rem;
+  padding: 0.25rem 0.1rem 0.35rem;
+  margin-bottom: 0.45rem;
+}
+.plan-detail-compact .date-card {
+  flex-basis: 58px;
+  height: 60px;
+  border-radius: 10px;
+}
+.plan-detail-compact .date-card .day-num {
+  font-size: 1.02rem;
+}
+.plan-detail-compact .date-card .date-lbl {
+  font-size: 0.62rem;
+}
+.plan-day-heading {
+  margin-bottom: 0.35rem !important;
+}
+.plan-day-heading #plan-day-subtitle {
+  font-size: clamp(1rem, 4vw, 1.18rem) !important;
+}
+.plan-day-heading #plan-day-status-pill {
+  padding: 0.22rem 0.7rem !important;
+  border-radius: 999px;
+  font-size: 0.72rem !important;
+}
+.plan-tasks-list {
+  gap: 0.38rem !important;
+  max-height: min(34vh, 300px) !important;
+  padding-right: 0.1rem !important;
+}
+.plan-detail-compact .plan-task-item {
+  min-height: 50px;
+  padding: 0.62rem 0.8rem;
+  margin-bottom: 0 !important;
+  border-radius: 12px;
+  gap: 0.72rem;
+}
+.plan-detail-compact .plan-task-item .task-checkbox {
+  width: 24px;
+  height: 24px;
+}
+.plan-detail-compact .plan-task-item .task-title {
+  font-size: 0.98rem;
+  line-height: 1.25;
+}
+.plan-detail-compact .plan-task-item .task-arrow {
+  font-size: 1rem;
+}
+@media (max-width: 640px) {
+  #plan-detail-subview.plan-detail-compact {
+    max-width: none;
+    min-height: calc(100dvh - 122px);
+    gap: 0.5rem !important;
+  }
+  .plan-detail-compact .youversion-detail-header {
+    margin-bottom: 0.15rem;
+  }
+  .plan-detail-compact .plan-back-button span {
+    display: none;
+  }
+  .plan-detail-compact .plan-cover-card {
+    aspect-ratio: 16 / 8.2;
+    min-height: 118px;
+    max-height: 170px;
+    padding: 0.85rem;
+  }
+  .plan-detail-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap !important;
+    scrollbar-width: none;
+  }
+  .plan-detail-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .plan-detail-tabs .pill-btn {
+    flex: 0 0 auto;
+    padding: 0.32rem 0.58rem;
+    font-size: 0.74rem;
+  }
+  .plan-detail-compact .date-card {
+    flex-basis: 52px;
+    height: 56px;
+  }
+  .plan-tasks-list {
+    max-height: calc(100dvh - 500px) !important;
+    min-height: 180px;
+  }
+  .plan-detail-compact .plan-task-item {
+    min-height: 48px;
+    padding: 0.55rem 0.72rem;
+  }
+}
+@media (max-height: 760px) and (max-width: 640px) {
+  .plan-detail-compact .plan-cover-card {
+    aspect-ratio: 16 / 6.7;
+    min-height: 96px;
+    max-height: 128px;
+  }
+  .plan-detail-tabs {
+    display: none !important;
+  }
+  .plan-detail-compact .date-card {
+    flex-basis: 48px;
+    height: 50px;
+  }
+  .plan-detail-compact .date-card .day-num {
+    font-size: 0.95rem;
+  }
+  .plan-detail-compact .date-card .date-lbl {
+    font-size: 0.58rem;
+  }
+  .plan-tasks-list {
+    max-height: calc(100dvh - 410px) !important;
+    min-height: 170px;
+  }
+}
+/* Plan detail navigation now lives in the top-right options menu */
+#plan-detail-subview .plan-detail-tabs {
+  display: none !important;
+}
+#plan-options-dropdown {
+  min-width: 220px;
+  padding: 0.55rem;
+  border-radius: 18px;
+  background: rgba(24, 24, 27, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.38);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+}
+#plan-options-dropdown .options-dropdown-item {
+  min-height: 44px;
+  padding: 0.62rem 0.75rem;
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.94rem;
+  font-weight: 800;
+  gap: 0.7rem;
+}
+#plan-options-dropdown .options-dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+#plan-options-dropdown .options-dropdown-item .menu-icon {
+  width: 1.35rem;
+  display: inline-flex;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 1rem;
+}
+#plan-options-dropdown .options-dropdown-item.danger-item {
+  color: #ff6b6b;
+}
+#plan-options-dropdown .options-dropdown-item.danger-item:hover {
+  background: rgba(239, 68, 68, 0.14);
+}
+
+
+/* Plan level editor */
+.plan-level-editor-card {
+  padding: 1rem;
+  border-radius: 18px;
+}
+.plan-level-editor-header {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin-bottom: 1rem;
+}
+.plan-level-editor-header h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: var(--text-primary);
+}
+.plan-level-back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid var(--border-card);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary);
+  border-radius: 999px;
+  min-height: 38px;
+  padding: 0 0.85rem 0 0.65rem;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.plan-level-back-btn:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.1);
+}
+.plan-level-options {
+  display: grid;
+  gap: 0.75rem;
+}
+.plan-level-option {
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+  width: 100%;
+  min-height: 82px;
+  padding: 1rem;
+  text-align: left;
+  border: 1px solid var(--border-card);
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.42);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+.plan-level-option strong {
+  font-size: 1rem;
+  font-weight: 900;
+}
+.plan-level-option span {
+  color: var(--text-muted);
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+.plan-level-option.active {
+  border-color: rgba(129, 140, 248, 0.88);
+  background: rgba(99, 102, 241, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(129, 140, 248, 0.2);
+}
+.plan-level-option.active strong {
+  color: #a5b4fc;
+}
+@media (max-width: 640px) {
+  .plan-level-editor-card {
+    padding: 0.85rem;
+  }
+  .plan-level-editor-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+  .plan-level-back-btn {
+    min-height: 36px;
+  }
+  .plan-level-option {
+    min-height: 76px;
+    padding: 0.85rem;
+  }
 }
