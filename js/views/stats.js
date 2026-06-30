@@ -542,14 +542,14 @@ function renderHeatmap(teamUsers = []) {
       const zoneSelectGroup = document.getElementById("stats-zone-selector");
       const selectedZone = zoneSelectGroup ? zoneSelectGroup.value : "";
       titleEl.textContent = selectedZone 
-        ? `${selectedZone} 團隊讀經熱點地圖 (365天打卡活躍度)`
-        : "全教會團隊讀經熱點地圖 (365天打卡活躍度)";
+        ? `${selectedZone} 團隊讀經熱點地圖 (近4個月打卡活躍度)`
+        : "全教會團隊讀經熱點地圖 (近4個月打卡活躍度)";
     } else if (role === "great_zone_leader") {
-      titleEl.textContent = `${state.currentUser.great_region} 團隊讀經熱點地圖 (365天打卡活躍度)`;
+      titleEl.textContent = `${state.currentUser.great_region} 團隊讀經熱點地圖 (近4個月打卡活躍度)`;
     } else if (role === "zone_leader") {
-      titleEl.textContent = `${state.currentUser.pastoral_zone} 團隊讀經熱點地圖 (365天打卡活躍度)`;
+      titleEl.textContent = `${state.currentUser.pastoral_zone} 團隊讀經熱點地圖 (近4個月打卡活躍度)`;
     } else {
-      titleEl.textContent = `${state.currentUser.small_group} 小組讀經熱點地圖 (365天打卡活躍度)`;
+      titleEl.textContent = `${state.currentUser.small_group} 小組讀經熱點地圖 (近4個月打卡活躍度)`;
     }
   }
 
@@ -563,7 +563,9 @@ function renderHeatmap(teamUsers = []) {
     }
   });
 
-  buildHeatmapGrid("bible-heatmap-container", logsByDate, teamUsers.length, "章");
+  const planStart = state.activePlan ? state.activePlan.startDate : null;
+  const planEnd = state.activePlan ? state.activePlan.endDate : null;
+  buildHeatmapGrid("bible-heatmap-container", logsByDate, teamUsers.length, "章", planStart, planEnd);
 }
 
 // ==========================================

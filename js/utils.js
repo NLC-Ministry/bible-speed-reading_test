@@ -106,7 +106,7 @@ function getScopedUsers(allUsers, currentUser) {
  * @param {number}  [teamSize=1] - Used to scale colour intensity (1 = personal)
  * @param {string}  [label="章"] - Word appended to count in tooltip
  */
-function buildHeatmapGrid(containerId, logsByDate, teamSize = 1, label = "章") {
+function buildHeatmapGrid(containerId, logsByDate, teamSize = 1, label = "章", planStartDate = null, planEndDate = null) {
   const container = document.getElementById(containerId);
   if (!container) return;
 
@@ -114,17 +114,37 @@ function buildHeatmapGrid(containerId, logsByDate, teamSize = 1, label = "章") 
 
   const grid = document.createElement("div");
   grid.className = "heatmap-grid";
+  grid.style.cssText = "display: grid; grid-template-rows: repeat(7, 10px); grid-auto-flow: column; gap: 3px; max-height: 90px; overflow-x: auto; padding: 0.2rem 0;";
 
-  // Use UTC to prevent timezone offsets
-  const startDate = new Date();
-  startDate.setUTCHours(12, 0, 0, 0);
-  startDate.setUTCDate(startDate.getUTCDate() - 365);
-  const dayOfWeek = startDate.getUTCDay();
-  startDate.setUTCDate(startDate.getUTCDate() - dayOfWeek);
+  let startDate, endDate;
 
-  const today = new Date();
+  if (planStartDate && planEndDate) {
+    // Parse plan dates
+    startDate = new Date(planStartDate);
+    startDate.setUTCHours(12, 0, 0, 0);
+    // Align to the preceding Sunday
+    const dayOfWeek = startDate.getUTCDay();
+    startDate.setUTCDate(startDate.getUTCDate() - dayOfWeek);
+
+    endDate = new Date(planEndDate);
+    endDate.setUTCHours(12, 0, 0, 0);
+    // Align to the succeeding Saturday
+    const endDayOfWeek = endDate.getUTCDay();
+    endDate.setUTCDate(endDate.getUTCDate() + (6 - endDayOfWeek));
+  } else {
+    // Fallback: past 30 days (heatmaps should normally always be plan-bound)
+    startDate = new Date();
+    startDate.setUTCHours(12, 0, 0, 0);
+    startDate.setUTCDate(startDate.getUTCDate() - 30);
+    const dayOfWeek = startDate.getUTCDay();
+    startDate.setUTCDate(startDate.getUTCDate() - dayOfWeek);
+
+    endDate = new Date();
+    endDate.setUTCHours(12, 0, 0, 0);
+  }
+
   const oneDayMs = 24 * 60 * 60 * 1000;
-  const daysDiff = Math.ceil((today.getTime() - startDate.getTime()) / oneDayMs);
+  const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / oneDayMs);
 
   for (let i = 0; i <= daysDiff; i++) {
     const currentDate = new Date(startDate.getTime() + i * oneDayMs);

@@ -2327,30 +2327,43 @@ function renderGroupTeamHeatmap() {
   const titleEl = document.getElementById('grp-heatmap-title');
   if (titleEl) {
     titleEl.textContent = scopeLabel === "全教會"
-      ? '全教會讀經熱點地圖 (365天打卡活躍度)'
-      : `${scopeLabel} 團隊讀經熱點地圖 (365天打卡活躍度)`;
+      ? '全教會讀經熱點地圖 (計畫期間打卡活躍度)'
+      : `${scopeLabel} 讀經熱點地圖 (計畫期間打卡活躍度)`;
   }
 
   const userIds = new Set(scopedUsers.map(u => u.id).filter(Boolean));
   const userNames = new Set(scopedUsers.map(u => u.name).filter(Boolean));
+  const currentPlanId = state.activePlan && state.activePlan.id;
+  const currentPresetKey = state.activePlan && state.activePlan.presetKey;
 
   const logsByDate = {};
-  if (state.readingLogs) {
-    state.readingLogs.forEach(log => {
-      let match = false;
-      if (state.isSupabaseMode && state.supabase) {
-        match = log.user_id && userIds.has(log.user_id);
-      } else {
-        // Mock fallback or local mode: match by name
-        match = log.name ? userNames.has(log.name) : true;
-      }
-      if (match && log.read_at) {
-        const dStr = log.read_at.substring(0, 10);
-        logsByDate[dStr] = (logsByDate[dStr] || 0) + 1;
-      }
+
+  if (state.isSupabaseMode && state.allLogsCache) {
+    // Supabase mode: use full log cache, filter by team users AND current plan
+    state.allLogsCache.forEach(log => {
+      if (!log.read_at) return;
+      if (!userIds.has(log.user_id)) return;
+      // Only count logs belonging to this plan
+      const matchesPlan = (currentPlanId && log.plan_id === currentPlanId) ||
+                          (!currentPlanId && !log.plan_id);
+      if (!matchesPlan) return;
+      const dStr = log.read_at.substring(0, 10);
+      logsByDate[dStr] = (logsByDate[dStr] || 0) + 1;
+    });
+  } else {
+    // Local / mock mode: filter state.readingLogs by plan
+    (state.readingLogs || []).forEach(log => {
+      if (!log.read_at) return;
+      const nameMatch = log.name ? userNames.has(log.name) : true;
+      if (!nameMatch) return;
+      if (!logMatchesPlan(log, currentPlanId, currentPresetKey)) return;
+      const dStr = log.read_at.substring(0, 10);
+      logsByDate[dStr] = (logsByDate[dStr] || 0) + 1;
     });
   }
-  buildHeatmapGrid('grp-bible-heatmap-container', logsByDate, scopedUsers.length, '章');
+  const planStart = state.activePlan ? state.activePlan.startDate : null;
+  const planEnd = state.activePlan ? state.activePlan.endDate : null;
+  buildHeatmapGrid('grp-bible-heatmap-container', logsByDate, scopedUsers.length, '章', planStart, planEnd);
 }
 
 function logMatchesPlan(log, currentPlanId, currentPresetKey) {
@@ -2372,7 +2385,9 @@ function renderPersonalHeatmap() {
       logsByDate[dStr] = (logsByDate[dStr] || 0) + 1;
     }
   });
-  buildHeatmapGrid("bible-heatmap-container", logsByDate, 1, "章");
+  const start = state.activePlan ? state.activePlan.startDate : null;
+  const end = state.activePlan ? state.activePlan.endDate : null;
+  buildHeatmapGrid("bible-heatmap-container", logsByDate, 1, "章", start, end);
 }
 
 function renderPersonalTrendChart() {
