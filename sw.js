@@ -1,5 +1,5 @@
-const CACHE_NAME = 'church-bible-reading-v62';
-const DYNAMIC_CACHE_NAME = 'church-bible-dynamic-v62';
+const CACHE_NAME = 'church-bible-reading-v63';
+const DYNAMIC_CACHE_NAME = 'church-bible-dynamic-v63';
 
 // Static resources to precache
 const PRECACHE_ASSETS = [
@@ -7,7 +7,6 @@ const PRECACHE_ASSETS = [
   './index.html',
   './index.css',
   './js/data/bible_data.js',
-  './config.js',
   './manifest.json',
   './assets/icon-192.png',
   './assets/icon-512.png',
@@ -71,8 +70,9 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  // 1. Bypass caching for auth redirects and Supabase API requests.
+  // 1. Bypass caching for runtime config, auth redirects and Supabase API requests.
   if (
+    requestUrl.pathname.endsWith('/config.js') ||
     requestUrl.searchParams.has('code') ||
     requestUrl.searchParams.has('state') ||
     requestUrl.searchParams.has('error') ||
