@@ -1,5 +1,5 @@
-const CACHE_NAME = 'church-bible-reading-v60';
-const DYNAMIC_CACHE_NAME = 'church-bible-dynamic-v60';
+const CACHE_NAME = 'church-bible-reading-v61';
+const DYNAMIC_CACHE_NAME = 'church-bible-dynamic-v61';
 
 // Static resources to precache
 const PRECACHE_ASSETS = [
@@ -72,8 +72,15 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
-  // 1. Bypass caching for Supabase API requests (authentication, database reads/writes)
-  if (requestUrl.hostname.includes('supabase.co')) {
+  // 1. Bypass caching for auth redirects and Supabase API requests.
+  if (
+    requestUrl.searchParams.has('code') ||
+    requestUrl.searchParams.has('state') ||
+    requestUrl.searchParams.has('error') ||
+    requestUrl.hostname.includes('supabase.co') ||
+    requestUrl.hostname.includes('sso.newlife.org.tw') ||
+    requestUrl.hostname.includes('member.newlife.org.tw')
+  ) {
     return; // Let the browser handle normally (network only)
   }
 
