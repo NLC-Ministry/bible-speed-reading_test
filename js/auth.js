@@ -8,7 +8,7 @@ const auth = {
     issuer: (typeof NLC_CONFIG !== "undefined" && NLC_CONFIG.issuer) || "https://sso.newlife.org.tw/oidc",
     clientId: (typeof NLC_CONFIG !== "undefined" && NLC_CONFIG.clientId) || "",
     memberHubUrl: (typeof NLC_CONFIG !== "undefined" && NLC_CONFIG.memberHubUrl) || "https://member.newlife.org.tw",
-    scopes: "openid profile email phone"
+    scopes: (typeof NLC_CONFIG !== "undefined" && NLC_CONFIG.scopes) || "openid"
   },
 
   // Token storage keys
@@ -125,6 +125,25 @@ const auth = {
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get("code");
     const stateVal = urlParams.get("state");
+    const authError = urlParams.get("error");
+    const authErrorDescription = urlParams.get("error_description");
+
+    if (authError) {
+      console.error("OIDC authorization error:", authError, authErrorDescription || "");
+      localStorage.removeItem(this.keys.state);
+      localStorage.removeItem(this.keys.verifier);
+      urlParams.delete("error");
+      urlParams.delete("error_description");
+      urlParams.delete("scope");
+      urlParams.delete("state");
+      urlParams.delete("iss");
+      const cleanUrl = window.location.origin + window.location.pathname +
+        (urlParams.toString() ? "?" + urlParams.toString() : "") +
+        window.location.hash;
+      window.history.replaceState({}, document.title, cleanUrl);
+      alert(`教會系統登入失敗：${authErrorDescription || authError}`);
+      return true;
+    }
 
     if (!code || !stateVal) return false;
 

@@ -8,6 +8,7 @@ let anonKey = process.env.SUPABASE_ANON_KEY || "";
 let nlcClientId = process.env.NLC_CLIENT_ID || "";
 let nlcLogtoIssuer = process.env.NLC_LOGTO_ISSUER || "https://sso.newlife.org.tw/oidc";
 let nlcMemberHubUrl = process.env.NLC_MEMBER_HUB_URL || "https://member.newlife.org.tw";
+let nlcScopes = process.env.NLC_SCOPES || "openid";
 
 if (fs.existsSync(envPath)) {
   const envContent = fs.readFileSync(envPath, 'utf8');
@@ -24,6 +25,7 @@ if (fs.existsSync(envPath)) {
       else if (key === 'NLC_CLIENT_ID' && !nlcClientId) nlcClientId = val;
       else if (key === 'NLC_LOGTO_ISSUER') nlcLogtoIssuer = val;
       else if (key === 'NLC_MEMBER_HUB_URL') nlcMemberHubUrl = val;
+      else if (key === 'NLC_SCOPES') nlcScopes = val;
     }
   }
 }
@@ -39,7 +41,8 @@ const SUPABASE_CONFIG = {
 const NLC_CONFIG = {
   clientId: "${nlcClientId}",
   issuer: "${nlcLogtoIssuer}",
-  memberHubUrl: "${nlcMemberHubUrl}"
+  memberHubUrl: "${nlcMemberHubUrl}",
+  scopes: "${nlcScopes}"
 };
 `;
 
@@ -51,4 +54,5 @@ console.log(`Supabase Anon Key: ${anonKey ? '已載入' : '(尚未填寫)'}`);
 console.log(`NLC Client ID: ${nlcClientId ? nlcClientId : '(尚未填寫 — 向 NLC IT 申請)'}`);
 console.log(`NLC Logto Issuer: ${nlcLogtoIssuer}`);
 console.log(`NLC Member Hub URL: ${nlcMemberHubUrl}`);
+console.log(`NLC Scopes: ${nlcScopes}`);
 console.log('---');
