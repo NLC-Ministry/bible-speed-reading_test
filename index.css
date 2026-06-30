@@ -604,7 +604,7 @@ body {
 }
 
 /* New compact reader layout */
-#reader-view {
+#reader-view.active {
   display: flex;
   flex-direction: column;
   gap: 0;
