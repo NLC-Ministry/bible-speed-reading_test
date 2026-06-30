@@ -22,6 +22,57 @@ const auth = {
     memberContext: "nlc_member_context"
   },
 
+  metadata: null,
+
+  _joinUrl(base, path) {
+    return `${base.replace(/\/+$/, "")}/${path.replace(/^\/+/, "")}`;
+  },
+
+  async _fetchMetadata() {
+    if (this.metadata) return this.metadata;
+
+    const issuer = this.config.issuer.replace(/\/+$/, "");
+    const candidates = [
+      this._joinUrl(issuer, ".well-known/openid-configuration")
+    ];
+
+    if (issuer.endsWith("/oidc")) {
+      candidates.push(this._joinUrl(issuer.slice(0, -5), ".well-known/openid-configuration"));
+    } else {
+      candidates.push(this._joinUrl(issuer, "oidc/.well-known/openid-configuration"));
+    }
+
+    let lastError = null;
+    for (const url of candidates) {
+      try {
+        const response = await fetch(url, { headers: { "Accept": "application/json" } });
+        if (!response.ok) {
+          lastError = new Error(`OIDC discovery failed: ${response.status} ${url}`);
+          continue;
+        }
+
+        const metadata = await response.json();
+        if (metadata.authorization_endpoint && metadata.token_endpoint) {
+          this.metadata = metadata;
+          return metadata;
+        }
+      } catch (err) {
+        lastError = err;
+      }
+    }
+
+    throw lastError || new Error("OIDC discovery failed");
+  },
+
+  async _getEndpoints() {
+    const metadata = await this._fetchMetadata();
+    return {
+      authorizationEndpoint: metadata.authorization_endpoint,
+      tokenEndpoint: metadata.token_endpoint,
+      endSessionEndpoint: metadata.end_session_endpoint || metadata.logout_endpoint || this._joinUrl(this.config.issuer, "auth/logout")
+    };
+  },
+
   // ── PKCE Cryptography Helpers ──────────────────────────────
   _dec2hex(dec) {
     return dec.toString(16).padStart(2, "0");
@@ -76,7 +127,7 @@ const auth = {
   },
 
   // ── Core OIDC Methods ──────────────────────────────────────
-  
+
   /**
    * Start the Logto OIDC authorization flow redirect.
    */
@@ -98,15 +149,17 @@ const auth = {
       // Resolve redirect URI (current page URL)
       const redirectUri = window.location.origin + window.location.pathname;
 
-      // Construct Logto authorize URL
-      const authUrl = `${this.config.issuer}/auth?` + 
-        `client_id=${encodeURIComponent(this.config.clientId)}&` +
-        `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-        `response_type=code&` +
-        `scope=${encodeURIComponent(this.config.scopes)}&` +
-        `state=${encodeURIComponent(stateVal)}&` +
-        `code_challenge=${encodeURIComponent(challenge)}&` +
-        `code_challenge_method=S256`;
+      const endpoints = await this._getEndpoints();
+      const authParams = new URLSearchParams({
+        client_id: this.config.clientId,
+        redirect_uri: redirectUri,
+        response_type: "code",
+        scope: this.config.scopes,
+        state: stateVal,
+        code_challenge: challenge,
+        code_challenge_method: "S256"
+      });
+      const authUrl = `${endpoints.authorizationEndpoint}?${authParams.toString()}`;
 
       console.log("Redirecting to Logto OIDC:", authUrl);
       window.location.href = authUrl;
@@ -166,7 +219,8 @@ const auth = {
       const redirectUri = window.location.origin + window.location.pathname;
 
       // Exchange authorization code for tokens
-      const response = await fetch(`${this.config.issuer}/token`, {
+      const endpoints = await this._getEndpoints();
+      const response = await fetch(endpoints.tokenEndpoint, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({
@@ -190,14 +244,14 @@ const auth = {
       // Clean query params from URL bar
       urlParams.delete("code");
       urlParams.delete("state");
-      const cleanUrl = window.location.origin + window.location.pathname + 
-        (urlParams.toString() ? "?" + urlParams.toString() : "") + 
+      const cleanUrl = window.location.origin + window.location.pathname +
+        (urlParams.toString() ? "?" + urlParams.toString() : "") +
         window.location.hash;
       window.history.replaceState({}, document.title, cleanUrl);
 
       // Fetch church context to align profile
       await this.fetchAndSyncMemberContext();
-      
+
       showToast("登入成功！歡迎使用 NLC 讀經系統");
       return true;
     } catch (err) {
@@ -256,7 +310,7 @@ const auth = {
       if (data && data.ok && data.context) {
         const context = data.context;
         localStorage.setItem(this.keys.memberContext, JSON.stringify(context));
-        
+
         // Align state.currentUser with church ecosystem context
         state.currentUser.name = context.profile.displayName || context.identity.username || "未具名會友";
         state.currentUser.role = context.primaryRole || "member";
@@ -288,7 +342,8 @@ const auth = {
 
     console.log("Refreshing Logto OIDC tokens...");
     try {
-      const response = await fetch(`${this.config.issuer}/token`, {
+      const endpoints = await this._getEndpoints();
+      const response = await fetch(endpoints.tokenEndpoint, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: new URLSearchParams({
@@ -321,7 +376,7 @@ const auth = {
   isLoggedIn() {
     const token = localStorage.getItem(this.keys.accessToken);
     const expiresAt = parseInt(localStorage.getItem(this.keys.expiresAt) || "0");
-    
+
     if (!token) return false;
     return Date.now() < expiresAt;
   },
@@ -341,7 +396,7 @@ const auth = {
    */
   async logout() {
     const idToken = localStorage.getItem(this.keys.idToken);
-    
+
     // Clear local storage tokens
     localStorage.removeItem(this.keys.accessToken);
     localStorage.removeItem(this.keys.idToken);
@@ -366,14 +421,21 @@ const auth = {
     state.activePlan = null;
 
     if (idToken) {
-      // Redirect to Logto End Session Endpoint
-      const postLogoutRedirectUri = window.location.origin + window.location.pathname;
-      const logoutUrl = `${this.config.issuer}/auth/logout?` + 
-        `id_token_hint=${encodeURIComponent(idToken)}&` +
-        `post_logout_redirect_uri=${encodeURIComponent(postLogoutRedirectUri)}`;
-      
-      console.log("Redirecting to Logto logout endpoint:", logoutUrl);
-      window.location.href = logoutUrl;
+      try {
+        const endpoints = await this._getEndpoints();
+        const postLogoutRedirectUri = window.location.origin + window.location.pathname;
+        const logoutParams = new URLSearchParams({
+          id_token_hint: idToken,
+          post_logout_redirect_uri: postLogoutRedirectUri
+        });
+        const logoutUrl = `${endpoints.endSessionEndpoint}?${logoutParams.toString()}`;
+
+        console.log("Redirecting to Logto logout endpoint:", logoutUrl);
+        window.location.href = logoutUrl;
+      } catch (err) {
+        console.error("OIDC logout endpoint discovery failed:", err);
+        window.location.reload();
+      }
     } else {
       window.location.reload();
     }
