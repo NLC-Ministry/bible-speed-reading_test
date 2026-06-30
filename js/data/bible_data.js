@@ -71,7 +71,73 @@ const BIBLE_BOOKS = [
   { id: 66, name: "啟示錄", abbrev: "啟", eng: "Revelation", chapters: 22, section: "new" }
 ];
 
-// Fallback offline verses (Genesis 1 & Matthew 1) to ensure instant usability when offline or API fails
+// Partial offline samples. They are used only if they contain a complete chapter.
+const BOLLS_BOOK_CODES = {
+  Genesis: "Gen", Exodus: "Exod", Leviticus: "Lev", Numbers: "Num", Deuteronomy: "Deut",
+  Joshua: "Josh", Judges: "Judg", Ruth: "Ruth", "1 Samuel": "1Sam", "2 Samuel": "2Sam",
+  "1 Kings": "1Kgs", "2 Kings": "2Kgs", "1 Chronicles": "1Chr", "2 Chronicles": "2Chr",
+  Ezra: "Ezra", Nehemiah: "Neh", Esther: "Esth", Job: "Job", Psalms: "Ps", Proverbs: "Prov",
+  Ecclesiastes: "Eccl", "Song of Solomon": "Song", Isaiah: "Isa", Jeremiah: "Jer", Lamentations: "Lam",
+  Ezekiel: "Ezek", Daniel: "Dan", Hosea: "Hos", Joel: "Joel", Amos: "Amos", Obadiah: "Obad",
+  Jonah: "Jonah", Micah: "Mic", Nahum: "Nah", Habakkuk: "Hab", Zephaniah: "Zeph", Haggai: "Hag",
+  Zechariah: "Zech", Malachi: "Mal", Matthew: "Matt", Mark: "Mark", Luke: "Luke", John: "John",
+  Acts: "Acts", Romans: "Rom", "1 Corinthians": "1Cor", "2 Corinthians": "2Cor", Galatians: "Gal",
+  Ephesians: "Eph", Philippians: "Phil", Colossians: "Col", "1 Thessalonians": "1Thess",
+  "2 Thessalonians": "2Thess", "1 Timothy": "1Tim", "2 Timothy": "2Tim", Titus: "Titus",
+  Philemon: "Phlm", Hebrews: "Heb", James: "Jas", "1 Peter": "1Pet", "2 Peter": "2Pet",
+  "1 John": "1John", "2 John": "2John", "3 John": "3John", Jude: "Jude", Revelation: "Rev"
+};
+
+async function fetchJson(url) {
+  const response = await fetch(url, { headers: { "Accept": "application/json" } });
+  if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+  return response.json();
+}
+
+function normalizeVerses(rawVerses) {
+  if (!Array.isArray(rawVerses)) return [];
+  return rawVerses
+    .map((v, index) => ({
+      verse: Number(v.verse || v.verseNumber || v.number || index + 1),
+      text: String(v.text || v.content || "").replace(/<[^>]*>/g, "").trim()
+    }))
+    .filter(v => v.verse && v.text);
+}
+
+function assertCompleteEnough(result, sourceName) {
+  if (!result || !Array.isArray(result.verses) || result.verses.length === 0) {
+    throw new Error(`${sourceName} 沒有回傳經文`);
+  }
+
+  const lastVerse = result.verses[result.verses.length - 1].verse;
+  const uniqueCount = new Set(result.verses.map(v => v.verse)).size;
+  if (result.verses.length === 10 && lastVerse === 10 && uniqueCount === 10) {
+    throw new Error(`${sourceName} 只回傳前 10 節`);
+  }
+
+  return result;
+}
+
+async function fetchFromBibleApi(bookEngName, chapter, translation) {
+  const url = `https://bible-api.com/${encodeURIComponent(`${bookEngName} ${chapter}`)}?translation=${encodeURIComponent(translation)}`;
+  const data = await fetchJson(url);
+  return assertCompleteEnough({
+    reference: data.reference || `${bookEngName} ${chapter}`,
+    verses: normalizeVerses(data.verses)
+  }, `bible-api ${translation}`);
+}
+
+async function fetchFromBolls(bookEngName, chapter, translation) {
+  const bookCode = BOLLS_BOOK_CODES[bookEngName];
+  if (!bookCode) throw new Error(`Bolls 缺少書卷代碼：${bookEngName}`);
+
+  const url = `https://bolls.life/get-chapter/${encodeURIComponent(translation)}/${encodeURIComponent(bookCode)}/${encodeURIComponent(chapter)}/`;
+  const data = await fetchJson(url);
+  return assertCompleteEnough({
+    reference: `${bookEngName} ${chapter}`,
+    verses: normalizeVerses(data)
+  }, `Bolls ${translation}`);
+}
 const BIBLE_FALLBACK = {
   "Genesis_1": {
     reference: "創世記 1章",
@@ -112,41 +178,27 @@ const BIBLE_FALLBACK = {
  * @returns {Promise<{reference: string, verses: Array<{verse: number, text: string}>}>}
  */
 async function fetchBibleChapter(bookEngName, chapter) {
-  const fallbackKey = `${bookEngName}_${chapter}`;
-  
-  try {
-    // API request URL (using bible-api.com)
-    // Note: CUV translation is supported
-    const response = await fetch(`https://bible-api.com/${encodeURIComponent(bookEngName)}+${chapter}?translation=cuv`);
-    if (!response.ok) {
-      throw new Error(`API returned status ${response.status}`);
+  const sources = [
+    () => fetchFromBolls(bookEngName, chapter, "CUV"),
+    () => fetchFromBolls(bookEngName, chapter, "CUVS"),
+    () => fetchFromBibleApi(bookEngName, chapter, "cuv"),
+    () => fetchFromBibleApi(bookEngName, chapter, "web")
+  ];
+
+  const errors = [];
+  for (const source of sources) {
+    try {
+      return await source();
+    } catch (error) {
+      errors.push(error.message || String(error));
     }
-    const data = await response.json();
-    
-    // Format response to match our expected format
-    return {
-      reference: data.reference,
-      verses: data.verses.map(v => ({
-        verse: v.verse,
-        text: v.text.trim()
-      }))
-    };
-  } catch (error) {
-    console.warn(`Failed to fetch Bible text from API. Falling back to local offline text. Error:`, error);
-    if (BIBLE_FALLBACK[fallbackKey]) {
-      return BIBLE_FALLBACK[fallbackKey];
-    }
-    
-    // Generic fallback if no specific offline text is available
-    return {
-      reference: `${bookEngName} ${chapter}章 (離線模式)`,
-      verses: [
-        { 
-          verse: 1, 
-          text: `[系統提示] 目前無法載入此章節內容。請確認您的網路連線是否正常。以下提供本地試閱創世記第一章。` 
-        },
-        ...BIBLE_FALLBACK["Genesis_1"].verses
-      ]
-    };
   }
+
+  const fallbackKey = `${bookEngName}_${chapter}`;
+  const fallback = BIBLE_FALLBACK[fallbackKey];
+  if (fallback && fallback.verses && fallback.verses.length > 10) {
+    return fallback;
+  }
+
+  throw new Error(`目前無法載入完整章節，請稍後再試。${errors.length ? "來源錯誤：" + errors.join("；") : ""}`);
 }

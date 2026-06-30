@@ -305,31 +305,39 @@ async function renderReaderText() {
     }
   }
 
-  // Load Bible text
-  const data = await fetchBibleChapter(book.eng, chapter);
-  
-  container.innerHTML = "";
-  data.verses.forEach(v => {
-    const verseDiv = document.createElement("div");
-    verseDiv.className = "bible-verse";
-    
-    // Highlight if marked
-    const highlightKey = `${book.name}_${chapter}_${v.verse}`;
-    if (state.highlights[highlightKey]) {
-      verseDiv.style.backgroundColor = state.highlights[highlightKey];
-      verseDiv.classList.add("selected");
-    }
+  try {
+    const data = await fetchBibleChapter(book.eng, chapter);
 
-    verseDiv.innerHTML = `<span class="verse-num">${v.verse}</span><span class="verse-text">${v.text}</span>`;
-    
-    // Add Click listeners for highlighting verses
-    verseDiv.addEventListener("click", (e) => {
-      e.stopPropagation();
-      showContextToolbar(verseDiv, highlightKey);
+    container.innerHTML = "";
+    data.verses.forEach(v => {
+      const verseDiv = document.createElement("div");
+      verseDiv.className = "bible-verse";
+
+      // Highlight if marked
+      const highlightKey = `${book.name}_${chapter}_${v.verse}`;
+      if (state.highlights[highlightKey]) {
+        verseDiv.style.backgroundColor = state.highlights[highlightKey];
+        verseDiv.classList.add("selected");
+      }
+
+      verseDiv.innerHTML = `<span class="verse-num">${v.verse}</span><span class="verse-text">${v.text}</span>`;
+
+      // Add Click listeners for highlighting verses
+      verseDiv.addEventListener("click", (e) => {
+        e.stopPropagation();
+        showContextToolbar(verseDiv, highlightKey);
+      });
+
+      container.appendChild(verseDiv);
     });
-
-    container.appendChild(verseDiv);
-  });
+  } catch (error) {
+    console.error("Failed to load complete Bible chapter:", error);
+    container.innerHTML = "";
+    const errorDiv = document.createElement("div");
+    errorDiv.className = "reader-error-state";
+    errorDiv.textContent = error.message || "目前無法載入完整章節，請稍後再試。";
+    container.appendChild(errorDiv);
+  }
 
   // Make sure we apply font size preference
   updateReaderFontSize();
