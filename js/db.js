@@ -26,6 +26,19 @@ const db = {
     const authSection = document.getElementById("sb-auth-section");
     const placeholder = document.getElementById("sb-disconnected-placeholder");
 
+    // ── NLC SSO button wiring (always, even before Supabase) ──
+    const btnNlcGate = document.getElementById("btn-gate-nlc-login");
+    if (btnNlcGate) {
+      btnNlcGate.addEventListener("click", (e) => {
+        e.preventDefault();
+        if (typeof auth !== "undefined") {
+          auth.login();
+        } else {
+          alert("NLC SSO 模組尚未載入，請重新整理頁面。");
+        }
+      });
+    }
+
     if (sbUrl && sbKey) {
       try {
         // Initialize Supabase SDK
@@ -37,7 +50,38 @@ const db = {
         statusBadge.querySelector(".status-text").textContent = "線上模式";
         if (placeholder) placeholder.classList.add("hidden");
 
-        // Check Auth Session
+        // ── OIDC Callback: Handle Logto redirect ──
+        if (typeof auth !== "undefined") {
+          const callbackHandled = await auth.handleCallback();
+          if (callbackHandled) {
+            console.log("Logto OIDC callback handled successfully.");
+          }
+
+          // ── Sync Logto JWT → Supabase session ──
+          // If already logged in via Logto OIDC, pass the ID token as
+          // Supabase access token so RLS policies (auth.uid() = user_id) work.
+          if (auth.isLoggedIn()) {
+            const idToken = localStorage.getItem(auth.keys.idToken);
+            const refreshToken = localStorage.getItem(auth.keys.refreshToken) || "";
+            if (idToken) {
+              try {
+                await state.supabase.auth.setSession({
+                  access_token: idToken,
+                  refresh_token: refreshToken
+                });
+                console.log("Supabase session synced via Logto ID Token.");
+              } catch (jwtErr) {
+                // Non-fatal: Logto JWT may not yet be configured as Supabase
+                // custom OIDC provider. State is still set in auth.js.
+                console.warn("Supabase JWT sync skipped (configure Logto as Supabase OIDC provider):", jwtErr.message);
+              }
+            }
+            this.updateAuthUI({ user: { id: auth.getLogtoSubject() } });
+            return; // loadUserData() will be called in main.js
+          }
+        }
+
+        // Fallback: Standard Supabase email/Google session
         const { data: { session } } = await state.supabase.auth.getSession();
         this.updateAuthUI(session);
 
@@ -75,6 +119,14 @@ const db = {
 
   showConnectionError() {
     state.isSupabaseMode = true;
+
+    // Disable NLC SSO login gate button
+    const btnNlcGate = document.getElementById("btn-gate-nlc-login");
+    if (btnNlcGate) {
+      btnNlcGate.disabled = true;
+      btnNlcGate.style.opacity = "0.5";
+      btnNlcGate.style.cursor = "not-allowed";
+    }
 
     // Disable Google login gate button
     const btnGoogleGate = document.getElementById("btn-gate-google-login");
@@ -158,44 +210,83 @@ const db = {
       if (state.currentUser) {
         state.currentUser.is_demo = false;
       }
-      const { data: { user } } = await state.supabase.auth.getUser();
+
+      // ── OIDC mode: resolve user from Logto token ──
+      let user = null;
+      const isOidcMode = typeof auth !== "undefined" && auth.isLoggedIn();
+      if (isOidcMode) {
+        const logtoSub = auth.getLogtoSubject();
+        if (logtoSub) {
+          user = { id: logtoSub, oidc: true };
+          // Sync Member Hub church profile (name, role, group) into state
+          await auth.fetchAndSyncMemberContext();
+        }
+      }
+
+      // Fallback: standard Supabase auth.getUser()
+      if (!user) {
+        const { data: { user: sbUser } } = await state.supabase.auth.getUser();
+        user = sbUser;
+      }
+
       if (user) {
-        // 1. Load Profile
-        const { data: profile } = await state.supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", user.id)
-          .single();
+        // 1. Load / sync profile
+        if (!user.oidc) {
+          // Standard Supabase auth: load profile from our profiles table
+          const { data: profile } = await state.supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", user.id)
+            .single();
 
-        if (profile) {
-          state.currentUser.name = profile.name;
-          state.currentUser.great_region = profile.great_region;
-          state.currentUser.pastoral_zone = profile.pastoral_zone;
-          state.currentUser.small_group = profile.small_group;
-          state.currentUser.role = profile.role;
-          state.currentUser.is_demo = !!profile.is_demo;
-          state.realRole = profile.role;
+          if (profile) {
+            state.currentUser.name = profile.name;
+            state.currentUser.great_region = profile.great_region;
+            state.currentUser.pastoral_zone = profile.pastoral_zone;
+            state.currentUser.small_group = profile.small_group;
+            state.currentUser.role = profile.role;
+            state.currentUser.is_demo = !!profile.is_demo;
+            state.realRole = profile.role;
+          } else {
+            // First-time login: create profile automatically in Supabase
+            state.currentUser.name = (user.user_metadata && user.user_metadata.full_name) || "新使用者";
+            state.currentUser.great_region = "東區";
+            state.currentUser.pastoral_zone = "大安1";
+            state.currentUser.small_group = "馬鈴";
+            state.currentUser.role = "member";
+            state.currentUser.is_demo = false;
+            state.realRole = "member";
+
+            try {
+              await state.supabase.from("profiles").insert({
+                id: user.id,
+                name: state.currentUser.name,
+                great_region: state.currentUser.great_region,
+                pastoral_zone: state.currentUser.pastoral_zone,
+                small_group: state.currentUser.small_group,
+                role: state.currentUser.role
+              });
+            } catch (dbErr) {
+              console.error("Failed to auto-create user profile in Supabase:", dbErr);
+            }
+          }
         } else {
-          // First-time login: create profile automatically in Supabase
-          state.currentUser.name = (user.user_metadata && user.user_metadata.full_name) || "新使用者";
-          state.currentUser.great_region = "東區";
-          state.currentUser.pastoral_zone = "大安1";
-          state.currentUser.small_group = "馬鈴";
-          state.currentUser.role = "member";
+          // OIDC mode: profile data already populated from Member Hub context.
+          // Upsert our satellite profiles row so team rankings / leader stats work.
+          // We use name + role from Member Hub; pastoral hierarchy fields use the
+          // homeNodeName mapped earlier — they may need an admin to configure zones.
           state.currentUser.is_demo = false;
-          state.realRole = "member";
-
           try {
-            await state.supabase.from("profiles").insert({
+            await state.supabase.from("profiles").upsert({
               id: user.id,
               name: state.currentUser.name,
-              great_region: state.currentUser.great_region,
-              pastoral_zone: state.currentUser.pastoral_zone,
-              small_group: state.currentUser.small_group,
-              role: state.currentUser.role
-            });
+              great_region: state.currentUser.great_region || "",
+              pastoral_zone: state.currentUser.pastoral_zone || "",
+              small_group: state.currentUser.small_group || "",
+              role: state.currentUser.role || "member"
+            }, { onConflict: "id" });
           } catch (dbErr) {
-            console.error("Failed to auto-create user profile in Supabase:", dbErr);
+            console.warn("Could not upsert OIDC profile row (RLS may require Logto JWT config):", dbErr.message);
           }
         }
 
