@@ -1,107 +1,4 @@
-// Unified Data Service (Supabase & LocalStorage integration)
 
-window.showDebugOverlay = function(title, data) {
-  let overlay = document.getElementById("debug-overlay");
-  if (!overlay) {
-    overlay = document.createElement("div");
-    overlay.id = "debug-overlay";
-    overlay.style.position = "fixed";
-    overlay.style.bottom = "0";
-    overlay.style.left = "0";
-    overlay.style.width = "100%";
-    overlay.style.maxHeight = "60vh";
-    overlay.style.overflowY = "auto";
-    overlay.style.backgroundColor = "rgba(0, 0, 0, 0.95)";
-    overlay.style.color = "#10b981";
-    overlay.style.fontFamily = "monospace";
-    overlay.style.fontSize = "12px";
-    overlay.style.padding = "15px";
-    overlay.style.zIndex = "999999";
-    overlay.style.borderTop = "3px solid #10b981";
-    overlay.style.boxSizing = "border-box";
-    
-    const header = document.createElement("div");
-    header.style.display = "flex";
-    header.style.justifyContent = "space-between";
-    header.style.alignItems = "center";
-    header.style.marginBottom = "10px";
-    
-    const titleEl = document.createElement("h4");
-    titleEl.id = "debug-overlay-title";
-    titleEl.style.margin = "0";
-    titleEl.style.color = "#ffffff";
-    titleEl.style.fontSize = "14px";
-    header.appendChild(titleEl);
-
-    const btnWrapper = document.createElement("div");
-    
-    const copyBtn = document.createElement("button");
-    copyBtn.textContent = "複製內容 (Copy)";
-    copyBtn.style.backgroundColor = "#10b981";
-    copyBtn.style.color = "black";
-    copyBtn.style.border = "none";
-    copyBtn.style.padding = "6px 12px";
-    copyBtn.style.borderRadius = "4px";
-    copyBtn.style.fontWeight = "bold";
-    copyBtn.style.marginRight = "10px";
-    copyBtn.style.cursor = "pointer";
-    copyBtn.onclick = () => {
-      const content = document.getElementById("debug-overlay-content").textContent;
-      navigator.clipboard.writeText(content)
-        .then(() => {
-          copyBtn.textContent = "已複製！ (Copied)";
-          copyBtn.style.backgroundColor = "#34d399";
-          setTimeout(() => {
-            copyBtn.textContent = "複製內容 (Copy)";
-            copyBtn.style.backgroundColor = "#10b981";
-          }, 2000);
-        })
-        .catch(() => {
-          // Fallback selection copy for older mobile browsers
-          const textarea = document.createElement("textarea");
-          textarea.value = content;
-          document.body.appendChild(textarea);
-          textarea.select();
-          try {
-            document.execCommand("copy");
-            copyBtn.textContent = "已複製！ (Copied)";
-            setTimeout(() => { copyBtn.textContent = "複製內容 (Copy)"; }, 2000);
-          } catch {
-            alert("無法自動複製，請在文字欄位中全選複製。");
-          }
-          document.body.removeChild(textarea);
-        });
-    };
-    btnWrapper.appendChild(copyBtn);
-    
-    const closeBtn = document.createElement("button");
-    closeBtn.textContent = "關閉 (Close)";
-    closeBtn.style.backgroundColor = "#ef4444";
-    closeBtn.style.color = "white";
-    closeBtn.style.border = "none";
-    closeBtn.style.padding = "6px 12px";
-    closeBtn.style.borderRadius = "4px";
-    closeBtn.style.fontWeight = "bold";
-    closeBtn.style.cursor = "pointer";
-    closeBtn.onclick = () => overlay.remove();
-    btnWrapper.appendChild(closeBtn);
-
-    header.appendChild(btnWrapper);
-    
-    overlay.appendChild(header);
-    
-    const preEl = document.createElement("pre");
-    preEl.id = "debug-overlay-content";
-    preEl.style.whiteSpace = "pre-wrap";
-    preEl.style.wordBreak = "break-all";
-    preEl.style.margin = "0";
-    overlay.appendChild(preEl);
-    
-    document.body.appendChild(overlay);
-  }
-  document.getElementById("debug-overlay-title").textContent = title;
-  document.getElementById("debug-overlay-content").textContent = JSON.stringify(data, null, 2);
-};
 
 /**
  * 依計畫名稱查找 CHURCH_PLAN_PRESETS 的 key（僅作舊資料 fallback 使用）
@@ -437,13 +334,7 @@ const db = {
     if (!response.ok || !payload.edge_session) {
       throw new Error(payload.message || payload.error || "NLC session sync failed: " + response.status);
     }
-    console.log("%c[DIAGNOSTIC] NLC Session Sync Payload:", "color: #06b6d4; background: #1e1e2f; font-size: 14px; padding: 4px; font-weight: bold;", payload);
 
-    if (payload.diagnostics) {
-      if (typeof window.showDebugOverlay === "function") {
-        window.showDebugOverlay("【同步偵錯資訊】", payload.diagnostics);
-      }
-    }
 
     localStorage.removeItem("nlc_supabase_access_token");
     localStorage.removeItem("nlc_supabase_expires_at");
@@ -1099,10 +990,7 @@ const db = {
         updated_at: new Date().toISOString()
       };
 
-      console.log("%c[DIAGNOSTIC] Saving Profile Payload:", "color: #f59e0b; background: #1e1e2f; font-size: 14px; padding: 4px; font-weight: bold;", profilePayload);
-      if (typeof window.showDebugOverlay === "function") {
-        window.showDebugOverlay("【儲存偵錯資訊】", profilePayload);
-      }
+
 
       const saveResult = state.supabase.saveProfile
         ? await state.supabase.saveProfile(profilePayload)
