@@ -275,7 +275,6 @@ const auth = {
       this._saveTokens(data);
       this._cleanCallbackUrl();
       this._applyTokenProfileFallback();
-      await this.fetchAndSyncMemberContext();
       this._showMessage("\u6559\u6703\u7cfb\u7d71\u767b\u5165\u6210\u529f\u3002");
       return true;
     } catch (err) {
@@ -293,48 +292,6 @@ const auth = {
     if (tokenResponse.expires_in) {
       localStorage.setItem(this.keys.expiresAt, String(Date.now() + tokenResponse.expires_in * 1000));
     }
-  },
-
-  async fetchAndSyncMemberContext() {
-    const token = localStorage.getItem(this.keys.accessToken);
-    if (!token) return null;
-
-    try {
-      const response = await fetch(`${this.config.memberHubUrl}/api/me/context`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          Accept: "application/json"
-        }
-      });
-
-      if (!response.ok) {
-        if (response.status === 401 && await this.refreshTokens()) return this.fetchAndSyncMemberContext();
-        throw new Error(`Member Hub context fetch failed: ${response.status}`);
-      }
-
-      const data = await response.json();
-      if (data && data.ok && data.context) {
-        const context = data.context;
-        localStorage.setItem(this.keys.memberContext, JSON.stringify(context));
-
-        const profile = context.profile || {};
-        const identity = context.identity || {};
-        const organization = context.organization || {};
-        const nodeName = organization.homeNodeName || "";
-
-        state.currentUser.name = profile.displayName || identity.username || state.currentUser.name || "NLC User";
-        state.currentUser.role = context.primaryRole || state.currentUser.role || "member";
-        state.realRole = state.currentUser.role;
-        state.currentUser.small_group = nodeName;
-        state.currentUser.pastoral_zone = nodeName;
-        state.currentUser.great_region = organization.homeRegionName || "Ecosystem";
-        return context;
-      }
-    } catch (err) {
-      console.error("Error fetching Member Hub context:", err);
-      this._applyTokenProfileFallback();
-    }
-    return null;
   },
 
   async refreshTokens() {

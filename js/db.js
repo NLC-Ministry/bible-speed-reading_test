@@ -372,23 +372,14 @@ const db = {
             }
           }
         } else {
-          // OIDC mode: profile data already populated from Member Hub context.
-          // Upsert our satellite profiles row so team rankings / leader stats work.
-          // We use name + role from Member Hub; pastoral hierarchy fields use the
-          // homeNodeName mapped earlier — they may need an admin to configure zones.
+          // OIDC profiles are created and updated by the nlc-session Edge Function.
+          const { data: profile } = await state.supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", user.id)
+            .maybeSingle();
+          if (profile) this.applyNlcProfile(profile);
           state.currentUser.is_demo = false;
-          try {
-            await state.supabase.from("profiles").upsert({
-              id: user.id,
-              name: state.currentUser.name,
-              great_region: state.currentUser.great_region || "",
-              pastoral_zone: state.currentUser.pastoral_zone || "",
-              small_group: state.currentUser.small_group || "",
-              role: state.currentUser.role || "member"
-            }, { onConflict: "id" });
-          } catch (dbErr) {
-            console.warn("Could not upsert OIDC profile row (RLS may require Logto JWT config):", dbErr.message);
-          }
         }
 
         // 2. Load Reading Logs
