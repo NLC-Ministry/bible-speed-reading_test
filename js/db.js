@@ -452,7 +452,10 @@ const db = {
 
   // Load User Data (either Supabase or LocalStorage fallbacks)
   _userDataPromise: null,
-  async loadUserData() {
+  async loadUserData(force = false) {
+    if (force) {
+      this._userDataPromise = null;
+    }
     if (this._userDataPromise) {
       return this._userDataPromise;
     }
@@ -1628,6 +1631,7 @@ const db = {
 
     calculatePlanProgress();
     this.saveLocalUserStats();
+    this._userDataPromise = null; // 💡 關鍵修復：清除資料加載快取以使快取失效
 
     loader.hide();
     renderPlanView();
@@ -1678,6 +1682,7 @@ const db = {
 
     calculateAllPlansProgress();
     this.saveLocalUserStats();
+    this._userDataPromise = null; // 💡 關鍵修復：清除資料加載快取以使快取失效
 
     loader.hide();
     renderPlanView();
@@ -1694,6 +1699,7 @@ const db = {
           .update(updateData)
           .eq("id", userId);
         if (error) throw error;
+        this._userDataPromise = null; // 💡 關鍵修復：清除資料加載快取以使快取失效
         return true;
       } catch (err) {
         console.error("Failed to update user role in Supabase:", err);
@@ -1706,6 +1712,7 @@ const db = {
       if (userIndex !== -1) {
         MOCK_USERS_DATA[userIndex].role = newRole;
         Object.assign(MOCK_USERS_DATA[userIndex], additionalFields);
+        this._userDataPromise = null; // 💡 關鍵修復：清除資料加載快取以使快取失效
         return true;
       }
       return false;
@@ -1839,6 +1846,7 @@ const db = {
       localStorage.setItem("global_plans_presets", JSON.stringify(list));
     }
 
+    this._userDataPromise = null; // 💡 關鍵修復：清除資料加載快取以使快取失效
     await this.loadGlobalPlans();
     return true;
   },
@@ -1920,6 +1928,7 @@ const db = {
       }
     }
 
+    this._userDataPromise = null; // 💡 關鍵修復：清除資料加載快取以使快取失效
     await this.loadGlobalPlans();
     return true;
   },

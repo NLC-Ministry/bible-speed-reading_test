@@ -825,6 +825,9 @@ window.saveAnnouncement = async function() {
   loader.hide();
   
   if (success) {
+    if (typeof showToast === "function") {
+      showToast("公告已發布成功！");
+    }
     window.closeAnnouncementForm();
     await updateAnnouncementsList();
   }
@@ -838,6 +841,9 @@ window.deleteAnnouncement = async function(id) {
   loader.hide();
   
   if (success) {
+    if (typeof showToast === "function") {
+      showToast("公告已成功刪除。");
+    }
     await updateAnnouncementsList();
   }
 };

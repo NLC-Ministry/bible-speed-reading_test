@@ -1436,6 +1436,9 @@ window.changePlanLevel = async function (newLevel) {
   loader.hide();
   renderPlanView();
   updateDashboardView();
+  if (typeof showToast === "function") {
+    showToast(`已成功將計畫難度變更為「${getPlanLevelLabel(newLevel)}」！`);
+  }
 };
 
 function initAdminPlanManagement() {
