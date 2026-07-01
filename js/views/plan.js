@@ -1750,7 +1750,54 @@ window.navigateInlineChapter = function(direction) {
   }
 };
 
-// Inline reading progress is updated only by the user's explicit check action.
+// Window scroll listener for inline reader automatic check-in.
+// This is intentionally limited to the plan detail inline reader only.
+window.addEventListener("scroll", async () => {
+  if (!state.inlineReader || !state.inlineReader.active) return;
+  if (!state.activePlan || !state.planDetailOpen) return;
+  if (typeof appRouter !== "undefined" && appRouter.currentTab !== "plan-view") return;
+
+  const inlineReader = document.getElementById("plan-inline-reader");
+  if (!inlineReader || inlineReader.classList.contains("hidden")) return;
+  if (state.inlineReader.autoMarked) return;
+
+  const scrollTop = window.scrollY || window.pageYOffset || document.documentElement.scrollTop;
+  const windowHeight = window.innerHeight;
+  const docHeight = document.documentElement.scrollHeight;
+
+  if (scrollTop + windowHeight >= docHeight - 50) {
+    state.inlineReader.autoMarked = true;
+
+    const currentCh = state.inlineReader.chaptersList[state.inlineReader.currentIndex];
+    if (!currentCh) return;
+
+    const readRound = currentCh.round || (state.activePlan ? (state.activePlan.currentRound || 1) : 1);
+    const isAlreadyRead = state.readingLogs.some(l =>
+      l.book === currentCh.book &&
+      Number(l.chapter) === Number(currentCh.chapter) &&
+      Number(l.round || 1) === Number(readRound)
+    );
+
+    if (!isAlreadyRead) {
+      await db.logChapterRead(currentCh.book, currentCh.chapter, true, readRound);
+
+      if (readRound === 1) currentCh.isReadR1 = true;
+      else if (readRound === 2) currentCh.isReadR2 = true;
+      else if (readRound === 3) currentCh.isReadR3 = true;
+      currentCh.isRead = true;
+      calculatePlanProgress();
+      db.saveLocalUserStats();
+
+      if (state.activePlan && state.activePlan.isPlanCompleted && !state.activePlan.upgradePromptHandled) {
+        await handleRoundCompletion(state.activePlan);
+      }
+
+      if (typeof showToast === "function") {
+        showToast("\u5df2\u81ea\u52d5\u5c07 " + currentCh.book + " \u7b2c " + currentCh.chapter + " \u7ae0\u6a19\u8a18\u70ba\u5df2\u8b80\uff01");
+      }
+    }
+  }
+});
 
 
 // ==================== PERSONAL STATS & HEATMAP & ACHIEVEMENTS ====================
