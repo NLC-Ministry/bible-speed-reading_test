@@ -1276,7 +1276,7 @@ function showResponsibilityModal(role, user) {
       
       // Bind zone changes to update groups
       zoneContainer.querySelectorAll("input[name='zone-checkbox']").forEach(cb => {
-        cb.onchange = updateGroups;
+        cb.onclick = updateGroups;
       });
       updateGroups();
     };
@@ -1318,7 +1318,7 @@ function showResponsibilityModal(role, user) {
     
     // Bind region check actions
     regionContainer.querySelectorAll("input[name='region-checkbox']").forEach(cb => {
-      cb.onchange = updateZones;
+      cb.onclick = updateZones;
     });
     
     // Initialize cascading trigger
