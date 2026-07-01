@@ -959,7 +959,7 @@ const db = {
       const zoneObj = state.orgStructure && state.orgStructure.rawZones ? state.orgStructure.rawZones.find(z => z.name === state.currentUser.pastoral_zone) : null;
       const groupObj = state.orgStructure && state.orgStructure.rawGroups ? state.orgStructure.rawGroups.find(g => g.name === state.currentUser.small_group) : null;
 
-      const { data, error } = await state.supabase.from("profiles").upsert({
+      const profilePayload = {
         id: user.id,
         name: state.currentUser.name,
         great_region: state.currentUser.great_region,
@@ -969,9 +969,32 @@ const db = {
         pastoral_zone_id: zoneObj ? zoneObj.id : null,
         small_group_id: groupObj ? groupObj.id : null,
         updated_at: new Date().toISOString()
-      }, { onConflict: "id" }).select().single();
+      };
+
+      const { data, error } = await state.supabase
+        .from("profiles")
+        .upsert(profilePayload, { onConflict: "id" })
+        .select("*")
+        .single();
       if (error) throw new Error(error.message || error.error || error);
-      if (data) this.applyNlcProfile(data);
+
+      let verifiedProfile = data || null;
+      if (!verifiedProfile || verifiedProfile.id !== user.id) {
+        const verifyResult = await state.supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .maybeSingle();
+        if (verifyResult.error) throw new Error(verifyResult.error.message || verifyResult.error.error || verifyResult.error);
+        verifiedProfile = verifyResult.data || null;
+      }
+
+      if (!verifiedProfile || verifiedProfile.id !== user.id) {
+        const projectUrl = state.supabaseConfig && state.supabaseConfig.url ? state.supabaseConfig.url : "unknown Supabase project";
+        throw new Error("???????? Supabase profiles???? nlc-data Edge Function ????????????? Supabase project ? " + projectUrl);
+      }
+
+      this.applyNlcProfile(verifiedProfile);
     }
   },
 

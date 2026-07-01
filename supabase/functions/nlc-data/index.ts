@@ -171,7 +171,20 @@ Deno.serve(async (req) => {
 
     const { data, error } = await query;
     if (error) return jsonResponse({ error: error.message, details: error }, 400);
-    return jsonResponse({ data, profile });
+
+    let responseData = data;
+    if (table === "profiles" && ["insert", "update", "upsert"].includes(action)) {
+      const { data: verifiedProfile, error: verifyError } = await supabaseAdmin
+        .from("profiles")
+        .select("*")
+        .eq("id", profile.id)
+        .maybeSingle();
+      if (verifyError) return jsonResponse({ error: verifyError.message, details: verifyError }, 400);
+      if (!verifiedProfile) return jsonResponse({ error: "profile_write_not_verified" }, 500);
+      responseData = verifiedProfile;
+    }
+
+    return jsonResponse({ data: responseData, profile });
   } catch (err) {
     console.error("nlc-data failed:", err);
     return jsonResponse({ error: "nlc_data_failed", message: err instanceof Error ? err.message : String(err) }, 500);
