@@ -1142,9 +1142,8 @@ function getRoundBadge(ch, currentRound) {
   return '';
 }
 
-window.toggleYouVersionChapter = async function(checkboxEl, book, chapter, taskRound = null) {
-  if (checkboxEl.dataset.saving === "true") return;
-
+window.toggleYouVersionChapter = function(checkboxEl, book, chapter, taskRound = null) {
+  // Optimistic UI updates are instant, so we don't need to block click events via data-saving
   const isCurrentlyRead = checkboxEl.dataset.isCurrentRead === 'true';
   const willBeChecked = !isCurrentlyRead;
   const currentRound = taskRound || (state.activePlan ? (state.activePlan.currentRound || 1) : 1);
@@ -1163,27 +1162,33 @@ window.toggleYouVersionChapter = async function(checkboxEl, book, chapter, taskR
     ch.isRead = checked;
   };
 
-  checkboxEl.dataset.saving = "true";
-  checkboxEl.classList.add("saving");
+  // 1. 💡 立即在本機更新記憶體狀態與 UI 渲染（完全零延遲）
   applyLocalReadState(chapterObj, willBeChecked);
   calculatePlanProgress();
   renderPlanScheduleTracker(true);
-
-  try {
-    await db.logChapterRead(book, chapter, willBeChecked, currentRound);
-    calculatePlanProgress();
-    db.saveLocalUserStats();
-
-    if (state.activePlan && state.activePlan.isPlanCompleted && !state.activePlan.upgradePromptHandled) {
-      await handleRoundCompletion(state.activePlan);
-    }
-  } catch (error) {
-    console.error("Failed to update reading progress", error);
-    applyLocalReadState(chapterObj, isCurrentlyRead);
-    calculatePlanProgress();
-    renderPlanScheduleTracker(true);
-    showToast("讀經進度更新失敗，請稍後再試");
+  if (typeof updateDashboardView === "function") {
+    updateDashboardView();
   }
+
+  // 2. 💡 在背景非同步向 Supabase 發送寫入請求，不要阻塞使用者操作
+  db.logChapterRead(book, chapter, willBeChecked, currentRound)
+    .then(async () => {
+      db.saveLocalUserStats();
+      if (state.activePlan && state.activePlan.isPlanCompleted && !state.activePlan.upgradePromptHandled) {
+        await handleRoundCompletion(state.activePlan);
+      }
+    })
+    .catch(error => {
+      console.error("Failed to update reading progress in background", error);
+      // 💡 同步失敗時，自動還原打勾狀態並提示使用者
+      applyLocalReadState(chapterObj, isCurrentlyRead);
+      calculatePlanProgress();
+      renderPlanScheduleTracker(true);
+      if (typeof updateDashboardView === "function") {
+        updateDashboardView();
+      }
+      showToast("讀經進度同步失敗，請稍後再試");
+    });
 };
 
 function renderPlanLevelEditor() {
@@ -1795,22 +1800,35 @@ window.addEventListener("scroll", async () => {
     );
 
     if (!isAlreadyRead) {
-      await db.logChapterRead(currentCh.book, currentCh.chapter, true, readRound);
-
+      // 1. 💡 立即在本機更新記憶體與進度狀態
       if (readRound === 1) currentCh.isReadR1 = true;
       else if (readRound === 2) currentCh.isReadR2 = true;
       else if (readRound === 3) currentCh.isReadR3 = true;
       currentCh.isRead = true;
       calculatePlanProgress();
-      db.saveLocalUserStats();
-
-      if (state.activePlan && state.activePlan.isPlanCompleted && !state.activePlan.upgradePromptHandled) {
-        await handleRoundCompletion(state.activePlan);
-      }
 
       if (typeof showToast === "function") {
-        showToast("\u5df2\u81ea\u52d5\u5c07 " + currentCh.book + " \u7b2c " + currentCh.chapter + " \u7ae0\u6a19\u8a18\u70ba\u5df2\u8b80\uff01");
+        showToast("已自動將 " + currentCh.book + " 第 " + currentCh.chapter + " 章標記為已讀！");
       }
+
+      // 2. 💡 在背景非同步發送 Supabase 寫入
+      db.logChapterRead(currentCh.book, currentCh.chapter, true, readRound)
+        .then(async () => {
+          db.saveLocalUserStats();
+          if (state.activePlan && state.activePlan.isPlanCompleted && !state.activePlan.upgradePromptHandled) {
+            await handleRoundCompletion(state.activePlan);
+          }
+        })
+        .catch(error => {
+          console.error("Failed to auto-mark reading progress in background", error);
+          // 同步失敗時還原狀態
+          if (readRound === 1) currentCh.isReadR1 = false;
+          else if (readRound === 2) currentCh.isReadR2 = false;
+          else if (readRound === 3) currentCh.isReadR3 = false;
+          currentCh.isRead = false;
+          calculatePlanProgress();
+          showToast("自動標記已讀同步失敗，請稍後再試");
+        });
     }
   }
 });

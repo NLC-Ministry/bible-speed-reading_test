@@ -113,37 +113,47 @@ function initReaderControls() {
   // Mark chapter read checkbox
   const markReadBtn = document.getElementById("mark-read-btn");
   if (markReadBtn) {
-    markReadBtn.addEventListener("click", async () => {
-      if (markReadBtn.dataset.saving === "true") return;
-
+    markReadBtn.addEventListener("click", () => {
       const wasChecked = markReadBtn.classList.contains("checked");
       const isChecked = !wasChecked;
       const bookObj = BIBLE_BOOKS.find(b => b.id === state.readerState.bookId);
       if (!bookObj) return;
 
-      markReadBtn.dataset.saving = "true";
-      markReadBtn.disabled = true;
+      // 1. 💡 立即在本機更新記憶體與按鈕打勾狀態（完全零延遲）
       markReadBtn.classList.toggle("checked", isChecked);
 
-      try {
-        await db.logChapterRead(bookObj.name, state.readerState.chapter, isChecked);
-
-        if (state.activePlan) {
-          const planDayChKey = `${bookObj.name}_${state.readerState.chapter}`;
-          updatePlanCheckboxState(planDayChKey, isChecked);
-          calculatePlanProgress();
-          if (state.activePlan.isPlanCompleted && !state.activePlan.upgradePromptHandled) {
-            await handleRoundCompletion(state.activePlan);
-          }
+      let planDayChKey = null;
+      if (state.activePlan) {
+        planDayChKey = `${bookObj.name}_${state.readerState.chapter}`;
+        updatePlanCheckboxState(planDayChKey, isChecked);
+        calculatePlanProgress();
+        if (typeof updateDashboardView === "function") {
+          updateDashboardView();
         }
-      } catch (error) {
-        console.error("Failed to update reader progress", error);
-        markReadBtn.classList.toggle("checked", wasChecked);
-        showToast("讀經進度更新失敗，請稍後再試");
-      } finally {
-        markReadBtn.dataset.saving = "false";
-        markReadBtn.disabled = false;
       }
+
+      // 2. 💡 背景非同步向 Supabase 發送進度更新，不阻塞 UI 操作
+      db.logChapterRead(bookObj.name, state.readerState.chapter, isChecked)
+        .then(async () => {
+          if (state.activePlan) {
+            if (state.activePlan.isPlanCompleted && !state.activePlan.upgradePromptHandled) {
+              await handleRoundCompletion(state.activePlan);
+            }
+          }
+        })
+        .catch(error => {
+          console.error("Failed to update reader progress in background", error);
+          // 💡 同步失敗時，自動還原按鈕打勾狀態與進度
+          markReadBtn.classList.toggle("checked", wasChecked);
+          if (state.activePlan && planDayChKey) {
+            updatePlanCheckboxState(planDayChKey, wasChecked);
+            calculatePlanProgress();
+            if (typeof updateDashboardView === "function") {
+              updateDashboardView();
+            }
+          }
+          showToast("讀經進度同步失敗，請稍後再試");
+        });
     });
   }
   // Reading progress is updated only by the user's explicit check action.
