@@ -1497,7 +1497,23 @@ function initAdminPlanManagement() {
     loader.hide();
 
     if (success) {
-      alert("計畫儲存成功！");
+      if (typeof showToast === "function") {
+        showToast("計畫儲存成功！已自動同步更新所有使用者的挑戰時間。");
+      } else {
+        alert("計畫儲存成功！");
+      }
+      
+      // 💡 關鍵修復：儲存成功後，重新載入用戶的活動計畫資料，使主頁挑戰卡片的進度與時間即時重新計算
+      if (typeof db !== "undefined" && db.loadUserData) {
+        await db.loadUserData();
+      }
+      if (typeof updateDashboardView === "function") {
+        updateDashboardView();
+      }
+      if (typeof renderPlanScheduleTracker === "function") {
+        renderPlanScheduleTracker(true);
+      }
+
       formContainer.classList.add("hidden");
       renderAdminPlanManagement();
       if (typeof renderPresetPlansList === 'function') {

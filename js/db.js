@@ -1767,6 +1767,22 @@ const db = {
             .update(payload)
             .eq("id", plan.id);
           error = res.error;
+
+          if (!error) {
+            // 💡 同步更新所有使用者對應的全域計畫 copy
+            const syncRes = await state.supabase
+              .from("reading_plans")
+              .update({
+                name: payload.name,
+                start_date: payload.start_date,
+                end_date: payload.end_date,
+                target_books: payload.target_books
+              })
+              .eq("global_plan_id", plan.id);
+            if (syncRes.error) {
+              console.error("Failed to sync updates to user reading_plans:", syncRes.error);
+            }
+          }
         } else {
           const res = await state.supabase
             .from("global_plans")
