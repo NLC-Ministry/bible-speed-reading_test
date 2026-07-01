@@ -1,0 +1,2 @@
+﻿[functions.nlc-session]
+verify_jwt = false

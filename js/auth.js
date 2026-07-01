@@ -17,7 +17,10 @@ const auth = {
     expiresAt: "nlc_token_expires_at",
     state: "nlc_auth_state",
     verifier: "nlc_auth_verifier",
-    memberContext: "nlc_member_context"
+    memberContext: "nlc_member_context",
+    supabaseAccessToken: "nlc_supabase_access_token",
+    supabaseExpiresAt: "nlc_supabase_expires_at",
+    supabaseProfile: "nlc_supabase_profile"
   },
 
   metadata: null,
@@ -127,6 +130,9 @@ const auth = {
     localStorage.removeItem(this.keys.refreshToken);
     localStorage.removeItem(this.keys.expiresAt);
     localStorage.removeItem(this.keys.memberContext);
+    localStorage.removeItem(this.keys.supabaseAccessToken);
+    localStorage.removeItem(this.keys.supabaseExpiresAt);
+    localStorage.removeItem(this.keys.supabaseProfile);
   },
 
   _getFlowItem(key) {
@@ -160,6 +166,7 @@ const auth = {
     state.readingLogs = [];
     state.activePlans = [];
     state.activePlan = null;
+    state.currentProfileId = null;
   },
 
   _showMessage(message) {

@@ -76,11 +76,8 @@ const db = {
     if (sbUrl && sbKey) {
       try {
         // Initialize Supabase SDK
-        state.supabase = supabase.createClient(sbUrl, sbKey, {
-          auth: {
-            detectSessionInUrl: allowGoogleLogin
-          }
-        });
+        state.supabaseConfig = { url: sbUrl, anonKey: sbKey, allowGoogleLogin };
+        state.supabase = this.createSupabaseClient();
         state.isSupabaseMode = true;
 
         // Update Status Badge
@@ -95,26 +92,10 @@ const db = {
             console.log("Logto OIDC callback handled successfully.");
           }
 
-          // ── Sync Logto JWT → Supabase session ──
-          // If already logged in via Logto OIDC, pass the ID token as
-          // Supabase access token so RLS policies (auth.uid() = user_id) work.
+          // Sync Logto login through the Edge Function so Supabase RLS can resolve profiles.
           if (auth.isLoggedIn()) {
-            const idToken = localStorage.getItem(auth.keys.idToken);
-            const refreshToken = localStorage.getItem(auth.keys.refreshToken) || "";
-            if (idToken) {
-              try {
-                await state.supabase.auth.setSession({
-                  access_token: idToken,
-                  refresh_token: refreshToken
-                });
-                console.log("Supabase session synced via Logto ID Token.");
-              } catch (jwtErr) {
-                // Non-fatal: Logto JWT may not yet be configured as Supabase
-                // custom OIDC provider. State is still set in auth.js.
-                console.warn("Supabase JWT sync skipped (configure Logto as Supabase OIDC provider):", jwtErr.message);
-              }
-            }
-            this.updateAuthUI({ user: { id: auth.getLogtoSubject() } });
+            await this.syncNlcSessionWithSupabase();
+            this.updateAuthUI({ user: { id: state.currentProfileId || auth.getLogtoSubject() } });
             return; // loadUserData() will be called in main.js
           }
         }
@@ -153,6 +134,94 @@ const db = {
         this.showConnectionError();
       }
     }
+  },
+
+  createSupabaseClient(externalJwt = null) {
+    const cfg = state.supabaseConfig || {};
+    const options = {
+      auth: {
+        detectSessionInUrl: !!cfg.allowGoogleLogin,
+        persistSession: !!cfg.allowGoogleLogin,
+        autoRefreshToken: !!cfg.allowGoogleLogin
+      }
+    };
+
+    if (externalJwt) {
+      options.global = {
+        headers: {
+          Authorization: "Bearer " + externalJwt
+        }
+      };
+      options.auth.persistSession = false;
+      options.auth.autoRefreshToken = false;
+      options.auth.detectSessionInUrl = false;
+    }
+
+    return supabase.createClient(cfg.url, cfg.anonKey, options);
+  },
+
+  applyNlcProfile(profile) {
+    if (!profile) return;
+    state.currentProfileId = profile.id;
+    state.currentUser.id = profile.id;
+    state.currentUser.name = profile.name || state.currentUser.name || "NLC User";
+    state.currentUser.great_region = profile.great_region || "";
+    state.currentUser.pastoral_zone = profile.pastoral_zone || "";
+    state.currentUser.small_group = profile.small_group || "";
+    state.currentUser.role = profile.role || "member";
+    state.currentUser.is_demo = !!profile.is_demo;
+    state.realRole = state.currentUser.role;
+  },
+
+  async syncNlcSessionWithSupabase(force = false) {
+    if (typeof auth === "undefined" || !auth.isLoggedIn()) return null;
+
+    const cachedToken = localStorage.getItem("nlc_supabase_access_token");
+    const cachedExpiresAt = Number(localStorage.getItem("nlc_supabase_expires_at") || "0");
+    const cachedProfile = localStorage.getItem("nlc_supabase_profile");
+    if (!force && cachedToken && cachedExpiresAt > Date.now() + 60000) {
+      state.supabase = this.createSupabaseClient(cachedToken);
+      if (cachedProfile) this.applyNlcProfile(JSON.parse(cachedProfile));
+      return { access_token: cachedToken, profile: cachedProfile ? JSON.parse(cachedProfile) : null };
+    }
+
+    const accessToken = localStorage.getItem(auth.keys.accessToken);
+    if (!accessToken) throw new Error("NLC access token is missing.");
+
+    const cfg = state.supabaseConfig || {};
+    const functionUrl = cfg.url.replace(/\/+$/, "") + "/functions/v1/nlc-session";
+    const response = await fetch(functionUrl, {
+      method: "POST",
+      headers: {
+        apikey: cfg.anonKey,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ access_token: accessToken })
+    });
+
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || !payload.access_token) {
+      throw new Error(payload.message || payload.error || "NLC session sync failed: " + response.status);
+    }
+
+    const expiresAt = Date.now() + ((payload.expires_in || 3600) * 1000);
+    localStorage.setItem("nlc_supabase_access_token", payload.access_token);
+    localStorage.setItem("nlc_supabase_expires_at", String(expiresAt));
+    if (payload.profile) localStorage.setItem("nlc_supabase_profile", JSON.stringify(payload.profile));
+
+    state.supabase = this.createSupabaseClient(payload.access_token);
+    this.applyNlcProfile(payload.profile);
+    return payload;
+  },
+
+  async getCurrentDbUser() {
+    if (typeof auth !== "undefined" && auth.isLoggedIn()) {
+      await this.syncNlcSessionWithSupabase();
+      if (state.currentProfileId) return { id: state.currentProfileId, oidc: true };
+    }
+
+    const { data: { user } } = await state.supabase.auth.getUser();
+    return user;
   },
 
   showConnectionError() {
@@ -250,22 +319,15 @@ const db = {
         state.currentUser.is_demo = false;
       }
 
-      // ── OIDC mode: resolve user from Logto token ──
       let user = null;
       const isOidcMode = typeof auth !== "undefined" && auth.isLoggedIn();
       if (isOidcMode) {
-        const logtoSub = auth.getLogtoSubject();
-        if (logtoSub) {
-          user = { id: logtoSub, oidc: true };
-          // Sync Member Hub church profile (name, role, group) into state
-          await auth.fetchAndSyncMemberContext();
-        }
+        await this.syncNlcSessionWithSupabase();
+        user = state.currentProfileId ? { id: state.currentProfileId, oidc: true } : null;
       }
 
-      // Fallback: standard Supabase auth.getUser()
       if (!user) {
-        const { data: { user: sbUser } } = await state.supabase.auth.getUser();
-        user = sbUser;
+        user = await this.getCurrentDbUser();
       }
 
       if (user) {
@@ -684,7 +746,7 @@ const db = {
         state.readingLogs.push({ book, chapter, read_at: todayISO, plan_id: planId, presetKey: presetKey, round: round });
 
         if (state.isSupabaseMode && state.supabase && !(state.currentUser && state.currentUser.is_demo)) {
-          const { data: { user } } = await state.supabase.auth.getUser();
+          const user = await this.getCurrentDbUser();
           if (user) {
             await state.supabase.from("reading_logs").insert({
               user_id: user.id,
@@ -701,7 +763,7 @@ const db = {
         if (!existingLog.plan_id && planId) existingLog.plan_id = planId;
         if (!existingLog.presetKey && presetKey) existingLog.presetKey = presetKey;
         if (state.isSupabaseMode && state.supabase && !(state.currentUser && state.currentUser.is_demo)) {
-          const { data: { user } } = await state.supabase.auth.getUser();
+          const user = await this.getCurrentDbUser();
           if (user) {
             let query = state.supabase.from("reading_logs").update({ read_at: todayISO }).eq("user_id", user.id).eq("book", book).eq("chapter", chapter).eq("round", round);
             if (planId) query = query.eq("plan_id", planId);
@@ -714,7 +776,7 @@ const db = {
       state.readingLogs = state.readingLogs.filter(l => !isSameChapterLog(l));
 
       if (state.isSupabaseMode && state.supabase && !(state.currentUser && state.currentUser.is_demo)) {
-        const { data: { user } } = await state.supabase.auth.getUser();
+        const user = await this.getCurrentDbUser();
         if (user) {
           let query = state.supabase.from("reading_logs").delete().eq("user_id", user.id).eq("book", book).eq("chapter", chapter).eq("round", round);
           if (planId) {
@@ -747,7 +809,7 @@ const db = {
       console.warn("syncProfileStatsToSupabase aborted: current user is demo user.");
       return;
     }
-    const { data: { user } } = await state.supabase.auth.getUser();
+    const user = await this.getCurrentDbUser();
     if (user) {
       const regionObj = state.orgStructure && state.orgStructure.rawRegions ? state.orgStructure.rawRegions.find(r => r.name === state.currentUser.great_region) : null;
       const zoneObj = state.orgStructure && state.orgStructure.rawZones ? state.orgStructure.rawZones.find(z => z.name === state.currentUser.pastoral_zone) : null;
@@ -1184,7 +1246,7 @@ const db = {
 
   async getDevotionalNote(date) {
     if (state.isSupabaseMode && state.supabase) {
-      const { data: { user } } = await state.supabase.auth.getUser();
+      const user = await this.getCurrentDbUser();
       if (user) {
         const { data } = await state.supabase
           .from("devotional_notes")
@@ -1206,7 +1268,7 @@ const db = {
 
   async saveDevotionalNote(date, content) {
     if (state.isSupabaseMode && state.supabase && !(state.currentUser && state.currentUser.is_demo)) {
-      const { data: { user } } = await state.supabase.auth.getUser();
+      const user = await this.getCurrentDbUser();
       if (!user) return;
 
       const { error } = await state.supabase
@@ -1244,7 +1306,7 @@ const db = {
 
     if (state.isSupabaseMode && state.supabase && !(state.currentUser && state.currentUser.is_demo)) {
       try {
-        const { data: { user } } = await state.supabase.auth.getUser();
+        const user = await this.getCurrentDbUser();
         if (user) {
           // 判斷是否為 global_plans 的 UUID key（非 q1~q4 的固定 key）
           const presetKeys = Object.keys(CHURCH_PLAN_PRESETS);
@@ -1612,7 +1674,7 @@ const db = {
   async saveAnnouncement(title, content) {
     if (state.isSupabaseMode && state.supabase && !(state.currentUser && state.currentUser.is_demo)) {
       try {
-        const { data: { user } } = await state.supabase.auth.getUser();
+        const user = await this.getCurrentDbUser();
         const userId = user ? user.id : (state.currentUser ? state.currentUser.id : null);
         const { error } = await state.supabase
           .from('church_announcements')
