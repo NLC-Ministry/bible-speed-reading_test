@@ -1,6 +1,11 @@
 // Application entry point & initialization bootstrap
 
 document.addEventListener("DOMContentLoaded", async () => {
+  // 💡 體驗優化：在最開始立即顯示 Loading 載入畫面，防止使用者在資料加載前看到 Demo 畫面或舊資料
+  if (typeof loader !== "undefined" && loader.show) {
+    loader.show("系統安全載入中，請稍候...");
+  }
+
   // 1. Initialize Theme
   try {
     initTheme();
@@ -104,16 +109,32 @@ document.addEventListener("DOMContentLoaded", async () => {
   try {
     if (state.isSupabaseMode && state.supabase) {
       setTimeout(async () => {
-        const { data: { session } } = await state.supabase.auth.getSession();
-        if (session) {
-          console.log("Auth session recovered in delayed check:", session);
-          db.updateAuthUI(session);
-          await db.loadUserData();
-          updateDashboardView();
+        try {
+          const { data: { session } } = await state.supabase.auth.getSession();
+          if (session) {
+            console.log("Auth session recovered in delayed check:", session);
+            db.updateAuthUI(session);
+            await db.loadUserData();
+            updateDashboardView();
+          }
+        } catch (recoverErr) {
+          console.error("Session recovery error:", recoverErr);
+        } finally {
+          // 💡 體驗優化：等最終連線檢查完成後，才隱藏 Loading 畫面
+          if (typeof loader !== "undefined" && loader.hide) {
+            loader.hide();
+          }
         }
       }, 500); // 500ms delay to allow async Supabase session recovery to complete
+    } else {
+      if (typeof loader !== "undefined" && loader.hide) {
+        loader.hide();
+      }
     }
   } catch (err) {
     console.error("Failed in final auth verification check:", err);
+    if (typeof loader !== "undefined" && loader.hide) {
+      loader.hide();
+    }
   }
 });
