@@ -17,7 +17,7 @@ const PRECACHE_ASSETS = [
   './js/main.js',
   './js/views/dashboard.js',
   './js/views/reader.js',
-  './js/views/plan.js',
+  './js/views/plan.js?v=nlc-edge-20260701-35',
   './js/views/stats.js',
   './js/views/profile.js?v=nlc-edge-20260701-18'
 ];
