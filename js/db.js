@@ -124,10 +124,10 @@ const db = {
         });
       } catch (e) {
         console.error("Supabase connection failed:", e);
-        if (typeof auth !== "undefined" && auth.resetLocalLogin) {
-          await auth.resetLocalLogin();
-        }
-        this.showConnectionError();
+        const message = e && e.message && e.message.includes("generated_jwt_rejected_by_supabase")
+          ? "\u7cfb\u7d71\u767b\u5165\u8a2d\u5b9a\u5c1a\u672a\u5b8c\u6210\uff0c\u8acb\u806f\u7d61\u7ba1\u7406\u54e1\u3002"
+          : "\u767b\u5165\u540c\u6b65\u5931\u6557\uff0c\u8acb\u91cd\u65b0\u767b\u5165\u3002";
+        this.showConnectionError(message);
       }
     } else {
       if (forceOfflineDemo) {
@@ -229,7 +229,7 @@ const db = {
     return user;
   },
 
-  showConnectionError() {
+  showConnectionError(message = "\u767b\u5165\u540c\u6b65\u5931\u6557\uff0c\u8acb\u91cd\u65b0\u767b\u5165\u3002") {
     state.isSupabaseMode = true;
 
     const btnNlcGate = document.getElementById("btn-gate-nlc-login");
@@ -251,7 +251,7 @@ const db = {
     const gateText = document.getElementById("gate-status-text");
     if (gateDot && gateText) {
       gateDot.style.backgroundColor = "#ef4444";
-      gateText.textContent = "\u767b\u5165\u72c0\u614b\u5df2\u5931\u6548\uff0c\u8acb\u91cd\u65b0\u767b\u5165\u3002";
+      gateText.textContent = message;
     }
 
     const loginGate = document.getElementById("login-gate");
