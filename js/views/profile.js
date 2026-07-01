@@ -16,7 +16,12 @@ function updateGoogleLoginVisibility() {
 // Profile & settings tab view controller
 
 function renderProfileView() {
-  document.getElementById("profile-name").value = state.currentUser.name || "";
+  const lockedFields = new Set(state.profileLockedFields || []);
+  const profileNameInput = document.getElementById("profile-name");
+  profileNameInput.value = state.currentUser.name || "";
+  profileNameInput.readOnly = lockedFields.has("name");
+  profileNameInput.classList.toggle("readonly-field", lockedFields.has("name"));
+  profileNameInput.title = lockedFields.has("name") ? "\u6b64\u6b04\u4f4d\u7531\u6559\u6703\u7cfb\u7d71\u63d0\u4f9b\uff0c\u4e0d\u53ef\u7de8\u8f2f" : "";
   
   const greatRegionSelect = document.getElementById("profile-great-region");
   const customGreatRegionInput = document.getElementById("profile-great-region-custom");
@@ -83,6 +88,30 @@ function renderProfileView() {
   populateProfileZones(greatRegionSelect.value, true);
   populateProfileGroupSelector(true);
 
+  const applyProfileFieldLocks = () => {
+    const lockTitle = "\u6b64\u6b04\u4f4d\u7531\u6559\u6703\u7cfb\u7d71\u63d0\u4f9b\uff0c\u4e0d\u53ef\u7de8\u8f2f";
+    const controls = [
+      [greatRegionSelect, customGreatRegionInput, "great_region"],
+      [zoneSelect, customZoneInput, "pastoral_zone"],
+      [groupSelect, customGroupInput, "small_group"]
+    ];
+    controls.forEach(([selectEl, customEl, field]) => {
+      const locked = lockedFields.has(field);
+      if (selectEl) {
+        selectEl.disabled = locked;
+        selectEl.title = locked ? lockTitle : "";
+        selectEl.classList.toggle("readonly-field", locked);
+      }
+      if (customEl) {
+        customEl.readOnly = locked;
+        customEl.disabled = locked;
+        customEl.title = locked ? lockTitle : "";
+        customEl.classList.toggle("readonly-field", locked);
+      }
+    });
+  };
+  applyProfileFieldLocks();
+
   greatRegionSelect.onchange = () => {
     if (greatRegionSelect.value === "custom") {
       customGreatRegionInput.classList.remove("hidden");
@@ -116,10 +145,10 @@ function renderProfileView() {
   // Submit profile details
   document.getElementById("profile-form").onsubmit = async (e) => {
     e.preventDefault();
-    const name = document.getElementById("profile-name").value.trim();
-    const greatRegion = greatRegionSelect.value === "custom" ? customGreatRegionInput.value.trim() : greatRegionSelect.value;
-    const zone = zoneSelect.value === "custom" ? customZoneInput.value.trim() : zoneSelect.value;
-    const group = groupSelect.value === "custom" ? customGroupInput.value.trim() : groupSelect.value;
+    const name = lockedFields.has("name") ? (state.currentUser.name || "") : document.getElementById("profile-name").value.trim();
+    const greatRegion = lockedFields.has("great_region") ? (state.currentUser.great_region || "") : (greatRegionSelect.value === "custom" ? customGreatRegionInput.value.trim() : greatRegionSelect.value);
+    const zone = lockedFields.has("pastoral_zone") ? (state.currentUser.pastoral_zone || "") : (zoneSelect.value === "custom" ? customZoneInput.value.trim() : zoneSelect.value);
+    const group = lockedFields.has("small_group") ? (state.currentUser.small_group || "") : (groupSelect.value === "custom" ? customGroupInput.value.trim() : groupSelect.value);
 
     if (!greatRegion || !zone || !group) {
       alert("請完整填寫大區、牧區與小組資料！");

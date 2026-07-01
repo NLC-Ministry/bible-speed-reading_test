@@ -271,7 +271,7 @@ const db = {
     };
   },
 
-  applyNlcProfile(profile) {
+  applyNlcProfile(profile, lockedFields = null) {
     if (!profile) return;
     state.currentProfileId = profile.id;
     state.currentUser.id = profile.id;
@@ -280,6 +280,7 @@ const db = {
     state.currentUser.pastoral_zone = profile.pastoral_zone || "";
     state.currentUser.small_group = profile.small_group || "";
     state.currentUser.role = profile.role || "member";
+    if (Array.isArray(lockedFields)) state.profileLockedFields = lockedFields;
     state.currentUser.is_demo = !!profile.is_demo;
     state.realRole = state.currentUser.role;
   },
@@ -291,8 +292,9 @@ const db = {
     const cachedProfile = localStorage.getItem("nlc_supabase_profile");
     if (!force && cachedExpiresAt > Date.now() + 60000) {
       state.supabase = this.createNlcDataClient();
-      if (cachedProfile) this.applyNlcProfile(JSON.parse(cachedProfile));
-      return { edge_session: true, profile: cachedProfile ? JSON.parse(cachedProfile) : null };
+      const cachedLockedFields = JSON.parse(localStorage.getItem("nlc_profile_locked_fields") || "[]");
+      if (cachedProfile) this.applyNlcProfile(JSON.parse(cachedProfile), cachedLockedFields);
+      return { edge_session: true, profile: cachedProfile ? JSON.parse(cachedProfile) : null, locked_fields: cachedLockedFields };
     }
 
     const accessToken = localStorage.getItem(auth.keys.accessToken);
@@ -318,9 +320,10 @@ const db = {
     localStorage.removeItem("nlc_supabase_expires_at");
     localStorage.setItem("nlc_edge_session_expires_at", String(Date.now() + 10 * 60 * 1000));
     if (payload.profile) localStorage.setItem("nlc_supabase_profile", JSON.stringify(payload.profile));
+    localStorage.setItem("nlc_profile_locked_fields", JSON.stringify(payload.locked_fields || []));
 
     state.supabase = this.createNlcDataClient();
-    this.applyNlcProfile(payload.profile);
+    this.applyNlcProfile(payload.profile, payload.locked_fields || []);
     return payload;
   },
 

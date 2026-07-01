@@ -134,6 +134,7 @@ const auth = {
     localStorage.removeItem(this.keys.supabaseExpiresAt);
     localStorage.removeItem(this.keys.supabaseProfile);
     localStorage.removeItem("nlc_edge_session_expires_at");
+    localStorage.removeItem("nlc_profile_locked_fields");
   },
 
   _getFlowItem(key) {
@@ -168,6 +169,7 @@ const auth = {
     state.activePlans = [];
     state.activePlan = null;
     state.currentProfileId = null;
+    state.profileLockedFields = [];
   },
 
   _showMessage(message) {
