@@ -441,9 +441,6 @@ const db = {
 
   // Load User Data (either Supabase or LocalStorage fallbacks)
   async loadUserData() {
-    // 0. Load global preset plans first
-    await this.loadGlobalPlans();
-
     if (state.isSupabaseMode && state.supabase) {
       if (state.currentUser) {
         state.currentUser.is_demo = false;
@@ -452,7 +449,8 @@ const db = {
       let user = null;
       const isOidcMode = typeof auth !== "undefined" && auth.isLoggedIn();
       if (isOidcMode) {
-        await this.syncNlcSessionWithSupabase(true);
+        // 💡 效能優化：不要重複強制同步（force=false），直接使用 db.init() 剛拿到的最新快取
+        await this.syncNlcSessionWithSupabase(false);
         user = state.currentProfileId ? { id: state.currentProfileId, oidc: true } : null;
       }
 
@@ -461,15 +459,34 @@ const db = {
       }
 
       if (user) {
+        // 💡 效能優化：平行化載入 global_plans, profiles, reading_logs, reading_plans
+        // 避開多個 sequential 網路請求產生的累積延遲與 cold start 問題！
+        const [globalPlansResult, profileResult, logsResult, plansResult] = await Promise.all([
+          state.supabase.from("global_plans").select("*").order("start_date", { ascending: true }),
+          state.supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
+          state.supabase.from("reading_logs").select("book, chapter, read_at, plan_id, round").eq("user_id", user.id),
+          state.supabase.from("reading_plans").select("*").eq("user_id", user.id).order("created_at", { ascending: false })
+        ]);
+
+        // 處理 global_plans
+        if (globalPlansResult.data) {
+          state.globalPlans = globalPlansResult.data.map(dbPlan => ({
+            id: dbPlan.id,
+            name: dbPlan.name,
+            startDate: dbPlan.start_date,
+            endDate: dbPlan.end_date,
+            books: dbPlan.target_books,
+            presetKey: dbPlan.id,
+            isHidden: Boolean(dbPlan.is_hidden)
+          }));
+        } else {
+          state.globalPlans = [];
+        }
+
         // 1. Load / sync profile
         if (!user.oidc) {
           // Standard Supabase auth: load profile from our profiles table
-          const { data: profile } = await state.supabase
-            .from("profiles")
-            .select("*")
-            .eq("id", user.id)
-            .single();
-
+          const profile = profileResult.data;
           if (profile) {
             state.currentUser.name = profile.name;
             state.currentUser.great_region = profile.great_region;
@@ -503,23 +520,13 @@ const db = {
           }
         } else {
           // OIDC profiles are created and updated by the nlc-session Edge Function.
-          const { data: profile } = await state.supabase
-            .from("profiles")
-            .select("*")
-            .eq("id", user.id)
-            .maybeSingle();
+          const profile = profileResult.data;
           if (profile) this.applyNlcProfile(profile);
           state.currentUser.is_demo = false;
         }
 
         // 2. Load Reading Logs
-        // 2. Load Reading Logs (fetch round to enable multi-round tracking)
-        const { data: logs } = await state.supabase
-          .from("reading_logs")
-          .select("book, chapter, read_at, plan_id, round")
-          .eq("user_id", user.id);
-
-        const rawLogs = logs || [];
+        const rawLogs = logsResult.data || [];
         const uniqueMap = {};
         rawLogs.forEach(l => {
           const r = l.round || 1;
@@ -533,12 +540,7 @@ const db = {
         state.currentUser.chapters_read = state.readingLogs.length;
 
         // 3. Load Active Reading Plans
-        const { data: plans } = await state.supabase
-          .from("reading_plans")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("created_at", { ascending: false });
-
+        const plans = plansResult.data || [];
         state.activePlans = [];
         if (plans && plans.length > 0) {
           plans.forEach(dbPlan => {
@@ -773,12 +775,20 @@ const db = {
   async loadOrgStructure() {
     if (state.isSupabaseMode && state.supabase) {
       try {
-        const { data: regions, error: rErr } = await state.supabase.from("great_regions").select("id, name");
-        if (rErr) throw rErr;
-        const { data: zones, error: zErr } = await state.supabase.from("pastoral_zones").select("id, name, great_region_id");
-        if (zErr) throw zErr;
-        const { data: groups, error: gErr } = await state.supabase.from("small_groups").select("id, name, pastoral_zone_id");
-        if (gErr) throw gErr;
+        // 💡 效能優化：平行化讀取組織結構，避免 3 次序列網路查詢
+        const [regionsResult, zonesResult, groupsResult] = await Promise.all([
+          state.supabase.from("great_regions").select("id, name"),
+          state.supabase.from("pastoral_zones").select("id, name, great_region_id"),
+          state.supabase.from("small_groups").select("id, name, pastoral_zone_id")
+        ]);
+
+        if (regionsResult.error) throw regionsResult.error;
+        if (zonesResult.error) throw zonesResult.error;
+        if (groupsResult.error) throw groupsResult.error;
+
+        const regions = regionsResult.data || [];
+        const zones = zonesResult.data || [];
+        const groups = groupsResult.data || [];
 
         state.orgStructure.regions = regions.map(r => r.name);
         state.orgStructure.rawRegions = regions;

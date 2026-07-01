@@ -62,19 +62,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.error("Failed to initialize profile/auth controls:", err);
   }
 
-  // 6.5 Load Church Organization Structure
+  // 6.5 & 7. Load Data in Parallel & Render initial Dashboard
   try {
-    await db.loadOrgStructure();
-  } catch (err) {
-    console.error("Failed to load church organization structure:", err);
-  }
-
-  // 7. Load Data & Render initial Dashboard
-  try {
-    await db.loadUserData();
+    await Promise.all([
+      db.loadOrgStructure(),
+      db.loadUserData()
+    ]);
     updateDashboardView();
   } catch (err) {
-    console.error("Failed to load user data & render initial dashboard:", err);
+    console.error("Failed to load initial data & render dashboard:", err);
   }
 
   // 8. Register Service Worker for PWA offline support
