@@ -190,7 +190,14 @@ const db = {
 
       if (!response.ok) return { data: null, error: payload };
       if (payload.profile) this.applyNlcProfile(payload.profile, payload.locked_fields || null);
-      return { data: payload.data, error: null };
+      return {
+        data: payload.data,
+        error: null,
+        profile: payload.profile || null,
+        profile_id: payload.profile_id || null,
+        project_url: payload.project_url || null,
+        locked_fields: payload.locked_fields || null
+      };
     };
 
     class NlcQueryBuilder {
