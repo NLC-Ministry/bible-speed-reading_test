@@ -39,7 +39,11 @@ function initReaderControls() {
   // ── New navigation and settings controls (Mockup Screenshot Design) ──
   const navDirectoryBtn = document.getElementById("reader-nav-directory-btn");
   if (navDirectoryBtn) {
-    navDirectoryBtn.addEventListener("click", () => toggleDrawer());
+    navDirectoryBtn.addEventListener("click", () => {
+      if (typeof window.openBibleNavOverlay === "function") {
+        window.openBibleNavOverlay();
+      }
+    });
   }
 
   const navVersionBtn = document.getElementById("reader-nav-version-btn");
@@ -60,77 +64,169 @@ function initReaderControls() {
     });
   }
 
+  // Global Search overlay hooks
   const searchBtn = document.getElementById("reader-search-btn");
-  const searchPanel = document.getElementById("reader-search-panel");
-  const searchInput = document.getElementById("reader-search-input");
-  const searchCloseBtn = document.getElementById("reader-search-close-btn");
+  const searchOverlay = document.getElementById("global-search-overlay");
+  const searchInput = document.getElementById("global-search-input");
+  const searchCancelBtn = document.getElementById("global-search-cancel-btn");
+  const searchClearBtn = document.getElementById("global-search-clear-btn");
+  const searchResultsContainer = document.getElementById("global-search-results");
+  const searchResultsCountEl = document.getElementById("search-results-count");
 
-  if (searchBtn && searchPanel) {
+  if (searchBtn && searchOverlay) {
     searchBtn.addEventListener("click", () => {
-      const isHidden = searchPanel.classList.contains("hidden");
-      searchPanel.classList.toggle("hidden", !isHidden);
-      searchBtn.classList.toggle("active", isHidden);
-      if (isHidden && searchInput) {
-        searchInput.focus();
-      } else if (!isHidden && searchInput) {
-        searchInput.value = "";
-        if (typeof window.searchChapterVerses === "function") window.searchChapterVerses("");
-      }
-    });
-  }
-
-  if (searchCloseBtn && searchPanel && searchBtn) {
-    searchCloseBtn.addEventListener("click", () => {
-      searchPanel.classList.add("hidden");
-      searchBtn.classList.remove("active");
+      searchOverlay.classList.remove("hidden");
       if (searchInput) {
         searchInput.value = "";
-        if (typeof window.searchChapterVerses === "function") window.searchChapterVerses("");
+        searchInput.focus();
       }
+      if (searchClearBtn) searchClearBtn.classList.add("hidden");
+      if (searchResultsContainer) searchResultsContainer.innerHTML = "";
+      if (searchResultsCountEl) searchResultsCountEl.textContent = "請輸入關鍵字進行搜尋";
     });
   }
 
+  if (searchCancelBtn && searchOverlay) {
+    searchCancelBtn.addEventListener("click", () => {
+      searchOverlay.classList.add("hidden");
+    });
+  }
+
+  if (searchClearBtn && searchInput) {
+    searchClearBtn.addEventListener("click", () => {
+      searchInput.value = "";
+      searchClearBtn.classList.add("hidden");
+      if (searchResultsContainer) searchResultsContainer.innerHTML = "";
+      if (searchResultsCountEl) searchResultsCountEl.textContent = "請輸入關鍵字進行搜尋";
+      searchInput.focus();
+    });
+  }
+
+  let searchTimeout = null;
   if (searchInput) {
     searchInput.addEventListener("input", (e) => {
-      if (typeof window.searchChapterVerses === "function") {
-        window.searchChapterVerses(e.target.value);
+      const query = e.target.value.trim();
+      if (searchClearBtn) {
+        searchClearBtn.classList.toggle("hidden", !query);
       }
+      
+      clearTimeout(searchTimeout);
+      if (!query) {
+        if (searchResultsContainer) searchResultsContainer.innerHTML = "";
+        if (searchResultsCountEl) searchResultsCountEl.textContent = "請輸入關鍵字進行搜尋";
+        return;
+      }
+      
+      if (searchResultsCountEl) searchResultsCountEl.textContent = "正在搜尋中...";
+      
+      searchTimeout = setTimeout(async () => {
+        try {
+          const results = await window.searchBibleText(query, state.readerState.version || "CUNP");
+          renderSearchResults(results, query);
+        } catch (err) {
+          console.error("Search error:", err);
+          if (searchResultsCountEl) searchResultsCountEl.textContent = "搜尋失敗，請稍後再試";
+        }
+      }, 400); // 400ms debounce
     });
   }
 
-  const settingsTrigger = document.getElementById("reader-settings-trigger-btn");
-  const settingsDropdown = document.getElementById("reader-settings-dropdown");
+  function renderSearchResults(results, query) {
+    if (!searchResultsContainer) return;
+    searchResultsContainer.innerHTML = "";
+    
+    if (!results || results.length === 0) {
+      if (searchResultsCountEl) searchResultsCountEl.textContent = "找不到符合的經文";
+      return;
+    }
+    
+    if (searchResultsCountEl) {
+      searchResultsCountEl.textContent = `共找到 ${results.length} 筆符合的結果`;
+    }
+    
+    results.forEach(item => {
+      const div = document.createElement("div");
+      div.className = "search-result-item";
+      
+      const regex = new RegExp(`(${escapeRegExp(query)})`, "gi");
+      const highlightedText = item.text.replace(regex, "<mark>$1</mark>");
+      
+      div.innerHTML = `
+        <div class="search-result-ref">${item.bookName} ${item.chapter}章:${item.verse}節</div>
+        <div class="search-result-text">${highlightedText}</div>
+      `;
+      
+      div.addEventListener("click", () => {
+        if (searchOverlay) searchOverlay.classList.add("hidden");
+        
+        const book = BIBLE_BOOKS.find(b => b.name === item.bookName || b.eng.toLowerCase() === item.bookEng.toLowerCase());
+        if (book) {
+          navOverlayState.selectedBookId = book.id;
+          navOverlayState.selectedChapter = item.chapter;
+          selectNavVerse(item.verse);
+        }
+      });
+      
+      searchResultsContainer.appendChild(div);
+    });
+  }
 
-  if (settingsTrigger && settingsDropdown) {
+  // Display Settings Bottom Sheet hooks
+  const settingsTrigger = document.getElementById("reader-settings-trigger-btn");
+  const settingsBackdrop = document.getElementById("typography-settings-backdrop");
+  const settingsCloseBtn = document.getElementById("typography-sheet-close-btn");
+
+  if (settingsTrigger && settingsBackdrop) {
     settingsTrigger.addEventListener("click", (e) => {
       e.stopPropagation();
-      settingsDropdown.classList.toggle("hidden");
+      settingsBackdrop.classList.remove("hidden");
+      updateSheetActiveStates();
     });
-    document.addEventListener("click", (e) => {
-      if (!e.target.closest(".reader-settings-container")) {
-        settingsDropdown.classList.add("hidden");
+  }
+
+  if (settingsCloseBtn && settingsBackdrop) {
+    settingsCloseBtn.addEventListener("click", () => {
+      settingsBackdrop.classList.add("hidden");
+    });
+  }
+
+  if (settingsBackdrop) {
+    settingsBackdrop.addEventListener("click", (e) => {
+      if (e.target === settingsBackdrop) {
+        settingsBackdrop.classList.add("hidden");
       }
     });
   }
 
-  // Bind font size buttons in settings dropdown
-  document.querySelectorAll("#reader-settings-dropdown .font-btn").forEach(btn => {
+  // Bind font size buttons in bottom sheet
+  document.querySelectorAll(".font-size-option").forEach(btn => {
     btn.addEventListener("click", () => {
       const size = parseInt(btn.dataset.size);
       state.readerState.fontSize = size;
       updateReaderFontSize();
+      updateSheetActiveStates();
     });
   });
 
-  // Bind theme buttons in settings dropdown
-  document.querySelectorAll("#reader-settings-dropdown .theme-btn").forEach(btn => {
+  // Bind theme buttons in bottom sheet
+  document.querySelectorAll(".theme-option").forEach(btn => {
     btn.addEventListener("click", () => {
       const theme = btn.dataset.theme;
       if (typeof window.applyAppTheme === "function") {
         window.applyAppTheme(theme);
+        updateSheetActiveStates();
       }
     });
   });
+
+  function updateSheetActiveStates() {
+    document.querySelectorAll(".font-size-option").forEach(btn => {
+      btn.classList.toggle("active", parseInt(btn.dataset.size) === state.readerState.fontSize);
+    });
+    document.querySelectorAll(".theme-option").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.theme === state.theme);
+    });
+  }
 
   // Reader picker controls
   const testamentButtons = document.querySelectorAll("#reader-testament-buttons .reader-picker-tab");
@@ -676,8 +772,370 @@ window.applyAppTheme = function(themeName) {
   document.body.className = themeName + "-theme";
   localStorage.setItem("app_theme", themeName);
   
-  // Update setting dropdown button active state
+  // Update settings dropdown active state if it exists
   document.querySelectorAll("#reader-settings-dropdown .theme-btn").forEach(btn => {
     btn.classList.toggle("active", btn.dataset.theme === themeName);
+  });
+
+  // Update bottom sheet active state
+  document.querySelectorAll(".theme-option").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.theme === themeName);
+  });
+};
+
+// ==========================================================================
+// Bible Navigation Overlay (Catalog Shell) State and Handlers
+// ==========================================================================
+let navOverlayState = {
+  activeTab: 'book', // 'book', 'chapter', 'verse'
+  selectedBookId: 1,
+  selectedChapter: 1,
+  selectedVerse: 1,
+  viewMode: 'grid', // 'grid', 'list'
+  autoAdvance: true
+};
+
+window.openBibleNavOverlay = function() {
+  const overlay = document.getElementById("bible-nav-overlay");
+  if (!overlay) return;
+  
+  // Sync selections with global reader state
+  navOverlayState.selectedBookId = state.readerState.bookId;
+  navOverlayState.selectedChapter = state.readerState.chapter;
+  navOverlayState.selectedVerse = 1;
+  
+  overlay.classList.remove("hidden");
+  
+  // Initialize grid mode buttons in DOM
+  const gridBtn = document.getElementById("view-mode-grid");
+  const listBtn = document.getElementById("view-mode-list");
+  if (gridBtn && listBtn) {
+    gridBtn.classList.toggle("active", navOverlayState.viewMode === 'grid');
+    listBtn.classList.toggle("active", navOverlayState.viewMode === 'list');
+  }
+
+  // Bind Segmented Tab clicks once
+  const tabs = document.querySelectorAll("#bible-nav-overlay .segmented-tab");
+  tabs.forEach(tab => {
+    if (!tab.dataset.bound) {
+      tab.dataset.bound = "true";
+      tab.addEventListener("click", () => {
+        window.switchNavTab(tab.dataset.tab);
+      });
+    }
+  });
+
+  // Bind view mode triggers once
+  if (gridBtn && !gridBtn.dataset.bound) {
+    gridBtn.dataset.bound = "true";
+    gridBtn.addEventListener("click", () => {
+      navOverlayState.viewMode = 'grid';
+      gridBtn.classList.add("active");
+      if (listBtn) listBtn.classList.remove("active");
+      renderBibleNavContent();
+    });
+  }
+  if (listBtn && !listBtn.dataset.bound) {
+    listBtn.dataset.bound = "true";
+    listBtn.addEventListener("click", () => {
+      navOverlayState.viewMode = 'list';
+      listBtn.classList.add("active");
+      if (gridBtn) gridBtn.classList.remove("active");
+      renderBibleNavContent();
+    });
+  }
+
+  // Bind back button once
+  const backBtn = document.getElementById("bible-nav-back-btn");
+  if (backBtn && !backBtn.dataset.bound) {
+    backBtn.dataset.bound = "true";
+    backBtn.addEventListener("click", () => {
+      if (navOverlayState.activeTab === 'verse') {
+        window.switchNavTab('chapter');
+      } else if (navOverlayState.activeTab === 'chapter') {
+        window.switchNavTab('book');
+      } else {
+        overlay.classList.add("hidden");
+      }
+    });
+  }
+
+  window.switchNavTab('book');
+};
+
+window.switchNavTab = function(tabName) {
+  navOverlayState.activeTab = tabName;
+  
+  // Update segmented control tabs
+  document.querySelectorAll("#bible-nav-overlay .segmented-tab").forEach(tab => {
+    tab.classList.toggle("active", tab.dataset.tab === tabName);
+  });
+  
+  updateNavOverlayHeader();
+  renderBibleNavContent();
+};
+
+function updateNavOverlayHeader() {
+  const titleEl = document.getElementById("bible-nav-title");
+  if (!titleEl) return;
+  
+  const book = BIBLE_BOOKS.find(b => b.id === navOverlayState.selectedBookId);
+  if (navOverlayState.activeTab === 'book') {
+    titleEl.textContent = "選擇書卷";
+  } else if (navOverlayState.activeTab === 'chapter') {
+    titleEl.textContent = book ? book.name : "選擇章節";
+  } else if (navOverlayState.activeTab === 'verse') {
+    titleEl.textContent = book ? `${book.name} ${navOverlayState.selectedChapter}章` : "選擇節";
+  }
+}
+
+function renderBibleNavContent() {
+  const container = document.getElementById("bible-nav-content");
+  if (!container) return;
+  
+  container.innerHTML = "";
+  const book = BIBLE_BOOKS.find(b => b.id === navOverlayState.selectedBookId);
+  
+  if (navOverlayState.activeTab === 'book') {
+    document.querySelector(".mode-selector-bar").style.display = "flex";
+    
+    if (navOverlayState.viewMode === 'grid') {
+      // 5-Column Grid Mode
+      const oldSection = document.createElement("div");
+      oldSection.className = "bible-nav-section-title";
+      oldSection.textContent = "舊約聖經";
+      container.appendChild(oldSection);
+      
+      const oldGrid = document.createElement("div");
+      oldGrid.className = "bible-nav-grid";
+      
+      const newSection = document.createElement("div");
+      newSection.className = "bible-nav-section-title";
+      newSection.textContent = "新約聖經";
+      
+      const newGrid = document.createElement("div");
+      newGrid.className = "bible-nav-grid";
+      
+      BIBLE_BOOKS.forEach(b => {
+        const item = document.createElement("div");
+        item.className = "grid-item-book";
+        item.classList.toggle("active", b.id === navOverlayState.selectedBookId);
+        item.innerHTML = `
+          <span class="abbrev-title">${b.abbrev}</span>
+          <span class="full-title">${b.name}</span>
+        `;
+        item.addEventListener("click", () => selectNavBook(b.id));
+        
+        if (b.section === 'old') {
+          oldGrid.appendChild(item);
+        } else {
+          newGrid.appendChild(item);
+        }
+      });
+      
+      container.appendChild(oldGrid);
+      container.appendChild(newSection);
+      container.appendChild(newGrid);
+    } else {
+      // List Mode
+      const oldSection = document.createElement("div");
+      oldSection.className = "bible-nav-section-title";
+      oldSection.textContent = "舊約聖經";
+      container.appendChild(oldSection);
+      
+      const oldList = document.createElement("div");
+      oldList.className = "bible-nav-list";
+      
+      const newSection = document.createElement("div");
+      newSection.className = "bible-nav-section-title";
+      newSection.textContent = "新約聖經";
+      
+      const newList = document.createElement("div");
+      newList.className = "bible-nav-list";
+      
+      BIBLE_BOOKS.forEach(b => {
+        const item = document.createElement("div");
+        item.className = "list-item-book";
+        item.classList.toggle("active", b.id === navOverlayState.selectedBookId);
+        item.innerHTML = `
+          <span>${b.name}</span>
+          <span class="abbrev-badge">${b.abbrev}</span>
+        `;
+        item.addEventListener("click", () => selectNavBook(b.id));
+        
+        if (b.section === 'old') {
+          oldList.appendChild(item);
+        } else {
+          newList.appendChild(item);
+        }
+      });
+      
+      container.appendChild(oldList);
+      container.appendChild(newSection);
+      container.appendChild(newList);
+    }
+  } else if (navOverlayState.activeTab === 'chapter') {
+    document.querySelector(".mode-selector-bar").style.display = "none";
+    
+    const grid = document.createElement("div");
+    grid.className = "chapter-nav-grid";
+    
+    const totalChapters = book ? book.chapters : 50;
+    for (let c = 1; c <= totalChapters; c++) {
+      const item = document.createElement("div");
+      item.className = "grid-item-number";
+      item.classList.toggle("active", c === navOverlayState.selectedChapter);
+      item.textContent = c;
+      item.addEventListener("click", () => selectNavChapter(c));
+      grid.appendChild(item);
+    }
+    container.appendChild(grid);
+  } else if (navOverlayState.activeTab === 'verse') {
+    document.querySelector(".mode-selector-bar").style.display = "none";
+    
+    const loader = document.createElement("div");
+    loader.className = "loader-inline";
+    loader.style.padding = "2.5rem";
+    loader.textContent = "讀取章節總節數中...";
+    container.appendChild(loader);
+    
+    if (book) {
+      fetchBibleChapter(book.eng, navOverlayState.selectedChapter)
+        .then(data => {
+          container.innerHTML = "";
+          const grid = document.createElement("div");
+          grid.className = "verse-nav-grid";
+          
+          const totalVerses = data.verses.length;
+          for (let v = 1; v <= totalVerses; v++) {
+            const item = document.createElement("div");
+            item.className = "grid-item-number";
+            item.textContent = v;
+            item.addEventListener("click", () => selectNavVerse(v));
+            grid.appendChild(item);
+          }
+          container.appendChild(grid);
+        })
+        .catch(err => {
+          container.innerHTML = `<div class="reader-error-state" style="margin:1rem;">無法加載節數資訊：${err.message}</div>`;
+        });
+    }
+  }
+}
+
+function selectNavBook(bookId) {
+  navOverlayState.selectedBookId = bookId;
+  navOverlayState.selectedChapter = 1;
+  
+  const autoAdvance = document.getElementById("bible-nav-auto-advance").checked;
+  if (autoAdvance) {
+    window.switchNavTab('chapter');
+  } else {
+    renderBibleNavContent();
+  }
+}
+
+function selectNavChapter(chNum) {
+  navOverlayState.selectedChapter = chNum;
+  
+  const autoAdvance = document.getElementById("bible-nav-auto-advance").checked;
+  if (autoAdvance) {
+    window.switchNavTab('verse');
+  } else {
+    renderBibleNavContent();
+  }
+}
+
+async function selectNavVerse(vNum) {
+  navOverlayState.selectedVerse = vNum;
+  
+  // Close overlay
+  document.getElementById("bible-nav-overlay").classList.add("hidden");
+  
+  // Apply update to state and trigger re-render
+  state.readerState.bookId = navOverlayState.selectedBookId;
+  state.readerState.chapter = navOverlayState.selectedChapter;
+  
+  // Sync selects
+  const bookSelect = document.getElementById("reader-book-select");
+  if (bookSelect) {
+    bookSelect.value = String(navOverlayState.selectedBookId);
+    populateChapterSelector();
+  }
+  const chapterSelect = document.getElementById("reader-chapter-select");
+  if (chapterSelect) {
+    chapterSelect.value = String(navOverlayState.selectedChapter);
+  }
+  
+  saveReaderPreferences();
+  updatePillLabels();
+  
+  // Show loader overlay since it is a full page transition
+  showLoader("讀取經文中...");
+  
+  try {
+    await renderReaderText();
+    
+    // Scroll to the verse
+    const container = document.getElementById("bible-content");
+    if (container) {
+      setTimeout(() => {
+        const verses = container.querySelectorAll(".bible-verse");
+        for (let v of verses) {
+          const numEl = v.querySelector(".verse-num");
+          if (numEl && parseInt(numEl.textContent) === vNum) {
+            v.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            // Visual physical flash feedback
+            const oldBg = v.style.backgroundColor;
+            v.style.backgroundColor = 'rgba(99, 102, 241, 0.22)';
+            setTimeout(() => {
+              v.style.backgroundColor = oldBg;
+            }, 1500);
+            break;
+          }
+        }
+      }, 100);
+    }
+  } catch (err) {
+    console.error(err);
+  } finally {
+    hideLoader();
+  }
+}
+
+// Helper to show/hide loading spinner overlay
+function showLoader(text) {
+  const overlay = document.getElementById("loader-overlay");
+  if (overlay) {
+    const textEl = overlay.querySelector(".loader-text");
+    if (textEl) textEl.textContent = text;
+    overlay.classList.remove("hidden");
+  }
+}
+
+function hideLoader() {
+  const overlay = document.getElementById("loader-overlay");
+  if (overlay) overlay.classList.add("hidden");
+}
+
+// ==========================================================================
+// Full-Text Bible Search client (Bolls API)
+// ==========================================================================
+window.searchBibleText = async function(query, translation = "CUNP") {
+  const url = `https://bolls.life/search/${encodeURIComponent(translation)}/?search=${encodeURIComponent(query)}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Search request failed");
+  const data = await res.json();
+  
+  return data.map(item => {
+    const book = BIBLE_BOOKS.find(b => b.id === item.book);
+    return {
+      bookName: book ? book.name : String(item.book),
+      bookEng: book ? book.eng : "",
+      chapter: item.chapter,
+      verse: item.verse,
+      text: item.text
+    };
   });
 };
