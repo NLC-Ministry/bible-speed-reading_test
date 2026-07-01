@@ -263,7 +263,12 @@ Deno.serve(async (req) => {
     return jsonResponse({
       edge_session: true,
       profile,
-      locked_fields: lockedFields
+      locked_fields: lockedFields,
+      diagnostics: {
+        sourceValues,
+        existingProfile,
+        profilePayload
+      }
     });
   } catch (err) {
     console.error("nlc-session failed:", err);

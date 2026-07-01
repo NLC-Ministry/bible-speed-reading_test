@@ -334,6 +334,7 @@ const db = {
     if (!response.ok || !payload.edge_session) {
       throw new Error(payload.message || payload.error || "NLC session sync failed: " + response.status);
     }
+    console.log("NLC Session Sync Payload:", payload);
 
     localStorage.removeItem("nlc_supabase_access_token");
     localStorage.removeItem("nlc_supabase_expires_at");
