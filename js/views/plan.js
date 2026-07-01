@@ -1258,11 +1258,18 @@ window.toggleYouVersionChapter = function (checkboxEl, book, chapter, taskRound 
 function renderPlanLevelEditor() {
   const currentLevel = state.activePlan ? (state.activePlan.level || "normal") : "normal";
   
-  // 計算使用者實際已讀經的最大遍數（Round）
-  const maxReadRound = (state.readingLogs || []).reduce((max, log) => {
-    const r = log.round || 1;
-    return r > max ? r : max;
-  }, 1);
+  // 💡 關鍵修復：直接從計畫各章節的打卡狀態（R2, R3）計算實際已讀的最大遍數，避免與 raw logs 型態不合
+  let maxReadRound = 1;
+  if (state.activePlan && state.activePlan.days) {
+    state.activePlan.days.forEach(day => {
+      if (day.chapters) {
+        day.chapters.forEach(ch => {
+          if (ch.isReadR3) maxReadRound = Math.max(maxReadRound, 3);
+          else if (ch.isReadR2) maxReadRound = Math.max(maxReadRound, 2);
+        });
+      }
+    });
+  }
 
   const options = document.querySelectorAll("#plan-level-options .plan-level-option");
   options.forEach(option => {
@@ -1432,10 +1439,19 @@ window.changePlanLevel = async function (newLevel) {
   if (!state.activePlan) return;
 
   const currentLevel = state.activePlan.level || "normal";
-  const maxReadRound = (state.readingLogs || []).reduce((max, log) => {
-    const r = log.round || 1;
-    return r > max ? r : max;
-  }, 1);
+  
+  // 💡 關鍵修復：直接從計畫各章節的打卡狀態（R2, R3）計算實際已讀的最大遍數
+  let maxReadRound = 1;
+  if (state.activePlan && state.activePlan.days) {
+    state.activePlan.days.forEach(day => {
+      if (day.chapters) {
+        day.chapters.forEach(ch => {
+          if (ch.isReadR3) maxReadRound = Math.max(maxReadRound, 3);
+          else if (ch.isReadR2) maxReadRound = Math.max(maxReadRound, 2);
+        });
+      }
+    });
+  }
 
   const newRounds = getPlanLevelRounds(newLevel);
   if (newRounds < maxReadRound) {
