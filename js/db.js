@@ -982,6 +982,8 @@ const db = {
         updated_at: new Date().toISOString()
       };
 
+      console.log("Saving Profile Payload:", profilePayload);
+
       const saveResult = state.supabase.saveProfile
         ? await state.supabase.saveProfile(profilePayload)
         : await state.supabase.from("profiles").upsert(profilePayload, { onConflict: "id" }).select("*").single();
