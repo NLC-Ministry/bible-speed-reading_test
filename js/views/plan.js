@@ -3002,11 +3002,14 @@ function renderPersonalUnlockedBadges() {
 async function renderMyPersonalRankings() {
   if (!state.activePlan) return;
 
-  // Calculate completedDaysCount
-  const completedDaysCount = state.activePlan.days.filter(d => {
-    if (!d.chapters || d.chapters.length === 0) return false;
-    return d.chapters.every(ch => ch.isRead);
-  }).length;
+  // Calculate completedDaysCount (讀完一遍後直接顯示總天數，避免進入二三遍計算落後/超前不準確)
+  const isCompletedOnce = state.activePlan.isPlanCompleted || (state.activePlan.currentRound || 1) > 1;
+  const completedDaysCount = isCompletedOnce
+    ? state.activePlan.days.length
+    : state.activePlan.days.filter(d => {
+        if (!d.chapters || d.chapters.length === 0) return false;
+        return d.chapters.every(ch => ch.isRead);
+      }).length;
 
   const planStart = new Date(state.activePlan.startDate);
   const today = new Date();
@@ -3151,10 +3154,14 @@ async function renderGroupParticipantsRankingTable() {
   const rankingTitle = document.getElementById("ranking-title");
   const personalStreak = state.currentUser.streak || 0;
 
-  const completedDaysCount = state.activePlan.days.filter(d => {
-    if (!d.chapters || d.chapters.length === 0) return false;
-    return d.chapters.every(ch => ch.isRead);
-  }).length;
+  // Calculate completedDaysCount (讀完一遍後直接顯示總天數，避免進入二三遍計算落後/超前不準確)
+  const isCompletedOnce = state.activePlan.isPlanCompleted || (state.activePlan.currentRound || 1) > 1;
+  const completedDaysCount = isCompletedOnce
+    ? state.activePlan.days.length
+    : state.activePlan.days.filter(d => {
+        if (!d.chapters || d.chapters.length === 0) return false;
+        return d.chapters.every(ch => ch.isRead);
+      }).length;
 
   const planStart = new Date(state.activePlan.startDate);
   const today = new Date();
