@@ -1257,9 +1257,44 @@ window.toggleYouVersionChapter = function (checkboxEl, book, chapter, taskRound 
 
 function renderPlanLevelEditor() {
   const currentLevel = state.activePlan ? (state.activePlan.level || "normal") : "normal";
+  
+  // 計算使用者實際已讀經的最大遍數（Round）
+  const maxReadRound = (state.readingLogs || []).reduce((max, log) => {
+    const r = log.round || 1;
+    return r > max ? r : max;
+  }, 1);
+
   const options = document.querySelectorAll("#plan-level-options .plan-level-option");
   options.forEach(option => {
-    option.classList.toggle("active", option.dataset.level === currentLevel);
+    const optLevel = option.dataset.level || "normal";
+    const optRounds = getPlanLevelRounds(optLevel);
+
+    option.classList.toggle("active", optLevel === currentLevel);
+
+    // 只有當「目標選項的總遍數」低於「使用者實際已讀到的最大遍數」時，才進行防呆禁用
+    if (optRounds < maxReadRound) {
+      option.disabled = true;
+      option.style.opacity = "0.4";
+      option.style.cursor = "not-allowed";
+      option.style.pointerEvents = "none";
+      let span = option.querySelector("span");
+      if (span && !span.innerHTML.includes("downgrade-warning")) {
+        span.innerHTML += ` <span class="downgrade-warning" style="color: #ef4444; font-weight: bold;">(已讀至第 ${maxReadRound} 遍，不可調回此難度)</span>`;
+      }
+    } else {
+      option.disabled = false;
+      option.style.opacity = "";
+      option.style.cursor = "pointer";
+      option.style.pointerEvents = "auto";
+      let span = option.querySelector("span");
+      if (span) {
+        // 清除舊有的防呆標示與警告字元
+        const warningSpan = span.querySelector(".downgrade-warning");
+        if (warningSpan) warningSpan.remove();
+        span.innerHTML = span.innerHTML.replace(/\s*<span class="downgrade-warning".*?<\/span>/g, "");
+        span.innerHTML = span.innerHTML.replace(/\s*<span style="color: #ef4444; font-weight: bold;">\(已晉升，不可調回低階難度\)<\/span>/g, "");
+      }
+    }
   });
 }
 window.showPlanLevelModal = async function () {
@@ -1397,7 +1432,20 @@ window.changePlanLevel = async function (newLevel) {
   if (!state.activePlan) return;
 
   const currentLevel = state.activePlan.level || "normal";
-  const isUpgrade = getPlanLevelOrder(newLevel) > getPlanLevelOrder(currentLevel);
+  const maxReadRound = (state.readingLogs || []).reduce((max, log) => {
+    const r = log.round || 1;
+    return r > max ? r : max;
+  }, 1);
+
+  const newRounds = getPlanLevelRounds(newLevel);
+  if (newRounds < maxReadRound) {
+    showToast(`您已打卡第 ${maxReadRound} 遍進度，無法調回低於此遍數的等級。`);
+    return;
+  }
+
+  const currentLevelOrder = getPlanLevelOrder(currentLevel);
+  const newLevelOrder = getPlanLevelOrder(newLevel);
+  const isUpgrade = newLevelOrder > currentLevelOrder;
   const lockedUntil = getDowngradeLockedUntil(state.activePlan);
   if (isUpgrade && isPlanUpgradeLocked(state.activePlan)) {
     showToast("降級後兩週內暫停升級申請，可於 " + formatLockDate(lockedUntil) + " 後再升級。");
