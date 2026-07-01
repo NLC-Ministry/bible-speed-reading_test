@@ -96,6 +96,7 @@ const db = {
           if (auth.isLoggedIn()) {
             await this.syncNlcSessionWithSupabase(true);
             this.updateAuthUI({ user: { id: state.currentProfileId || auth.getLogtoSubject() } });
+            this.refreshRoleDependentUI();
             return; // loadUserData() will be called in main.js
           }
         }
@@ -303,6 +304,16 @@ const db = {
     if (Array.isArray(lockedFields)) state.profileLockedFields = lockedFields;
     state.currentUser.is_demo = !!profile.is_demo;
     state.realRole = state.currentUser.role;
+    this.refreshRoleDependentUI();
+  },
+
+  refreshRoleDependentUI() {
+    if (typeof updateAdminNavVisibility === "function") {
+      updateAdminNavVisibility();
+    }
+    if (typeof updateProfileDropdown === "function") {
+      updateProfileDropdown();
+    }
   },
 
   async syncNlcSessionWithSupabase(force = false) {
