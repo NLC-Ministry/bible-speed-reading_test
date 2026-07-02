@@ -3,6 +3,10 @@
 window._currentStatsTab = 'personal';
 window._statsTabScope = null;
 
+// Asynchronous Request & Click Debounce state trackers
+let lastTrackerRequestId = 0;
+let dateClickDebounceTimer = null;
+
 function canUseAdvancedGroupStats() {
   const role = (state.currentUser && state.currentUser.role) || "member";
   return ["admin", "senior_pastor", "great_zone_leader", "zone_leader", "group_leader"].includes(role);
@@ -1064,7 +1068,13 @@ function renderHorizontalDateStrip() {
       // Smoothly scroll the selected day card into the center of viewport
       dateCard.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
 
-      renderPlanScheduleTracker(true); // Pass true to skip rebuilding the carousel
+      // Debounce rendering to protect against continuous clicking
+      if (dateClickDebounceTimer) {
+        clearTimeout(dateClickDebounceTimer);
+      }
+      dateClickDebounceTimer = setTimeout(() => {
+        renderPlanScheduleTracker(true);
+      }, 200);
     });
 
     carousel.appendChild(dateCard);
@@ -1082,6 +1092,8 @@ function renderHorizontalDateStrip() {
 async function renderPlanScheduleTracker(skipCarouselUpdate = false) {
   const container = document.getElementById("plan-tasks-list");
   if (!container || !state.activePlan) return;
+
+  const currentRequestId = ++lastTrackerRequestId;
 
   container.innerHTML = "";
 
@@ -1110,6 +1122,12 @@ async function renderPlanScheduleTracker(skipCarouselUpdate = false) {
 
   // Check checkPlanSchedule
   await checkPlanSchedule(state.activePlan);
+
+  // Validate request pointer after asynchronous block to prevent race condition overrides
+  if (currentRequestId !== lastTrackerRequestId) {
+    console.log('⏳ [日期切換防護] 偵測到快速切換，已自動忽略/取消舊日期的非同步請求，當前鎖定日期：', state.selectedPlanDay);
+    return;
+  }
 
   const isAdmin = state.currentUser && state.currentUser.role === 'admin';
   const started = isPlanStarted(state.activePlan) || isAdmin;
@@ -1245,7 +1263,13 @@ window.toggleYouVersionChapter = function (checkboxEl, book, chapter, taskRound 
   // 1. 💡 立即在本機更新記憶體狀態與 UI 渲染（完全零延遲）
   applyLocalReadState(chapterObj, willBeChecked);
   calculatePlanProgress();
+  
+  // Optimistically update horizontal date carousel strip instantly
+  renderHorizontalDateStrip();
   renderPlanScheduleTracker(true);
+  
+  console.log('✅ [進度同步完成] 成功標記已讀，已強制驅動畫面更新');
+
   if (typeof updateDashboardView === "function") {
     updateDashboardView();
   }
