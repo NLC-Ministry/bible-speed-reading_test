@@ -620,15 +620,16 @@ function initAdminFiltersUI() {
 }
 
 // Render administrative User Permission Management table
+// Render administrative User Permission Management list (Mobile Flexbox layout)
 async function renderAdminUserManagement() {
-  const tableBody = document.getElementById("admin-users-table-body");
-  if (!tableBody) return;
+  const listContainer = document.getElementById("admin-users-list");
+  if (!listContainer) return;
 
   const searchInput = document.getElementById("admin-search-user");
   const query = searchInput ? searchInput.value.trim().toLowerCase() : "";
 
   // Show inline loading indicator
-  tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">載入成員名單中...</td></tr>`;
+  listContainer.innerHTML = `<div style="text-align: center; padding: 2.5rem; color: var(--text-muted);">載入成員名單中...</div>`;
 
   try {
     const users = await db.fetchMergedUsersList();
@@ -660,149 +661,181 @@ async function renderAdminUserManagement() {
       return matchName && matchRegion && matchZone && matchGroup;
     });
 
-    tableBody.innerHTML = "";
+    listContainer.innerHTML = "";
 
     if (filteredUsers.length === 0) {
-      tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">無相符成員</td></tr>`;
+      listContainer.innerHTML = `<div style="text-align: center; padding: 2.5rem; color: var(--text-muted);">無相符成員</div>`;
       return;
     }
 
+    const roleLabels = {
+      member: "一般組員",
+      group_leader: "小組長",
+      zone_leader: "區長",
+      great_zone_leader: "大區長",
+      senior_pastor: "主任牧師",
+      admin: "系統管理員"
+    };
+
     filteredUsers.forEach(user => {
-      const tr = document.createElement("tr");
       const isDemo = !!user.is_demo;
-
-      const roleOptions = [
-        { value: "member", label: "一般組員" },
-        { value: "group_leader", label: "小組長" },
-        { value: "zone_leader", label: "區長" },
-        { value: "great_zone_leader", label: "大區長" },
-        { value: "senior_pastor", label: "主任牧師" },
-        { value: "admin", label: "系統管理員" }
-      ];
-
-      let selectHtml = `<div style="display: flex; align-items: center; gap: 0.4rem;">`;
-      selectHtml += `<select class="form-control" style="font-size: 0.82rem; padding: 0.25rem 0.5rem; height: auto; flex: 1;" ${isDemo ? "disabled title=\"示範帳號不可更改角色\"" : ""}>`;
-      roleOptions.forEach(opt => {
-        const selected = user.role === opt.value ? "selected" : "";
-        selectHtml += `<option value="${opt.value}" ${selected}>${opt.label}</option>`;
-      });
-      selectHtml += `</select>`;
-
-      const isLeader = ["great_zone_leader", "zone_leader", "group_leader"].includes(user.role);
-      if (isLeader && !isDemo) {
-        selectHtml += `
-          <button class="pill-btn edit-scope-btn" data-userid="${user.id}" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; white-space: nowrap;">
-            ✏️ 範圍
-          </button>
-        `;
-      }
-      selectHtml += `</div>`;
-
+      const roleLabel = roleLabels[user.role] || user.role;
+      
+      const item = document.createElement("div");
+      item.className = "member-list-item";
+      
       const demoBadge = isDemo
         ? `<span style="display:inline-block;margin-left:0.4rem;padding:0.1rem 0.45rem;border-radius:99px;font-size:0.65rem;font-weight:700;background:rgba(251,191,36,0.18);color:#d97706;border:1px solid rgba(251,191,36,0.4);">示範</span>`
         : "";
 
-      tr.innerHTML = `
-        <td><strong>${escapeHTML(user.name)}</strong>${demoBadge}</td>
-        <td>${escapeHTML(user.great_region)} / ${escapeHTML(user.pastoral_zone)} / ${escapeHTML(user.small_group)}</td>
-        <td>${selectHtml}</td>
-        <td style="text-align: center; vertical-align: middle;" class="status-cell">
-          <span style="font-size: 0.8rem; color: var(--text-muted);">${isDemo ? "示範帳號" : "--"}</span>
-        </td>
+      item.innerHTML = `
+        <div class="member-info-left">
+          <div class="member-name-row">
+            <span class="member-name-text">${escapeHTML(user.name)}</span>
+            <span class="role-badge-pill">${escapeHTML(roleLabel)}</span>
+            ${demoBadge}
+          </div>
+          <div class="member-sub-text">
+            ${escapeHTML(user.great_region)} / ${escapeHTML(user.pastoral_zone)} / ${escapeHTML(user.small_group)}
+          </div>
+        </div>
+        <div class="member-arrow-right">
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </div>
       `;
 
-      if (!isDemo) {
-        // Event listener for role selector (only for real accounts)
-        const select = tr.querySelector("select");
-        const statusCell = tr.querySelector(".status-cell");
-
-        select.onchange = async (e) => {
-          const newRole = e.target.value;
-          let additionalFields = {};
-
-          if (["great_zone_leader", "zone_leader", "group_leader"].includes(newRole)) {
-            const resp = await showResponsibilityModal(newRole, user);
-            if (!resp) {
-              select.value = user.role;
-              return;
-            }
-            additionalFields = resp;
-          }
-
-          statusCell.innerHTML = `<span style="font-size: 0.8rem; color: var(--primary-color); font-weight: bold;">更新中...</span>`;
-          select.disabled = true;
-
-          const success = await db.updateUserRole(user.id, newRole, user.name, additionalFields);
-
-          select.disabled = false;
-          if (success) {
-            statusCell.innerHTML = `<span style="font-size: 0.8rem; color: #10b981; font-weight: bold;">✓ 已儲存</span>`;
-            user.role = newRole;
-            if (additionalFields.great_region !== undefined) user.great_region = additionalFields.great_region;
-            if (additionalFields.pastoral_zone !== undefined) user.pastoral_zone = additionalFields.pastoral_zone;
-            if (additionalFields.small_group !== undefined) user.small_group = additionalFields.small_group;
-
-            if (user.name === state.currentUser.name) {
-              state.currentUser.role = newRole;
-              state.realRole = newRole;
-              if (additionalFields.great_region !== undefined) state.currentUser.great_region = additionalFields.great_region;
-              if (additionalFields.pastoral_zone !== undefined) state.currentUser.pastoral_zone = additionalFields.pastoral_zone;
-              if (additionalFields.small_group !== undefined) state.currentUser.small_group = additionalFields.small_group;
-              renderProfileView();
-            }
-
-            renderAdminUserManagement();
-
-            setTimeout(() => {
-              if (statusCell.textContent.includes("已儲存")) {
-                statusCell.innerHTML = `<span style="font-size: 0.8rem; color: var(--text-muted);">--</span>`;
-              }
-            }, 2000);
-          } else {
-            statusCell.innerHTML = `<span style="font-size: 0.8rem; color: #ef4444; font-weight: bold;">✕ 失敗</span>`;
-            select.value = user.role;
-          }
-        };
-
-        // Event listener for edit scope button (if exists)
-        const editBtn = tr.querySelector(".edit-scope-btn");
-        if (editBtn) {
-          editBtn.onclick = async () => {
-            const resp = await showResponsibilityModal(user.role, user);
-            if (!resp) return;
-
-            statusCell.innerHTML = `<span style="font-size: 0.8rem; color: var(--primary-color); font-weight: bold;">更新中...</span>`;
-            
-            const success = await db.updateUserRole(user.id, user.role, user.name, resp);
-            
-            if (success) {
-              statusCell.innerHTML = `<span style="font-size: 0.8rem; color: #10b981; font-weight: bold;">✓ 已儲存</span>`;
-              if (resp.great_region !== undefined) user.great_region = resp.great_region;
-              if (resp.pastoral_zone !== undefined) user.pastoral_zone = resp.pastoral_zone;
-              if (resp.small_group !== undefined) user.small_group = resp.small_group;
-
-              if (user.name === state.currentUser.name) {
-                if (resp.great_region !== undefined) state.currentUser.great_region = resp.great_region;
-                if (resp.pastoral_zone !== undefined) state.currentUser.pastoral_zone = resp.pastoral_zone;
-                if (resp.small_group !== undefined) state.currentUser.small_group = resp.small_group;
-                renderProfileView();
-              }
-
-              renderAdminUserManagement();
-            } else {
-              statusCell.innerHTML = `<span style="font-size: 0.8rem; color: #ef4444; font-weight: bold;">✕ 失敗</span>`;
-            }
-          };
+      item.onclick = (e) => {
+        e.preventDefault();
+        if (isDemo) {
+          alert("示範帳號不可更改角色。");
+          return;
         }
-      }
+        openMemberEditBottomSheet(user);
+      };
 
-      tableBody.appendChild(tr);
+      listContainer.appendChild(item);
     });
 
   } catch (err) {
     console.error("Failed to render admin user management:", err);
-    tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #ef4444;">載入失敗: ${err.message || err}</td></tr>`;
+    listContainer.innerHTML = `<div style="text-align: center; padding: 2.5rem; color: #ef4444;">載入失敗: ${err.message || err}</div>`;
   }
+}
+
+// Open bottom sheet to edit member role or responsibility scope
+function openMemberEditBottomSheet(user) {
+  const overlay = document.getElementById("global-bottom-sheet");
+  const titleEl = document.getElementById("bottom-sheet-title");
+  const listEl = document.getElementById("bottom-sheet-list");
+  if (!overlay || !listEl) return;
+
+  if (titleEl) titleEl.textContent = `管理 ${user.name} 的權限`;
+  listEl.innerHTML = "";
+
+  const roleOptions = [
+    { value: "member", label: "一般組員" },
+    { value: "group_leader", label: "小組長" },
+    { value: "zone_leader", label: "區長" },
+    { value: "great_zone_leader", label: "大區長" },
+    { value: "senior_pastor", label: "主任牧師" },
+    { value: "admin", label: "系統管理員" }
+  ];
+
+  // If currently a leader, show option to edit responsibility scope first
+  const isLeader = ["great_zone_leader", "zone_leader", "group_leader"].includes(user.role);
+  if (isLeader) {
+    const scopeBtn = document.createElement("button");
+    scopeBtn.className = "bottom-sheet-item";
+    scopeBtn.style.background = "rgba(99, 102, 241, 0.1)";
+    scopeBtn.style.borderColor = "rgba(99, 102, 241, 0.2)";
+    scopeBtn.style.color = "#a5b4fc";
+    scopeBtn.style.marginBottom = "0.8rem";
+    scopeBtn.type = "button";
+    scopeBtn.innerHTML = `<span>✏️ 修改管轄範圍 (${user.great_region}/${user.pastoral_zone}/${user.small_group})</span>`;
+    scopeBtn.onclick = async () => {
+      closeAdminFilterBottomSheet();
+      const resp = await showResponsibilityModal(user.role, user);
+      if (!resp) return;
+
+      loader.show();
+      const success = await db.updateUserRole(user.id, user.role, user.name, resp);
+      loader.hide();
+
+      if (success) {
+        if (resp.great_region !== undefined) user.great_region = resp.great_region;
+        if (resp.pastoral_zone !== undefined) user.pastoral_zone = resp.pastoral_zone;
+        if (resp.small_group !== undefined) user.small_group = resp.small_group;
+
+        if (user.name === state.currentUser.name) {
+          if (resp.great_region !== undefined) state.currentUser.great_region = resp.great_region;
+          if (resp.pastoral_zone !== undefined) state.currentUser.pastoral_zone = resp.pastoral_zone;
+          if (resp.small_group !== undefined) state.currentUser.small_group = resp.small_group;
+          renderProfileView();
+        }
+        alert("已成功更新管轄範圍！");
+        renderAdminUserManagement();
+      } else {
+        alert("更新管轄範圍失敗，請重試。");
+      }
+    };
+    listEl.appendChild(scopeBtn);
+  }
+
+  // Add sub-header text for roles selection
+  const headerText = document.createElement("div");
+  headerText.style.fontSize = "0.75rem";
+  headerText.style.color = "var(--text-secondary)";
+  headerText.style.margin = "0.2rem 0 0.5rem 0.2rem";
+  headerText.style.fontWeight = "bold";
+  headerText.textContent = "變更角色身分：";
+  listEl.appendChild(headerText);
+
+  // Render all role options
+  roleOptions.forEach(opt => {
+    const btn = document.createElement("button");
+    const isSelected = user.role === opt.value;
+    btn.className = `bottom-sheet-item ${isSelected ? "selected" : ""}`;
+    btn.type = "button";
+    btn.textContent = opt.label;
+    btn.onclick = async () => {
+      closeAdminFilterBottomSheet();
+      if (isSelected) return; // No change
+
+      let additionalFields = {};
+      if (["great_zone_leader", "zone_leader", "group_leader"].includes(opt.value)) {
+        const resp = await showResponsibilityModal(opt.value, user);
+        if (!resp) return;
+        additionalFields = resp;
+      }
+
+      loader.show();
+      const success = await db.updateUserRole(user.id, opt.value, user.name, additionalFields);
+      loader.hide();
+
+      if (success) {
+        user.role = opt.value;
+        if (additionalFields.great_region !== undefined) user.great_region = additionalFields.great_region;
+        if (additionalFields.pastoral_zone !== undefined) user.pastoral_zone = additionalFields.pastoral_zone;
+        if (additionalFields.small_group !== undefined) user.small_group = additionalFields.small_group;
+
+        if (user.name === state.currentUser.name) {
+          state.currentUser.role = opt.value;
+          state.realRole = opt.value;
+          if (additionalFields.great_region !== undefined) state.currentUser.great_region = additionalFields.great_region;
+          if (additionalFields.pastoral_zone !== undefined) state.currentUser.pastoral_zone = additionalFields.pastoral_zone;
+          if (additionalFields.small_group !== undefined) state.currentUser.small_group = additionalFields.small_group;
+          renderProfileView();
+        }
+        alert("已成功變更成員權限角色！");
+        renderAdminUserManagement();
+      } else {
+        alert("變更角色失敗，請重試。");
+      }
+    };
+    listEl.appendChild(btn);
+  });
+
+  overlay.classList.add("active");
 }
 
 function populateProfileZones(greatRegion, autoSelect = true) {
