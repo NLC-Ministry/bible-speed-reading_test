@@ -420,8 +420,203 @@ function initProfileControls() {
     };
   }
 
+  // Initialize advanced search filters UI
+  initAdminFiltersUI();
+
   // Initialize header avatar dropdown
   initAvatarDropdown();
+}
+
+// Initialize advanced search filters state and bottom sheet UI
+function updateFilterChipsUI() {
+  const chipRegion = document.getElementById("chip-filter-region");
+  const chipZone = document.getElementById("chip-filter-zone");
+  const chipGroup = document.getElementById("chip-filter-group");
+
+  if (chipRegion) {
+    if (state.adminFilters.region) {
+      chipRegion.classList.add("active");
+      chipRegion.innerHTML = `<span>${state.adminFilters.region}</span> <span class="chip-clear" data-clear="region">✕</span>`;
+    } else {
+      chipRegion.classList.remove("active");
+      chipRegion.innerHTML = `<span>全部大區</span> <span class="chip-arrow">▾</span>`;
+    }
+  }
+
+  if (chipZone) {
+    if (state.adminFilters.zone) {
+      chipZone.classList.add("active");
+      chipZone.innerHTML = `<span>${state.adminFilters.zone}</span> <span class="chip-clear" data-clear="zone">✕</span>`;
+    } else {
+      chipZone.classList.remove("active");
+      chipZone.innerHTML = `<span>全部牧區</span> <span class="chip-arrow">▾</span>`;
+    }
+  }
+
+  if (chipGroup) {
+    if (state.adminFilters.group) {
+      chipGroup.classList.add("active");
+      chipGroup.innerHTML = `<span>${state.adminFilters.group}</span> <span class="chip-clear" data-clear="group">✕</span>`;
+    } else {
+      chipGroup.classList.remove("active");
+      chipGroup.innerHTML = `<span>全部小組</span> <span class="chip-arrow">▾</span>`;
+    }
+  }
+}
+
+function openAdminFilterBottomSheet(type) {
+  const overlay = document.getElementById("global-bottom-sheet");
+  const titleEl = document.getElementById("bottom-sheet-title");
+  const listEl = document.getElementById("bottom-sheet-list");
+  if (!overlay || !listEl) return;
+
+  let title = "選擇篩選條件";
+  let options = [];
+  let selectedValue = state.adminFilters[type];
+
+  // Helper to compile list items safely
+  const getPredefinedRegions = () => {
+    return (state.orgStructure && state.orgStructure.regions && state.orgStructure.regions.length > 0)
+      ? state.orgStructure.regions
+      : ["東區", "南區", "西區", "北區", "青少年", "慶典", "創藝"];
+  };
+
+  const getPredefinedZones = () => {
+    if (state.adminFilters.region) {
+      return state.orgStructure.zones[state.adminFilters.region] || [];
+    }
+    // Combine all zones if no region selected
+    const all = [];
+    if (state.orgStructure && state.orgStructure.zones) {
+      Object.values(state.orgStructure.zones).forEach(arr => {
+        if (Array.isArray(arr)) all.push(...arr);
+      });
+    }
+    return Array.from(new Set(all));
+  };
+
+  const getPredefinedGroups = () => {
+    if (state.adminFilters.zone) {
+      return state.orgStructure.groups[state.adminFilters.zone] || [];
+    }
+    // Combine all groups if no zone selected
+    const all = [];
+    if (state.orgStructure && state.orgStructure.groups) {
+      Object.values(state.orgStructure.groups).forEach(arr => {
+        if (Array.isArray(arr)) all.push(...arr);
+      });
+    }
+    return Array.from(new Set(all));
+  };
+
+  if (type === "region") {
+    title = "選擇大區";
+    options = getPredefinedRegions();
+  } else if (type === "zone") {
+    title = "選擇牧區";
+    options = getPredefinedZones();
+  } else if (type === "group") {
+    title = "選擇小組";
+    options = getPredefinedGroups();
+  }
+
+  if (titleEl) titleEl.textContent = title;
+  listEl.innerHTML = "";
+
+  // Add "全部" (All) option
+  const allBtn = document.createElement("button");
+  allBtn.className = `bottom-sheet-item ${!selectedValue ? "selected" : ""}`;
+  allBtn.type = "button";
+  allBtn.textContent = `全部${type === "region" ? "大區" : (type === "zone" ? "牧區" : "小組")}`;
+  allBtn.onclick = () => {
+    state.adminFilters[type] = null;
+    if (type === "region") {
+      state.adminFilters.zone = null;
+      state.adminFilters.group = null;
+    } else if (type === "zone") {
+      state.adminFilters.group = null;
+    }
+    updateFilterChipsUI();
+    closeAdminFilterBottomSheet();
+    renderAdminUserManagement();
+  };
+  listEl.appendChild(allBtn);
+
+  // Add other options
+  options.forEach(opt => {
+    const btn = document.createElement("button");
+    btn.className = `bottom-sheet-item ${selectedValue === opt ? "selected" : ""}`;
+    btn.type = "button";
+    btn.textContent = opt;
+    btn.onclick = () => {
+      state.adminFilters[type] = opt;
+      if (type === "region") {
+        state.adminFilters.zone = null;
+        state.adminFilters.group = null;
+      } else if (type === "zone") {
+        state.adminFilters.group = null;
+      }
+      updateFilterChipsUI();
+      closeAdminFilterBottomSheet();
+      renderAdminUserManagement();
+    };
+    listEl.appendChild(btn);
+  });
+
+  // Open overlay
+  overlay.classList.add("active");
+}
+
+function closeAdminFilterBottomSheet() {
+  const overlay = document.getElementById("global-bottom-sheet");
+  if (overlay) overlay.classList.remove("active");
+}
+
+function initAdminFiltersUI() {
+  // Bind chips click events
+  ["region", "zone", "group"].forEach(type => {
+    const chip = document.getElementById(`chip-filter-${type}`);
+    if (chip) {
+      chip.onclick = (e) => {
+        e.preventDefault();
+        const clearBtn = e.target.closest(".chip-clear");
+        if (clearBtn) {
+          e.stopPropagation();
+          state.adminFilters[type] = null;
+          if (type === "region") {
+            state.adminFilters.zone = null;
+            state.adminFilters.group = null;
+          } else if (type === "zone") {
+            state.adminFilters.group = null;
+          }
+          updateFilterChipsUI();
+          renderAdminUserManagement();
+        } else {
+          openAdminFilterBottomSheet(type);
+        }
+      };
+    }
+  });
+
+  // Bind close buttons
+  const closeBtn = document.getElementById("btn-close-bottom-sheet");
+  if (closeBtn) {
+    closeBtn.onclick = (e) => {
+      e.preventDefault();
+      closeAdminFilterBottomSheet();
+    };
+  }
+
+  const overlay = document.getElementById("global-bottom-sheet");
+  if (overlay) {
+    overlay.onclick = (e) => {
+      if (e.target === overlay) {
+        closeAdminFilterBottomSheet();
+      }
+    };
+  }
+
+  updateFilterChipsUI();
 }
 
 // Render administrative User Permission Management table
@@ -446,7 +641,24 @@ async function renderAdminUserManagement() {
       return (roleOrder[a.role] || 99) - (roleOrder[b.role] || 99);
     });
 
-    const filteredUsers = sortedUsers.filter(u => u.name.toLowerCase().includes(query));
+    const filteredUsers = sortedUsers.filter(u => {
+      // Exclude demo users in Supabase mode
+      if (state.isSupabaseMode && u.is_demo) return false;
+
+      // Check name query match
+      const matchName = u.name.toLowerCase().includes(query);
+
+      // Check Great Region match
+      const matchRegion = !state.adminFilters.region || u.great_region === state.adminFilters.region;
+
+      // Check Pastoral Zone match
+      const matchZone = !state.adminFilters.zone || u.pastoral_zone === state.adminFilters.zone;
+
+      // Check Small Group match
+      const matchGroup = !state.adminFilters.group || u.small_group === state.adminFilters.group;
+
+      return matchName && matchRegion && matchZone && matchGroup;
+    });
 
     tableBody.innerHTML = "";
 

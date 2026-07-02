@@ -954,8 +954,28 @@
                 您可以檢視所有成員，並手動升任/降職其角色權限（例如：小組長、區長、大區長、主任牧師或管理員）。
               </p>
               
-              <div class="form-group" style="display: flex; gap: 0.5rem; max-width: 400px; margin-bottom: 1.2rem;">
-                <input type="text" id="admin-search-user" class="form-control" placeholder="搜尋成員姓名...">
+              <!-- Advanced Search & Filter Component -->
+              <div style="display: flex; flex-direction: column; gap: 0.8rem; margin-bottom: 1.5rem; max-width: 480px;">
+                <!-- Search Bar -->
+                <div style="position: relative; display: flex; width: 100%;">
+                  <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); display: flex; align-items: center;">
+                    <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                  </span>
+                  <input type="text" id="admin-search-user" class="form-control" placeholder="搜尋成員姓名..." style="padding-left: 2.3rem; width: 100%;">
+                </div>
+
+                <!-- Horizontal Scrollable Filter Chips -->
+                <div class="filter-chips-row" style="display: flex; overflow-x: auto; gap: 0.6rem; padding: 0.2rem 0; width: 100%; -webkit-overflow-scrolling: touch; scrollbar-width: none;">
+                  <button class="filter-chip" id="chip-filter-region" type="button">
+                    <span>全部大區</span> <span class="chip-arrow">▾</span>
+                  </button>
+                  <button class="filter-chip" id="chip-filter-zone" type="button">
+                    <span>全部牧區</span> <span class="chip-arrow">▾</span>
+                  </button>
+                  <button class="filter-chip" id="chip-filter-group" type="button">
+                    <span>全部小組</span> <span class="chip-arrow">▾</span>
+                  </button>
+                </div>
               </div>
 
               <div class="table-container">
@@ -1216,6 +1236,23 @@
       document.head.appendChild(mockScript);
     }
   </script>
+
+  <!-- Global Premium Bottom Sheet (Mobile Drawer) -->
+  <div id="global-bottom-sheet" class="bottom-sheet-overlay">
+    <div class="bottom-sheet-container">
+      <div class="bottom-sheet-handle"></div>
+      <div class="bottom-sheet-header">
+        <h4 id="bottom-sheet-title">選擇篩選條件</h4>
+        <button class="bottom-sheet-close-btn" id="btn-close-bottom-sheet" type="button">
+          <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+      <div class="bottom-sheet-content" id="bottom-sheet-list">
+        <!-- populated dynamically -->
+      </div>
+    </div>
+  </div>
+
   <script src="js/state.js?v=app-shell-20260702-2"></script>
   <script src="js/auth.js?v=nlc-edge-20260701-99"></script>
   <script src="js/views/plan.js?v=nlc-edge-20260702-3"></script>
