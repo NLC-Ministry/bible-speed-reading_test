@@ -79,11 +79,26 @@ function updateDashboardView() {
         </p>
       </div>
       <div style="display: flex; gap: 1rem; margin-top: 1.5rem;">
-        <button class="secondary-btn flex-btn" onclick="appRouter.switchTab('plan-view')">讀經表</button>
-        <button class="primary-btn flex-btn" onclick="window.startReadingCurrentChapter()" ${isPlanAvailable ? '' : 'disabled style="opacity: 0.6; cursor: not-allowed;"'}>開始閱讀</button>
+        <button class="secondary-btn flex-btn" onclick="event.stopPropagation(); window.openActivePlanFromDashboard()">讀經表</button>
+        <button class="primary-btn flex-btn" onclick="event.stopPropagation(); window.startReadingCurrentChapter()" ${isPlanAvailable ? '' : 'disabled style="opacity: 0.6; cursor: not-allowed;"'}>開始閱讀</button>
       </div>
     `;
+    planSummaryDiv.classList.add("route-plan-card");
+    planSummaryDiv.setAttribute("role", "button");
+    planSummaryDiv.setAttribute("tabindex", "0");
+    planSummaryDiv.onclick = window.openActivePlanFromDashboard;
+    planSummaryDiv.onkeydown = (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        window.openActivePlanFromDashboard(event);
+      }
+    };
   } else {
+    planSummaryDiv.classList.remove("route-plan-card");
+    planSummaryDiv.removeAttribute("role");
+    planSummaryDiv.removeAttribute("tabindex");
+    planSummaryDiv.onclick = null;
+    planSummaryDiv.onkeydown = null;
     planSummaryDiv.innerHTML = `
       <div class="empty-state" style="text-align: center; padding: 2rem 0;">
         <p style="color: var(--text-secondary); margin-bottom: 1rem;">目前沒有進行中的讀經計畫。</p>
@@ -915,10 +930,25 @@ function renderDailyVerse() {
   }
 }
 
+
+window.openActivePlanFromDashboard = function(event) {
+  console.log('📅 [Debug] 已點選讀經計畫，正在跳轉至計畫頁');
+  if (event) {
+    const interactive = event.target && event.target.closest && event.target.closest("button, a, input, select, textarea");
+    if (interactive && !interactive.classList.contains("route-plan-card")) return;
+  }
+  if (!state.activePlan) return;
+  state.planDetailOpen = true;
+  state.selectedPlanDay = null;
+  localStorage.setItem("selected_plan_key", state.activePlan.presetKey || state.activePlan.id || "");
+  appRouter.switchTab('plan-view', { keepPlanDetail: true });
+};
+
 /**
  * Switch directly to the Bible Reader and navigate to the user's first unread chapter.
  */
 window.startReadingCurrentChapter = function() {
+  console.log('📖 [Debug] 已點選章節，進入全滿版沉浸閱讀模式');
   if (!state.activePlan) {
     appRouter.switchTab('reader-view');
     return;
@@ -964,6 +994,8 @@ window.startReadingCurrentChapter = function() {
       }
     }
   }
+
+  state.readerState.returnTab = "dashboard-view";
 
   // Navigate to reader
   appRouter.switchTab('reader-view');

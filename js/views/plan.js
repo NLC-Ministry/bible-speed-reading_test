@@ -1168,20 +1168,30 @@ async function renderPlanScheduleTracker(skipCarouselUpdate = false) {
       ? `<div class="task-round-label round-${taskRound}">第${taskRound}遍</div>`
       : "";
 
+    taskItem.setAttribute("role", "button");
+    taskItem.setAttribute("tabindex", "0");
     taskItem.innerHTML = `
       <div class="task-checkbox ${cssClass}"
            data-is-current-read="${ch.isRead ? 'true' : 'false'}"
            onclick="event.stopPropagation(); window.toggleYouVersionChapter(this, '${ch.book}', ${ch.chapter}, ${ch.round || currentRound})">
         ${content}
       </div>
-      <div class="task-title" onclick="window.openPlanInlineReader('${ch.book}', ${ch.chapter}, ${state.selectedPlanDay}, ${ch.round || currentRound})">
+      <div class="task-title">
         ${ch.book} ${ch.chapter}章
       </div>
       ${roundLabelHtml}
-      <div class="task-arrow" onclick="window.openPlanInlineReader('${ch.book}', ${ch.chapter}, ${state.selectedPlanDay}, ${ch.round || currentRound})">
+      <div class="task-arrow">
         <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2.5" fill="none"><polyline points="9 18 15 12 9 6"></polyline></svg>
       </div>
     `;
+    const openChapter = () => window.openPlanChapterInReader(ch.book, ch.chapter, state.selectedPlanDay, ch.round || currentRound);
+    taskItem.addEventListener("click", openChapter);
+    taskItem.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        openChapter();
+      }
+    });
     container.appendChild(taskItem);
   });
 }
@@ -1763,6 +1773,34 @@ async function renderAdminPlanManagement() {
   }
 }
 
+
+
+window.openPlanChapterInReader = function(bookName, chapter, dayNum, round = null) {
+  console.log('📖 [Debug] 已點選章節，進入全滿版沉浸閱讀模式');
+  const book = BIBLE_BOOKS.find(b => b.name === bookName || b.eng === bookName);
+  if (!book) {
+    console.warn('找不到本地聖經卷名，無法進入閱讀：', bookName);
+    return;
+  }
+
+  state.readerState.bookId = book.id;
+  state.readerState.chapter = Number(chapter) || 1;
+  state.readerState.fromPlan = true;
+  state.readerState.returnTab = "plan-view";
+  state.readerState.planDayNum = dayNum || null;
+  state.readerState.planRound = round || (state.activePlan ? state.activePlan.currentRound || 1 : 1);
+
+  if (typeof saveReaderPreferences === 'function') {
+    saveReaderPreferences();
+  } else {
+    localStorage.setItem("reader_state", JSON.stringify({
+      bookId: state.readerState.bookId,
+      chapter: state.readerState.chapter
+    }));
+  }
+
+  appRouter.switchTab('reader-view');
+};
 
 // Initialize state for inline reader
 state.inlineReader = {

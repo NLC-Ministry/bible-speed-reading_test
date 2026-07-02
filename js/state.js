@@ -173,6 +173,14 @@ const appRouter = {
   },
 
   goBack() {
+    if (this.currentTab === "reader-view") {
+      if (state.readerState && state.readerState.returnTab === "plan-view") {
+        state.readerState.returnTab = null;
+        this.switchTab("plan-view", { keepPlanDetail: true });
+        return;
+      }
+    }
+
     if (this.currentTab === "plan-view") {
       if (state.inlineReader && state.inlineReader.active && typeof window.closePlanInlineReader === "function") {
         window.closePlanInlineReader();
@@ -209,7 +217,7 @@ const appRouter = {
     this.updateNavigationChrome();
   },
 
-  switchTab(tabId) {
+  switchTab(tabId, options = {}) {
     // Stop reading audio if switching away from reader-view
     if (tabId !== "reader-view" && typeof window.speechSynthesis !== "undefined") {
       window.speechSynthesis.cancel();
@@ -244,7 +252,9 @@ const appRouter = {
     } else if (tabId === "reader-view") {
       if (typeof renderReaderText === "function") renderReaderText();
     } else if (tabId === "plan-view") {
-      state.planDetailOpen = false;
+      if (!options.keepPlanDetail) {
+        state.planDetailOpen = false;
+      }
       if (typeof renderPlanView === "function") renderPlanView();
     } else if (tabId === "stats-view") {
       if (typeof updateStatsView === "function") updateStatsView();

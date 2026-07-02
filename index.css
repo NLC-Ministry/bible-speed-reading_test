@@ -5809,3 +5809,35 @@ body.dark-theme .skeleton-shimmer {
 }
 
 
+
+/* Immersive reader routing: hide app bottom navigation in full-screen reading mode. */
+.route-plan-card {
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.route-plan-card:active,
+.plan-task-item:active {
+  transform: scale(0.98);
+}
+
+body.reader-page .mobile-nav-bar,
+.app-layout.reader-mode .mobile-nav-bar {
+  opacity: 0;
+  transform: translateY(110%);
+  pointer-events: none;
+}
+
+body.reader-page .main-content,
+.app-layout.reader-mode .main-content {
+  bottom: 0 !important;
+  padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+}
+
+@media (max-width: 640px) {
+  .app-layout.reader-mode .main-content,
+  .app-layout:has(#reader-view.active) .main-content {
+    bottom: 0 !important;
+    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+  }
+}
