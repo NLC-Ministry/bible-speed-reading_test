@@ -791,6 +791,11 @@ function renderJoinedPlansList() {
   const container = document.getElementById("joined-plans-list");
   if (!container) return;
 
+  if (!state.activePlans) {
+    ComponentSkeletonLoader.show('plan', container);
+    return;
+  }
+
   container.innerHTML = "";
 
   if (!state.activePlans || state.activePlans.length === 0) {

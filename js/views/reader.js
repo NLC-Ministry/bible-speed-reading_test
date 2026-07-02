@@ -649,7 +649,7 @@ async function renderReaderText() {
   heading.textContent = `${book.name} ${chapter}章`;
   updatePillLabels();
   renderReaderPicker();
-  container.innerHTML = `<div class="loader-inline">讀取經文中...</div>`;
+  ComponentSkeletonLoader.show('reader', container);
   
   // Set checked button status
   if (markReadBtn) {

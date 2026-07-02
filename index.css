@@ -5769,3 +5769,43 @@ body.light-theme .book-brand-box {
   box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3) !important;
 }
 
+/* ==========================================================================
+   Global Shimmer Skeleton UI Loader Styles
+   ========================================================================== */
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(90deg, 
+    #f1f5f9 25%, 
+    #ffffff 50%, 
+    #f1f5f9 75%
+  ) !important;
+  background-size: 200% 100% !important;
+  animation: skeleton-shimmer 1.6s infinite linear !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+body.dark-theme .skeleton-shimmer {
+  background: linear-gradient(90deg, 
+    rgba(30, 41, 59, 0.6) 25%, 
+    rgba(51, 65, 85, 0.5) 50%, 
+    rgba(30, 41, 59, 0.6) 75%
+  ) !important;
+  background-size: 200% 100% !important;
+}
+
+/* Base sizing and styles for skeleton items inside shimmer wrappers */
+.skeleton-wrapper div {
+  pointer-events: none !important;
+  user-select: none !important;
+}
+
+

@@ -635,8 +635,7 @@ async function renderAdminUserManagement() {
   const searchInput = document.getElementById("admin-search-user");
   const query = searchInput ? searchInput.value.trim().toLowerCase() : "";
 
-  // Show inline loading indicator
-  listContainer.innerHTML = `<div style="text-align: center; padding: 2.5rem; color: var(--text-muted);">載入成員名單中...</div>`;
+  ComponentSkeletonLoader.show('members', listContainer);
 
   try {
     const users = await db.fetchMergedUsersList();

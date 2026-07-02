@@ -261,3 +261,99 @@ function renderBadgeWall(containerId) {
     container.appendChild(badgeItem);
   });
 }
+
+// ── Global Premium Skeleton UI Loader ──────────────────────
+const ComponentSkeletonLoader = {
+  /**
+   * Renders a shimmer skeleton layout inside the specified container.
+   * @param {string} type - 'reader', 'plan', or 'members'
+   * @param {HTMLElement|string} container - Element object or CSS selector
+   */
+  show(type, container) {
+    const parent = typeof container === "string" ? document.querySelector(container) : container;
+    if (!parent) return;
+
+    // Cache original content to restore on hide
+    if (!parent.dataset.originalHtml) {
+      parent.dataset.originalHtml = parent.innerHTML;
+    }
+
+    let skeletonHtml = "";
+
+    if (type === "reader") {
+      // 狀況 A：當處於【讀經頁面】載入時 (4~5 條長短不一、大字體行高的橫向圓角條狀骨架)
+      skeletonHtml = `
+        <div class="skeleton-wrapper space-y-6" style="padding: 1.5rem 0.2rem;">
+          <div class="h-8 w-3/4 rounded-md skeleton-shimmer mb-8" style="height: 32px; width: 75%; margin-bottom: 2rem;"></div>
+          <div class="space-y-4" style="display: flex; flex-direction: column; gap: 1.2rem;">
+            <div class="h-6 w-full rounded-md skeleton-shimmer" style="height: 24px; width: 100%;"></div>
+            <div class="h-6 w-11/12 rounded-md skeleton-shimmer" style="height: 24px; width: 91%;"></div>
+            <div class="h-6 w-full rounded-md skeleton-shimmer" style="height: 24px; width: 100%;"></div>
+            <div class="h-6 w-10/12 rounded-md skeleton-shimmer" style="height: 24px; width: 83%;"></div>
+            <div class="h-6 w-3/5 rounded-md skeleton-shimmer" style="height: 24px; width: 60%;"></div>
+          </div>
+        </div>
+      `;
+    } else if (type === "plan") {
+      // 狀況 B：當處於【計畫頁面】載入時 (頂部大圓角矩形 + 7個小正方形 + 滿版長條)
+      skeletonHtml = `
+        <div class="skeleton-wrapper space-y-6" style="padding: 1rem 0.5rem; display: flex; flex-direction: column; gap: 1.5rem;">
+          <!-- Big rounded progress card -->
+          <div class="h-32 w-full rounded-2xl skeleton-shimmer" style="height: 120px; width: 100%; border-radius: 16px;"></div>
+          
+          <!-- Horizontal 7 days calendar calendar slider -->
+          <div class="flex space-x-3 overflow-hidden py-1" style="display: flex; gap: 0.75rem; overflow: hidden; padding: 0.25rem 0;">
+            <div class="h-12 w-12 rounded-xl skeleton-shimmer flex-shrink-0" style="height: 48px; width: 48px; border-radius: 12px; flex-shrink: 0;"></div>
+            <div class="h-12 w-12 rounded-xl skeleton-shimmer flex-shrink-0" style="height: 48px; width: 48px; border-radius: 12px; flex-shrink: 0;"></div>
+            <div class="h-12 w-12 rounded-xl skeleton-shimmer flex-shrink-0" style="height: 48px; width: 48px; border-radius: 12px; flex-shrink: 0;"></div>
+            <div class="h-12 w-12 rounded-xl skeleton-shimmer flex-shrink-0" style="height: 48px; width: 48px; border-radius: 12px; flex-shrink: 0;"></div>
+            <div class="h-12 w-12 rounded-xl skeleton-shimmer flex-shrink-0" style="height: 48px; width: 48px; border-radius: 12px; flex-shrink: 0;"></div>
+            <div class="h-12 w-12 rounded-xl skeleton-shimmer flex-shrink-0" style="height: 48px; width: 48px; border-radius: 12px; flex-shrink: 0;"></div>
+            <div class="h-12 w-12 rounded-xl skeleton-shimmer flex-shrink-0" style="height: 48px; width: 48px; border-radius: 12px; flex-shrink: 0;"></div>
+          </div>
+          
+          <!-- Full-width list task item -->
+          <div class="space-y-3" style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <div class="h-14 w-full rounded-xl skeleton-shimmer" style="height: 56px; width: 100%; border-radius: 12px;"></div>
+            <div class="h-14 w-full rounded-xl skeleton-shimmer" style="height: 56px; width: 100%; border-radius: 12px;"></div>
+          </div>
+        </div>
+      `;
+    } else if (type === "members") {
+      // 狀況 C：當處於【成員管理頁面】載入時 (搜尋框下方 5 條高度 64px 橫向長條，左圓右兩行)
+      skeletonHtml = `
+        <div class="skeleton-wrapper space-y-4" style="display: flex; flex-direction: column; gap: 1rem; padding: 1rem 0;">
+          ${[1, 2, 3, 4, 5].map(() => `
+            <div class="h-16 w-full rounded-xl p-3 flex items-center" style="height: 64px; width: 100%; border-radius: 12px; display: flex; align-items: center; gap: 1rem; padding: 0.75rem; background: var(--bg-card); border: 1px solid var(--border-card);">
+              <!-- Left circle avatar -->
+              <div class="h-10 w-10 rounded-full skeleton-shimmer" style="height: 40px; width: 40px; border-radius: 50%; flex-shrink: 0;"></div>
+              <!-- Right two lines of text -->
+              <div class="flex-1" style="flex: 1; display: flex; flex-direction: column; gap: 0.4rem; min-width: 0;">
+                <div class="h-4 w-1/3 rounded skeleton-shimmer" style="height: 16px; width: 35%; border-radius: 4px;"></div>
+                <div class="h-3 w-1/2 rounded skeleton-shimmer" style="height: 12px; width: 55%; border-radius: 4px;"></div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
+    parent.innerHTML = skeletonHtml;
+  },
+
+  /**
+   * Hides the skeleton loader and restores the cached HTML.
+   * @param {HTMLElement|string} container
+   */
+  hide(container) {
+    const parent = typeof container === "string" ? document.querySelector(container) : container;
+    if (!parent) return;
+
+    if (parent.dataset.originalHtml !== undefined) {
+      parent.innerHTML = parent.dataset.originalHtml;
+      delete parent.dataset.originalHtml;
+    }
+  }
+};
+window.ComponentSkeletonLoader = ComponentSkeletonLoader;
+

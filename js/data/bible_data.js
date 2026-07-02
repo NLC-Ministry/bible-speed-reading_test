@@ -214,5 +214,24 @@ async function fetchBibleChapter(bookEngName, chapter) {
     return fallback;
   }
 
-  throw new Error(`目前無法載入中文完整章節，請稍後再試。${errors.length ? "來源錯誤：" + errors.slice(0, 4).join("?") : ""}`);
+  // Robust offline fallback using BIBLE_VERSE_COUNTS
+  let totalVerses = 30;
+  if (typeof BIBLE_VERSE_COUNTS !== "undefined") {
+    totalVerses = (BIBLE_VERSE_COUNTS[bookEngName] && BIBLE_VERSE_COUNTS[bookEngName][chapter - 1]) || 30;
+  }
+
+  console.warn(`⚠️ [Warning] 無法從線上或快取中載入 ${bookEngName} ${chapter} 章，啟動本地防崩潰經文生成，總計 ${totalVerses} 節。`);
+
+  const placeholderVerses = [];
+  for (let v = 1; v <= totalVerses; v++) {
+    placeholderVerses.push({
+      verse: v,
+      text: "（經文載入中，請保持網路連線。若持續未載入，請確認連線後點選右上角翻譯版本重新讀取）"
+    });
+  }
+
+  return {
+    reference: `${bookEngName} ${chapter}章`,
+    verses: placeholderVerses
+  };
 }
