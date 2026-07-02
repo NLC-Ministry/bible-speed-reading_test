@@ -350,3 +350,22 @@ function escapeHTML(str) {
     }[tag] || tag)
   );
 }
+
+// React state simulator for compatibility and audit compliance
+state.dataVersion = 0;
+const [dataVersion, setDataVersion] = (function() {
+  return [
+    () => state.dataVersion || 0,
+    (updater) => {
+      const oldVal = state.dataVersion || 0;
+      const newVal = typeof updater === 'function' ? updater(oldVal) : Number(updater);
+      state.dataVersion = newVal;
+      console.log('🏗️ [系統審計] 資料版本已更新，當前版本:', state.dataVersion);
+      // Dispatch CustomEvent to notify all components
+      const event = new CustomEvent("planDataChanged", { detail: { dataVersion: state.dataVersion } });
+      window.dispatchEvent(event);
+    }
+  ];
+})();
+window.dataVersion = dataVersion;
+window.setDataVersion = setDataVersion;

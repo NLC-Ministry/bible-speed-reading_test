@@ -7,6 +7,13 @@ window._statsTabScope = null;
 let lastTrackerRequestId = 0;
 let dateClickDebounceTimer = null;
 
+// Reactive state propagation audit
+window.addEventListener("planDataChanged", (e) => {
+  console.log('🏗️ [系統審計] 收到資料變更事件通知，強制重新渲染組件，資料版本:', e.detail.dataVersion);
+  renderHorizontalDateStrip();
+  renderPlanScheduleTracker(true);
+});
+
 function canUseAdvancedGroupStats() {
   const role = (state.currentUser && state.currentUser.role) || "member";
   return ["admin", "senior_pastor", "great_zone_leader", "zone_leader", "group_leader"].includes(role);
@@ -991,6 +998,8 @@ async function renderPlanDetailView() {
   renderPlanScheduleTracker();
 }
 function renderHorizontalDateStrip() {
+  console.log('🏗️ [系統審計] 進入資料讀寫，當前操作類型：渲染日曆格子', '資料版本:', state.dataVersion);
+
   const carousel = document.getElementById("plan-date-carousel");
   if (!carousel || !state.activePlan) return;
 
@@ -1073,7 +1082,7 @@ function renderHorizontalDateStrip() {
         clearTimeout(dateClickDebounceTimer);
       }
       dateClickDebounceTimer = setTimeout(() => {
-        renderPlanScheduleTracker(true);
+        setDataVersion(prev => prev + 1);
       }, 200);
     });
 
@@ -1090,6 +1099,8 @@ function renderHorizontalDateStrip() {
 }
 
 async function renderPlanScheduleTracker(skipCarouselUpdate = false) {
+  console.log('🏗️ [系統審計] 進入資料讀寫，當前操作類型：渲染任務章節', '資料版本:', state.dataVersion);
+
   const container = document.getElementById("plan-tasks-list");
   if (!container || !state.activePlan) return;
 
@@ -1241,6 +1252,8 @@ function getRoundBadge(ch, currentRound) {
 }
 
 window.toggleYouVersionChapter = function (checkboxEl, book, chapter, taskRound = null) {
+  console.log('🏗️ [系統審計] 進入資料讀寫，當前操作類型：切換章節已讀狀態', '資料版本:', state.dataVersion);
+
   // Optimistic UI updates are instant, so we don't need to block click events via data-saving
   const isCurrentlyRead = checkboxEl.dataset.isCurrentRead === 'true';
   const willBeChecked = !isCurrentlyRead;
@@ -1264,9 +1277,8 @@ window.toggleYouVersionChapter = function (checkboxEl, book, chapter, taskRound 
   applyLocalReadState(chapterObj, willBeChecked);
   calculatePlanProgress();
   
-  // Optimistically update horizontal date carousel strip instantly
-  renderHorizontalDateStrip();
-  renderPlanScheduleTracker(true);
+  // Set dataVersion to optimistically propagate changes to all listening views via CustomEvent
+  window.setDataVersion(prev => prev + 1);
   
   console.log('✅ [進度同步完成] 成功標記已讀，已強制驅動畫面更新');
 
