@@ -699,6 +699,9 @@ async function renderReaderText() {
 
   // Make sure we apply font size preference
   updateReaderFontSize();
+  
+  // Update sticky bottom action bar context
+  updateReaderBottomActionBar();
 }
 
 // Floating context menu toolbar for highlights
@@ -1248,3 +1251,209 @@ window.searchBibleText = async function(query, translation = "CUNP") {
     };
   });
 };
+
+// ── Context-Aware Read Tracking Bottom Action Bar ─────────
+function updateReaderBottomActionBar() {
+  const bar = document.getElementById("reader-bottom-action-bar");
+  const indicator = document.getElementById("reader-progress-indicator");
+  const btn = document.getElementById("reader-capsule-btn");
+  if (!bar || !btn) return;
+
+  const bookObj = BIBLE_BOOKS.find(b => b.id === state.readerState.bookId);
+  if (!bookObj) {
+    bar.classList.add("hidden");
+    return;
+  }
+
+  const fromPlan = !!(state.readerState && state.readerState.fromPlan && state.activePlan);
+  let isCatchingUp = false;
+  let elapsedDay = 1;
+
+  if (fromPlan && state.activePlan) {
+    const start = new Date(state.activePlan.startDate);
+    start.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    elapsedDay = Math.max(1, Math.ceil((today - start) / (1000 * 60 * 60 * 24)) + 1);
+    
+    const planDay = state.readerState.planDayNum || 1;
+    isCatchingUp = planDay < elapsedDay;
+  }
+
+  // Remove previous scenario classes
+  bar.classList.remove("hidden", "scenario-a", "scenario-b", "scenario-c");
+
+  // Force debugging trace output on first line of capsule action triggers
+  const logClick = () => {
+    console.log('🧠 [智慧按鈕觸發] 情境：' + (isCatchingUp ? '補讀' : '正常') + '，fromPlan：' + fromPlan);
+  };
+
+  if (!fromPlan) {
+    // 情境 A：【自由讀經模式】
+    bar.classList.add("scenario-a");
+    if (indicator) indicator.classList.add("hidden");
+    btn.innerHTML = `<span>📌 紀錄進度</span>`;
+
+    btn.onclick = () => {
+      logClick();
+      const activePlans = state.activePlans || [];
+      if (activePlans.length === 0) {
+        showToast("您尚未加入任何讀經計畫，請前往計畫頁加入");
+        return;
+      }
+      if (activePlans.length === 1) {
+        const plan = activePlans[0];
+        // 100% 本地寫入，不准發起外部網絡請求
+        db.logChapterRead(bookObj.name, state.readerState.chapter, true, plan.currentRound || 1)
+          .then(() => db.saveLocalUserStats());
+        applyMemoryChapterReadState(bookObj.name, state.readerState.chapter, true, plan.currentRound || 1);
+        calculatePlanProgress();
+        showToast(`已成功記錄至計畫「${plan.name}」`);
+      } else {
+        const planNames = activePlans.map((p, idx) => `${idx + 1}. ${p.name}`).join("\n");
+        const choice = prompt(`請選擇要記錄進度的計畫（輸入數字）：\n${planNames}`);
+        if (!choice) return;
+        const selectedIdx = parseInt(choice) - 1;
+        if (selectedIdx >= 0 && selectedIdx < activePlans.length) {
+          const plan = activePlans[selectedIdx];
+          db.logChapterRead(bookObj.name, state.readerState.chapter, true, plan.currentRound || 1)
+            .then(() => db.saveLocalUserStats());
+          applyMemoryChapterReadState(bookObj.name, state.readerState.chapter, true, plan.currentRound || 1);
+          calculatePlanProgress();
+          showToast(`已成功記錄至計畫「${plan.name}」`);
+        }
+      }
+    };
+  } else {
+    const plan = state.activePlan;
+    const planDay = state.readerState.planDayNum || 1;
+    const selectedDay = plan.days.find(d => d.dayNum === planDay);
+    const dayChapters = (selectedDay && selectedDay.chapters) || [];
+    
+    // Find current index
+    const currentChIndex = dayChapters.findIndex(ch => 
+      ch.book === bookObj.name && Number(ch.chapter) === Number(state.readerState.chapter)
+    );
+    const isLastChapterOfDay = currentChIndex === dayChapters.length - 1 || currentChIndex === -1;
+    const totalChapters = dayChapters.length;
+    
+    // Count how many are read (treating current as read once they click the button)
+    const readCount = dayChapters.filter(ch => ch.isRead).length;
+
+    if (!isCatchingUp) {
+      // 情境 B：【本日計畫正常模式】
+      bar.classList.add("scenario-b");
+      if (indicator) {
+        indicator.classList.remove("hidden");
+        indicator.textContent = `本日進度 ${readCount}/${totalChapters}`;
+      }
+
+      if (isLastChapterOfDay) {
+        btn.innerHTML = `<span>🎉 大功告成</span>`;
+      } else {
+        btn.innerHTML = `<span>✅ 下一章</span>`;
+      }
+
+      btn.onclick = () => {
+        logClick();
+        
+        // 1. 標記已讀，100% 同步寫入本地端
+        const currentRound = state.readerState.planRound || plan.currentRound || 1;
+        db.logChapterRead(bookObj.name, state.readerState.chapter, true, currentRound)
+          .then(() => db.saveLocalUserStats());
+        applyMemoryChapterReadState(bookObj.name, state.readerState.chapter, true, currentRound);
+        calculatePlanProgress();
+        if (typeof updateDashboardView === "function") {
+          updateDashboardView();
+        }
+
+        if (isLastChapterOfDay) {
+          showToast("🎉 本日計畫已全部完成！");
+          appRouter.switchTab("plan-view", { keepPlanDetail: true });
+        } else {
+          // 載入本地下一章
+          const nextCh = dayChapters[currentChIndex + 1];
+          const nextBook = BIBLE_BOOKS.find(b => b.name === nextCh.book || b.eng === nextCh.book);
+          if (nextBook) {
+            state.readerState.bookId = nextBook.id;
+            state.readerState.chapter = Number(nextCh.chapter);
+            renderReaderText();
+          }
+        }
+      };
+    } else {
+      // 情境 C：【落後補讀模式】
+      bar.classList.add("scenario-c");
+      if (indicator) indicator.classList.add("hidden"); // 強制隱藏提示字
+      btn.innerHTML = `<span>➡️ 補讀下一天</span>`;
+
+      btn.onclick = () => {
+        logClick();
+        
+        // 1. 標記已讀，100% 同步寫入本地端
+        const currentRound = state.readerState.planRound || plan.currentRound || 1;
+        db.logChapterRead(bookObj.name, state.readerState.chapter, true, currentRound)
+          .then(() => db.saveLocalUserStats());
+        applyMemoryChapterReadState(bookObj.name, state.readerState.chapter, true, currentRound);
+        calculatePlanProgress();
+        if (typeof updateDashboardView === "function") {
+          updateDashboardView();
+        }
+
+        // 尋找下一個補讀章節
+        const nextChInfo = getNextPlanChapterInfo(plan, planDay, currentChIndex, dayChapters);
+        if (nextChInfo) {
+          const nextBook = BIBLE_BOOKS.find(b => b.name === nextChInfo.book || b.eng === nextChInfo.book);
+          if (nextBook) {
+            state.readerState.bookId = nextBook.id;
+            state.readerState.chapter = Number(nextChInfo.chapter);
+            state.readerState.planDayNum = nextChInfo.dayNum;
+            renderReaderText();
+          }
+        } else {
+          showToast("🎉 補讀進度已全部追上！");
+          appRouter.switchTab("plan-view", { keepPlanDetail: true });
+        }
+      };
+    }
+  }
+}
+
+function applyMemoryChapterReadState(bookName, chapterNum, checked, roundNum) {
+  if (!state.activePlan || !state.activePlan.days) return;
+  state.activePlan.days.forEach(day => {
+    if (!day.chapters) return;
+    day.chapters.forEach(ch => {
+      if (ch.book === bookName && Number(ch.chapter) === Number(chapterNum)) {
+        if (roundNum === 1) ch.isReadR1 = checked;
+        else if (roundNum === 2) ch.isReadR2 = checked;
+        else if (roundNum === 3) ch.isReadR3 = checked;
+        ch.isRead = checked;
+      }
+    });
+  });
+}
+
+function getNextPlanChapterInfo(plan, planDay, currentChIndex, dayChapters) {
+  if (currentChIndex !== -1 && currentChIndex < dayChapters.length - 1) {
+    return {
+      book: dayChapters[currentChIndex + 1].book,
+      chapter: dayChapters[currentChIndex + 1].chapter,
+      dayNum: planDay
+    };
+  }
+  
+  const nextDays = plan.days.filter(d => d.dayNum > planDay);
+  for (const d of nextDays) {
+    const firstUnread = d.chapters.find(ch => !ch.isRead);
+    if (firstUnread) {
+      return {
+        book: firstUnread.book,
+        chapter: firstUnread.chapter,
+        dayNum: d.dayNum
+      };
+    }
+  }
+  return null;
+}
+
