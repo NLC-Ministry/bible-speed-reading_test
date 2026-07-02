@@ -17,6 +17,12 @@ function closeReaderLayer(element) {
   document.body.classList.toggle("reader-modal-open", Boolean(stillOpen));
 }
 
+function releaseClosedReaderLayers() {
+  document.querySelectorAll(".full-page-overlay.hidden, .bottom-sheet-backdrop.hidden, .loader-overlay.hidden, .reader-search-panel.hidden, [aria-hidden='true']").forEach((layer) => {
+    layer.style.pointerEvents = "none";
+  });
+}
+
 function initSmartFloatingReaderNav() {
   const readerView = document.getElementById("reader-view");
   const floatPrev = document.getElementById("floating-prev-btn");
@@ -46,6 +52,7 @@ function initSmartFloatingReaderNav() {
   const bindFloatingButton = (button, direction) => {
     if (!button) return;
     button.addEventListener("click", (event) => {
+      console.log(direction > 0 ? '下一章被點擊了' : '上一章被點擊了');
       event.preventDefault();
       event.stopPropagation();
       navigateToChapter(direction);
@@ -70,6 +77,7 @@ function initSmartFloatingReaderNav() {
 }
 
 function initReaderControls() {
+  releaseClosedReaderLayers();
   const bookSelect = document.getElementById("reader-book-select");
   const chapterSelect = document.getElementById("reader-chapter-select");
   const testamentSelect = document.getElementById("reader-testament-select");
@@ -91,6 +99,7 @@ function initReaderControls() {
   renderReaderPicker();
 
   function openReaderCatalog() {
+    console.log('目錄被點擊了');
     if (typeof window.openBibleNavOverlay === "function") window.openBibleNavOverlay();
   }
 
@@ -101,6 +110,7 @@ function initReaderControls() {
   const navDirectoryBtn = document.getElementById("reader-nav-directory-btn");
   if (navDirectoryBtn) {
     navDirectoryBtn.addEventListener("click", () => {
+      console.log('目錄被點擊了');
       if (typeof window.openBibleNavOverlay === "function") {
         window.openBibleNavOverlay();
       }
@@ -353,8 +363,14 @@ function initReaderControls() {
   // ── Prev / Next Chapter Buttons ──
   const prevChapterBtn = document.getElementById("prev-chapter-btn");
   const nextChapterBtn = document.getElementById("next-chapter-btn");
-  if (prevChapterBtn) prevChapterBtn.addEventListener("click", () => navigateToChapter(-1));
-  if (nextChapterBtn) nextChapterBtn.addEventListener("click", () => navigateToChapter(1));
+  if (prevChapterBtn) prevChapterBtn.addEventListener("click", () => {
+    console.log('上一章被點擊了');
+    navigateToChapter(-1);
+  });
+  if (nextChapterBtn) nextChapterBtn.addEventListener("click", () => {
+    console.log('下一章被點擊了');
+    navigateToChapter(1);
+  });
 
   // Smart floating prev / next chapter buttons
   initSmartFloatingReaderNav();
