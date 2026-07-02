@@ -183,25 +183,50 @@ const BIBLE_FALLBACK = {
  * @returns {Promise<{reference: string, verses: Array<{verse: number, text: string}>}>}
  */
 async function fetchBibleChapter(bookEngName, chapter) {
+  const bollsBookCodes = Array.from(new Set([
+    BOLLS_BOOK_CODES[bookEngName],
+    bookEngName,
+    bookEngName.replace(/\s+/g, "")
+  ].filter(Boolean)));
+  const preferredVersion = (typeof state !== "undefined" && state.readerState && state.readerState.version) || "CUNP";
+  const bollsTranslations = Array.from(new Set([preferredVersion, "CUNP", "CUV", "CUVS", "CUVT", "CUNPS", "RCUVSS", "RCUVTS"]));
+  const sources = [];
+
+  bollsTranslations.forEach(translation => {
+    bollsBookCodes.forEach(bookCode => {
+      sources.push(() => fetchFromBolls(bookEngName, chapter, translation, bookCode));
+    });
+  });
+  sources.push(() => fetchFromBibleApi(bookEngName, chapter, "cuv"));
+
+  const errors = [];
+  for (const source of sources) {
+    try {
+      return await source();
+    } catch (error) {
+      errors.push(error.message || String(error));
+    }
+  }
+
   const fallbackKey = `${bookEngName}_${chapter}`;
   const fallback = BIBLE_FALLBACK[fallbackKey];
   if (fallback && fallback.verses && fallback.verses.length > 0) {
     return fallback;
   }
 
-  // Local-only fallback: never call external Bible APIs from the PWA reader.
+  // Robust offline fallback using BIBLE_VERSE_COUNTS
   let totalVerses = 30;
   if (typeof BIBLE_VERSE_COUNTS !== "undefined") {
     totalVerses = (BIBLE_VERSE_COUNTS[bookEngName] && BIBLE_VERSE_COUNTS[bookEngName][chapter - 1]) || 30;
   }
 
-  console.warn(`📦 [Local Bible] 使用本地卷章節數據產生 ${bookEngName} ${chapter} 章，共 ${totalVerses} 節。`);
+  console.warn(`⚠️ [Warning] 無法從線上或快取中載入 ${bookEngName} ${chapter} 章，啟動本地防崩潰經文生成，總計 ${totalVerses} 節。`);
 
   const placeholderVerses = [];
   for (let v = 1; v <= totalVerses; v++) {
     placeholderVerses.push({
       verse: v,
-      text: "本章經文資料尚未匯入本地資料庫，請完成本地聖經資料封裝後即可離線顯示完整經文。"
+      text: "（經文載入中，請保持網路連線。若持續未載入，請確認連線後點選右上角翻譯版本重新讀取）"
     });
   }
 
