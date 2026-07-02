@@ -878,6 +878,17 @@ let navOverlayState = {
   autoAdvance: true
 };
 
+function updateVerseTabVisibility() {
+  const autoAdvance = document.getElementById("bible-nav-auto-advance")?.checked !== false;
+  const verseTab = document.querySelector("#bible-nav-overlay .segmented-tab[data-tab='verse']");
+  if (verseTab) {
+    verseTab.style.display = autoAdvance ? "block" : "none";
+  }
+  if (!autoAdvance && navOverlayState.activeTab === 'verse') {
+    window.switchNavTab('chapter');
+  }
+}
+
 window.openBibleNavOverlay = function() {
   const overlay = document.getElementById("bible-nav-overlay");
   if (!overlay) return;
@@ -888,6 +899,16 @@ window.openBibleNavOverlay = function() {
   navOverlayState.selectedVerse = 1;
   
   openReaderLayer(overlay);
+
+  // Bind auto-advance switch click to toggle verse tab visibility
+  const autoAdvanceSwitch = document.getElementById("bible-nav-auto-advance");
+  if (autoAdvanceSwitch && !autoAdvanceSwitch.dataset.bound) {
+    autoAdvanceSwitch.dataset.bound = "true";
+    autoAdvanceSwitch.addEventListener("change", updateVerseTabVisibility);
+  }
+
+  // Initial check on overlay open
+  updateVerseTabVisibility();
   
   // Initialize grid mode buttons in DOM
   const gridBtn = document.getElementById("view-mode-grid");
@@ -1038,11 +1059,14 @@ function renderBibleNavContent() {
       
       BIBLE_BOOKS.forEach(b => {
         const item = document.createElement("div");
-        item.className = "list-item-book";
+        item.className = "book-list-item-asym";
         item.classList.toggle("active", b.id === navOverlayState.selectedBookId);
         item.innerHTML = `
-          <span>${b.name}</span>
-          <span class="abbrev-badge">${b.abbrev}</span>
+          <div class="book-brand-box">${escapeHTML(b.abbrev)}</div>
+          <div class="book-names-box">
+            <span class="book-full-title">${escapeHTML(b.name)}</span>
+            <span class="book-english-sub">${escapeHTML(b.eng)}</span>
+          </div>
         `;
         item.addEventListener("click", () => selectNavBook(b.id));
         
@@ -1125,7 +1149,8 @@ function selectNavChapter(chNum) {
   if (autoAdvance) {
     window.switchNavTab('verse');
   } else {
-    renderBibleNavContent();
+    // Auto-advance is off: immediately confirm chapter selection (verse 1) and exit menu
+    selectNavVerse(1);
   }
 }
 

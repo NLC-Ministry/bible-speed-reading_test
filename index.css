@@ -5609,3 +5609,160 @@ body.reader-nav-hidden #reader-view .floating-nav-btn {
   justify-content: center;
 }
 
+/* Original Premium Bible navigation styles (Pill Slider & Frameless Grid) */
+.segmented-control.bible-native-tabs {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 9999px;
+  padding: 4px;
+  display: flex;
+  position: relative;
+  margin: 1.2rem 1rem;
+}
+body.light-theme .segmented-control.bible-native-tabs {
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.05);
+}
+.segmented-control.bible-native-tabs .segmented-tab {
+  border-radius: 9999px;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  flex: 1;
+  text-align: center;
+  padding: 0.6rem 1rem;
+  font-weight: 700;
+  font-size: 0.94rem;
+  cursor: pointer;
+  z-index: 1;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  -webkit-tap-highlight-color: transparent;
+}
+.segmented-control.bible-native-tabs .segmented-tab.active {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.12) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+body.light-theme .segmented-control.bible-native-tabs .segmented-tab.active {
+  color: var(--primary-color) !important;
+  background: rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Magazine-style Asymmetrical Split List items */
+.book-list-item-asym {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.8rem 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+body.light-theme .book-list-item-asym {
+  border-bottom-color: rgba(0, 0, 0, 0.04);
+}
+.book-list-item-asym:active {
+  background: rgba(255, 255, 255, 0.02);
+}
+.book-list-item-asym.active {
+  background: rgba(99, 102, 241, 0.08);
+}
+.book-brand-box {
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 1.02rem;
+  font-weight: 800;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+body.light-theme .book-brand-box {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.05);
+}
+.book-list-item-asym.active .book-brand-box {
+  background: var(--primary-gradient);
+  border-color: transparent;
+  color: white !important;
+  box-shadow: 0 4px 10px rgba(99, 102, 241, 0.25);
+}
+.book-names-box {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  overflow: hidden;
+}
+.book-full-title {
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.book-english-sub {
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+  opacity: 0.8;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Frameless Grid selections */
+.chapter-nav-grid, .verse-nav-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1.2rem;
+  padding: 1.2rem;
+}
+.grid-item-number {
+  border: none !important;
+  background: transparent !important;
+  color: var(--text-primary);
+  font-size: 1.15rem;
+  font-weight: 700;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50% !important;
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  margin: 0 auto;
+  -webkit-tap-highlight-color: transparent;
+}
+.grid-item-number:active {
+  transform: scale(0.9);
+}
+.grid-item-number::after {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  border-radius: 50%;
+  background: rgba(99, 102, 241, 0.18);
+  transform: scale(0);
+  opacity: 0;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  z-index: -1;
+}
+.grid-item-number:active::after {
+  transform: scale(1.1);
+  opacity: 1;
+}
+.grid-item-number.active {
+  background: var(--primary-gradient) !important;
+  color: white !important;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3) !important;
+}
+
