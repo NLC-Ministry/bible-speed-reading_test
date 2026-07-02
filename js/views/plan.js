@@ -3367,7 +3367,7 @@ async function renderGroupParticipantsRankingTable() {
         }
       }
 
-      let statusStr = hasAnyPlanRead ? "進度上一致" : "未開始";
+      let statusStr = hasAnyPlanRead ? "在進度上" : "未開始";
       let statusColor = "var(--text-muted)";
       if (hasAnyPlanRead && diff > 0) {
         statusStr = `超前 ${diff}天`;
@@ -3377,7 +3377,8 @@ async function renderGroupParticipantsRankingTable() {
         statusColor = "#ef4444";
       }
 
-      return {        name: u.name,
+      return {
+        name: u.name,
         streak: streak,
         completed: completed,
         makeup: makeup,
