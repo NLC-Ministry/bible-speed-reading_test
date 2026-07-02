@@ -5106,3 +5106,118 @@ body.reader-page .reader-ref-chip {
 .search-result-ref {
   color: var(--reader-accent) !important;
 }
+
+
+/* Mobile full-bleed Bible reading surface */
+@media (max-width: 640px) {
+  .app-layout.reader-mode .main-content,
+  .app-layout:has(#reader-view.active) .main-content {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    padding-bottom: calc(var(--app-bottom-nav-height) + env(safe-area-inset-bottom, 0px)) !important;
+    background: var(--bg-app);
+  }
+
+  #reader-view.active {
+    min-height: 100%;
+    background: var(--bg-app);
+  }
+
+  body.reader-page .native-reader-toolbar,
+  .app-layout.reader-mode .native-reader-toolbar,
+  .app-layout:has(#reader-view.active) .native-reader-toolbar {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    margin-bottom: 0 !important;
+    padding-left: 0.65rem !important;
+    padding-right: 0.65rem !important;
+    border-radius: 0 !important;
+  }
+
+  #reader-view .reader-body,
+  #reader-view .reader-body-full {
+    flex: 1 1 auto;
+    width: 100%;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: linear-gradient(180deg, rgba(99, 102, 241, 0.08) 0%, transparent 160px), var(--bg-app);
+  }
+
+  #reader-view .reader-card,
+  #reader-view .glass-card.reader-card {
+    width: 100%;
+    min-height: 100%;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  #reader-view .reader-card:hover {
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
+  #reader-view .reader-header {
+    padding: 1.05rem 20px 0.45rem !important;
+    margin: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+  }
+
+  #reader-view .bible-heading {
+    font-size: 0.95rem !important;
+    color: var(--text-muted) !important;
+    font-weight: 800 !important;
+    letter-spacing: 0 !important;
+  }
+
+  #reader-view .bible-text-container {
+    width: 100%;
+    padding: 0.35rem 20px calc(2rem + env(safe-area-inset-bottom, 0px)) !important;
+    margin: 0 !important;
+    background: transparent !important;
+  }
+
+  #reader-view .bible-verse {
+    margin: 0 !important;
+    padding: 0.72rem 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    line-height: 1.9;
+  }
+
+  #reader-view .bible-verse + .bible-verse {
+    border-top: 1px solid rgba(148, 163, 184, 0.08) !important;
+  }
+
+  #reader-view .bible-verse:hover {
+    background: transparent !important;
+    transform: none !important;
+  }
+
+  #reader-view .bible-verse.selected {
+    background: rgba(99, 102, 241, 0.1) !important;
+    border-radius: 12px !important;
+    padding-left: 0.55rem !important;
+    padding-right: 0.55rem !important;
+  }
+
+  #reader-view .verse-num {
+    min-width: 2.2rem;
+    color: var(--primary-color) !important;
+    opacity: 0.9;
+    font-weight: 900;
+  }
+
+  #reader-view .verse-text {
+    color: var(--text-primary);
+    letter-spacing: 0;
+  }
+}
