@@ -4434,7 +4434,7 @@ function renderPlanScheduleView() {
 
     const btnStats = document.createElement("button");
     btnStats.className = "secondary-btn";
-    btnStats.style.cssText = "flex: 1; font-weight: 700; font-size: 0.82rem; padding: 0.6rem; display: flex; align-items: center; justify-content: center; gap: 0.3rem; border-radius: var(--radius-sm); border: 1px solid var(--border-card); background: var(--bg-card); color: var(--text-primary); cursor: pointer;";
+    btnStats.style.cssText = "flex: 1; font-weight: 700; font-size: 0.82rem; padding: 0.65rem; display: flex; align-items: center; justify-content: center; gap: 0.3rem; border-radius: 12px; border: none; background: rgba(148, 163, 184, 0.1); color: var(--text-muted); cursor: pointer; transition: all 0.2s ease;";
     btnStats.innerHTML = `📊 我的進度`;
     btnStats.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -4445,7 +4445,7 @@ function renderPlanScheduleView() {
 
     const btnToday = document.createElement("button");
     btnToday.className = "secondary-btn";
-    btnToday.style.cssText = "flex: 1; font-weight: 700; font-size: 0.82rem; padding: 0.6rem; display: flex; align-items: center; justify-content: center; gap: 0.3rem; border-radius: var(--radius-sm); border: 1px solid var(--border-card); background: var(--bg-card); color: var(--text-primary); cursor: pointer;";
+    btnToday.style.cssText = "flex: 1; font-weight: 700; font-size: 0.82rem; padding: 0.65rem; display: flex; align-items: center; justify-content: center; gap: 0.3rem; border-radius: 12px; border: none; background: rgba(148, 163, 184, 0.1); color: var(--text-muted); cursor: pointer; transition: all 0.2s ease;";
     btnToday.innerHTML = `📅 今天進度`;
     btnToday.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -4454,7 +4454,7 @@ function renderPlanScheduleView() {
 
     const btnCal = document.createElement("button");
     btnCal.className = "primary-btn";
-    btnCal.style.cssText = "flex: 1.2; font-weight: 700; font-size: 0.82rem; padding: 0.6rem; display: flex; align-items: center; justify-content: center; gap: 0.3rem; border-radius: var(--radius-sm); background: var(--primary-gradient); color: white; border: none; cursor: pointer; box-shadow: var(--shadow-sm);";
+    btnCal.style.cssText = "flex: 1.2; font-weight: 700; font-size: 0.82rem; padding: 0.65rem; display: flex; align-items: center; justify-content: center; gap: 0.3rem; border-radius: 12px; background: #7c3aed; color: white; border: none; cursor: pointer; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25); transition: all 0.2s ease;";
     btnCal.innerHTML = `📅 查看日曆`;
     btnCal.addEventListener("click", (e) => {
       e.stopPropagation();

@@ -2459,52 +2459,55 @@ button.logout-btn:hover {
   align-items: center;
   gap: 1rem;
   padding: 1rem 1.2rem;
-  background: var(--bg-card);
-  border-radius: 14px;
-  border: 1px solid var(--border-card);
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
   cursor: pointer;
   transition: all 0.2s ease;
-  margin-bottom: 0.7rem;
+  margin-bottom: 0 !important;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.08) !important;
+}
+.plan-task-item:last-child {
+  border-bottom: none !important;
 }
 .plan-task-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+  background: rgba(255, 255, 255, 0.02) !important;
 }
 .plan-task-item .task-checkbox {
-  width: 26px;
-  height: 26px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  border: 2px solid var(--text-muted);
+  border: 2px solid rgba(148, 163, 184, 0.28) !important;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s ease;
   flex-shrink: 0;
-  background: transparent;
+  background: transparent !important;
 }
 .plan-task-item .task-checkbox.checked {
-  border-color: #10b981;
-  background: #10b981;
-  color: white;
+  border: none !important;
+  background: transparent !important;
+  color: #10b981 !important;
 }
 /* 第一遍完成，但當前處於第二或第三遍中 (還沒讀第二遍) */
 .plan-task-item .task-checkbox.checked.round-1.dimmed {
-  background: transparent;
-  border-color: rgba(16, 185, 129, 0.45);
-  color: rgba(16, 185, 129, 0.6);
+  border: none !important;
+  background: transparent !important;
+  color: rgba(16, 185, 129, 0.45) !important;
 }
 /* 第二遍完成：靛藍色雙勾 */
 .plan-task-item .task-checkbox.checked.round-2 {
-  border-color: #6366f1;
-  background: #6366f1;
-  color: white;
+  border: none !important;
+  background: transparent !important;
+  color: #6366f1 !important;
 }
 /* 第三遍完成：金色星星 */
 .plan-task-item .task-checkbox.checked.round-3 {
-  border-color: #f59e0b;
-  background: #f59e0b;
-  color: white;
+  border: none !important;
+  background: transparent !important;
+  color: #f59e0b !important;
 }
 .plan-task-item .task-checkbox svg {
   width: 16px;
@@ -5923,7 +5926,7 @@ body.dark-theme .reader-bottom-action-bar.scenario-a .capsule-action-btn {
 /* Calendar container styling */
 .calendar-component {
   background: var(--bg-card);
-  border: 1px solid var(--border-card);
+  border: none !important;
   border-radius: var(--radius-md);
   padding: 12px 14px;
   margin-bottom: 1.5rem;
@@ -5956,7 +5959,7 @@ body.dark-theme .reader-bottom-action-bar.scenario-a .capsule-action-btn {
 
 .calendar-nav-btn {
   background: transparent;
-  border: 1px solid var(--border-card);
+  border: none !important;
   color: var(--text-primary);
   border-radius: 50%;
   width: 28px;
@@ -5998,7 +6001,7 @@ body.dark-theme .reader-bottom-action-bar.scenario-a .capsule-action-btn {
   grid-template-columns: repeat(7, 1fr);
   text-align: center;
   margin-bottom: 8px;
-  border-bottom: 1px solid var(--border-card);
+  border-bottom: none !important;
   padding-bottom: 6px;
 }
 
