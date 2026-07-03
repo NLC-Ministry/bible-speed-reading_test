@@ -1007,6 +1007,9 @@ async function renderPlanDetailView() {
 
 function isChapterReadForRound(ch, round) {
   if (!ch) return false;
+  const chRound = ch.round || 1;
+  if (chRound < round) return true;
+  if (chRound > round) return false;
   if (round === 1) return Boolean(ch.isReadR1 || ch.isRead);
   if (round === 2) return Boolean(ch.isReadR2);
   if (round >= 3) return Boolean(ch.isReadR3);
