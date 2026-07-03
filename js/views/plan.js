@@ -1005,7 +1005,7 @@ async function renderPlanDetailView() {
 }
 
 function renderHorizontalDateStrip() {
-  console.log('🏗️ [系統審計] 進入資料讀寫，當前操作類型：渲染日曆格子 (滑動視窗優化)', '資料版本:', state.dataVersion);
+  console.log('[系統審計] 進入資料讀寫，當前操作類型：渲染日曆格子 (無縫滑動視窗優化)', '資料版本:', state.dataVersion);
 
   const container = document.getElementById("plan-date-carousel");
   if (!container || !state.activePlan) return;
@@ -1044,12 +1044,18 @@ function renderHorizontalDateStrip() {
     }
   }
 
-  // 2. Define Sliding Window boundaries: start - 5 days, end + 5 days
-  const windowStart = new Date(planStartDate);
-  windowStart.setDate(windowStart.getDate() - 5);
+  // 2. Define Sliding Window boundaries: start - 2 weeks (backtrack to Sunday), end + 3 weeks (forward to Saturday)
+  const startBase = new Date(planStartDate);
+  startBase.setDate(startBase.getDate() - 14);
+  const startDayOfWeek = startBase.getDay();
+  const windowStart = new Date(startBase);
+  windowStart.setDate(startBase.getDate() - startDayOfWeek);
 
-  const windowEnd = new Date(planEndDate);
-  windowEnd.setDate(windowEnd.getDate() + 5);
+  const endBase = new Date(planEndDate);
+  endBase.setDate(endBase.getDate() + 21);
+  const endDayOfWeek = endBase.getDay();
+  const windowEnd = new Date(endBase);
+  windowEnd.setDate(endBase.getDate() + (6 - endDayOfWeek));
 
   // 3. Create the Calendar Wrapper (Clean flat look, completely borderless)
   const calendarWrapper = document.createElement("div");
@@ -1071,7 +1077,7 @@ function renderHorizontalDateStrip() {
   // 5. Create the Scroll Container (max-h-[380px] overflow-y-auto scrollbar-none)
   const scrollContainer = document.createElement("div");
   scrollContainer.className = "calendar-scroll-container scrollbar-none";
-  scrollContainer.style.cssText = "max-height: 380px; overflow-y: auto; width: 100%; display: flex; flex-direction: column; gap: 1.5rem; scrollbar-width: none; -ms-overflow-style: none;";
+  scrollContainer.style.cssText = "max-height: 380px; overflow-y: auto; width: 100%; display: flex; flex-direction: column; scrollbar-width: none; -ms-overflow-style: none;";
 
   const now = new Date();
   const todayYear = now.getFullYear();
@@ -1087,205 +1093,145 @@ function renderHorizontalDateStrip() {
     });
   };
 
-  // Group sliding window dates into unique year-month segments dynamically
-  const planMonths = [];
-  let temp = new Date(windowStart);
-  while (temp <= windowEnd) {
-    const y = temp.getFullYear();
-    const m = temp.getMonth() + 1;
-    if (!planMonths.some(pm => pm.year === y && pm.month === m)) {
-      planMonths.push({ year: y, month: m });
-    }
-    temp.setDate(temp.getDate() + 1);
-  }
-  planMonths.sort((a, b) => (a.year * 12 + a.month) - (b.year * 12 + b.month));
-
-  // Render each month block
-  planMonths.forEach(pm => {
-    const monthBlock = document.createElement("div");
-    monthBlock.style.cssText = "display: flex; flex-direction: column; position: relative;";
-
-    // Sticky Month Header (top-0 bg-slate-950 backdrop-blur)
-    const monthHeader = document.createElement("div");
-    monthHeader.className = "calendar-month-header";
-    monthHeader.style.cssText = "position: sticky; top: 0; background: #020617 !important; z-index: 10; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); padding: 0.6rem 0; font-size: 0.88rem; font-weight: 700; color: #94a3b8; letter-spacing: 0.5px; text-align: center; margin-bottom: 0.5rem;";
-    monthHeader.textContent = `${pm.year}-${String(pm.month).padStart(2, '0')}`;
-    monthBlock.appendChild(monthHeader);
-
-    // Month Grid
-    const gridDiv = document.createElement("div");
-    gridDiv.className = "calendar-grid";
-    gridDiv.style.cssText = "display: grid; grid-template-columns: repeat(7, 1fr); gap: 24px 4px !important; padding: 8px 0 !important;";
-
-    // Calculate dates within this month that fall in the sliding window
-    const startDateTime = Math.max(new Date(pm.year, pm.month - 1, 1).getTime(), windowStart.getTime());
-    const startDate = new Date(startDateTime);
-
-    const endDateTime = Math.min(new Date(pm.year, pm.month, 0).getTime(), windowEnd.getTime());
-    const endDate = new Date(endDateTime);
-
-    let cells = [];
-
-    // Pre-padding back to Sunday to align weekday columns
-    const padCount = startDate.getDay();
-    for (let i = padCount; i > 0; i--) {
-      const padDate = new Date(startDate);
-      padDate.setDate(startDate.getDate() - i);
-      cells.push({
-        year: padDate.getFullYear(),
-        month: padDate.getMonth() + 1,
-        dayOfMonth: padDate.getDate(),
-        isOtherMonth: padDate.getMonth() + 1 !== pm.month
-      });
-    }
-
-    // Window days for current month block
-    let curr = new Date(startDate);
-    while (curr <= endDate) {
-      cells.push({
-        year: curr.getFullYear(),
-        month: curr.getMonth() + 1,
-        dayOfMonth: curr.getDate(),
-        isOtherMonth: false
-      });
-      curr.setDate(curr.getDate() + 1);
-    }
-
-    // Post-padding forward to Saturday to complete the grid row
-    const endPadCount = (7 - (cells.length % 7)) % 7;
-    for (let i = 1; i <= endPadCount; i++) {
-      const padDate = new Date(endDate);
-      padDate.setDate(endDate.getDate() + i);
-      cells.push({
-        year: padDate.getFullYear(),
-        month: padDate.getMonth() + 1,
-        dayOfMonth: padDate.getDate(),
-        isOtherMonth: padDate.getMonth() + 1 !== pm.month
-      });
-    }
-
-    // Render cells
-    cells.forEach(cell => {
-      const dayCell = document.createElement("div");
-      dayCell.className = "calendar-day";
-      dayCell.innerHTML = `<span class="day-number">${cell.dayOfMonth}</span>`;
-
-      if (cell.isOtherMonth) {
-        dayCell.classList.add("other-month");
-      }
-
-      const day = findPlanDay(cell.year, cell.month, cell.dayOfMonth);
-      if (day) {
-        dayCell.setAttribute("data-day-num", day.dayNum);
-
-        const totalChapters = day.chapters ? day.chapters.length : 0;
-        let completedChapters = 0;
-
-        if (totalChapters > 0) {
-          day.chapters.forEach(ch => {
-            const currentRound = state.activePlan.currentRound || 1;
-            const taskRound = ch.round || currentRound;
-            let isRead = false;
-            if (taskRound === 1) isRead = ch.isReadR1 || ch.isRead;
-            else if (taskRound === 2) isRead = ch.isReadR2;
-            else if (taskRound >= 3) isRead = ch.isReadR3;
-            else isRead = ch.isRead;
-
-            if (isRead) completedChapters++;
-          });
-        }
-
-        const isDayCompleted = totalChapters > 0 && completedChapters === totalChapters;
-        const isPartiallyCompleted = totalChapters > 0 && completedChapters > 0 && completedChapters < totalChapters;
-
-        const isToday = cell.year === todayYear && cell.month === todayMonth && cell.dayOfMonth === todayDay;
-        const isPast = cell.year < todayYear || 
-                       (cell.year === todayYear && cell.month < todayMonth) || 
-                       (cell.year === todayYear && cell.month === todayMonth && cell.dayOfMonth < todayDay);
-
-        // Highlight selected day
-        if (day.dayNum === state.selectedPlanDay) {
-          dayCell.classList.add("active");
-        }
-
-        if (isToday) {
-          dayCell.classList.add("today");
-        }
-
-        if (isDayCompleted) {
-          dayCell.classList.add("completed");
-        }
-
-        if (isPast && !isDayCompleted && totalChapters > 0) {
-          dayCell.classList.add("past-unread");
-        }
-
-        if (isPartiallyCompleted) {
-          const progressContainer = document.createElement("div");
-          progressContainer.className = "micro-progress-container";
-          const progressBar = document.createElement("div");
-          progressBar.className = "micro-progress-bar";
-          progressBar.style.width = `${(completedChapters / totalChapters) * 100}%`;
-          progressContainer.appendChild(progressBar);
-          dayCell.appendChild(progressContainer);
-        }
-
-        // Status dot indicator
-        if (!isToday) {
-          const dot = document.createElement("div");
-          dot.className = "day-status-dot";
-          if (isDayCompleted) {
-            dot.classList.add("dot-completed");
-          } else if (isPast && totalChapters > 0) {
-            dot.classList.add("dot-behind");
-          } else {
-            dot.classList.add("dot-grey");
-          }
-          dayCell.appendChild(dot);
-        }
-
-        // Click handler with race condition cancellation
-        dayCell.addEventListener("click", (e) => {
-          e.stopPropagation();
-
-          const clickedDate = `${cell.year}/${String(cell.month).padStart(2, '0')}/${String(cell.dayOfMonth).padStart(2, '0')}`;
-          console.log('📅 [日曆切換防護] 已成功鎖定日期：', clickedDate, '準備渲染對應章節');
-
-          if (window._dateSwitchAbortController) {
-            window._dateSwitchAbortController.abort();
-          }
-          window._dateSwitchAbortController = new AbortController();
-          const signal = window._dateSwitchAbortController.signal;
-
-          state.selectedPlanDay = day.dayNum;
-
-          // Redraw to refresh highlights (active state)
-          renderHorizontalDateStrip();
-          renderPlanScheduleTracker(true, signal);
-        });
-
-      } else {
-        // Not part of the reading plan
-        dayCell.style.cursor = "default";
-        dayCell.classList.add("other-month");
-
-        const isToday = cell.year === todayYear && cell.month === todayMonth && cell.dayOfMonth === todayDay;
-        if (isToday) {
-          dayCell.classList.add("today");
-        } else {
-          const dot = document.createElement("div");
-          dot.className = "day-status-dot dot-grey";
-          dayCell.appendChild(dot);
-        }
-      }
-
-      gridDiv.appendChild(dayCell);
+  // 6. Generate single flat continuous array of dates within the sliding window
+  let cells = [];
+  let curr = new Date(windowStart);
+  while (curr <= windowEnd) {
+    cells.push({
+      year: curr.getFullYear(),
+      month: curr.getMonth() + 1,
+      dayOfMonth: curr.getDate()
     });
+    curr.setDate(curr.getDate() + 1);
+  }
 
-    monthBlock.appendChild(gridDiv);
-    scrollContainer.appendChild(monthBlock);
+  // Month Grid Container (Seamless single grid, no month banners/dividers)
+  const gridDiv = document.createElement("div");
+  gridDiv.className = "calendar-grid";
+  gridDiv.style.cssText = "display: grid; grid-template-columns: repeat(7, 1fr); gap: 24px 4px !important; padding: 16px 0 !important; width: 100%;";
+
+
+
+  // Render cells flatly
+  cells.forEach(cell => {
+    const dayCell = document.createElement("div");
+    dayCell.className = "calendar-day";
+
+    // Minimal Month Identifier: 1st of month displays "M/D" (e.g. 7/1), others display "D"
+    const numberLabel = cell.dayOfMonth === 1 ? `${cell.month}/${cell.dayOfMonth}` : `${cell.dayOfMonth}`;
+    dayCell.innerHTML = `<span class="day-number">${numberLabel}</span>`;
+
+    const day = findPlanDay(cell.year, cell.month, cell.dayOfMonth);
+    if (day) {
+      dayCell.setAttribute("data-day-num", day.dayNum);
+
+      const totalChapters = day.chapters ? day.chapters.length : 0;
+      let completedChapters = 0;
+
+      if (totalChapters > 0) {
+        day.chapters.forEach(ch => {
+          const currentRound = state.activePlan.currentRound || 1;
+          const taskRound = ch.round || currentRound;
+          let isRead = false;
+          if (taskRound === 1) isRead = ch.isReadR1 || ch.isRead;
+          else if (taskRound === 2) isRead = ch.isReadR2;
+          else if (taskRound >= 3) isRead = ch.isReadR3;
+          else isRead = ch.isRead;
+
+          if (isRead) completedChapters++;
+        });
+      }
+
+      const isDayCompleted = totalChapters > 0 && completedChapters === totalChapters;
+      const isPartiallyCompleted = totalChapters > 0 && completedChapters > 0 && completedChapters < totalChapters;
+
+      const isToday = cell.year === todayYear && cell.month === todayMonth && cell.dayOfMonth === todayDay;
+      const isPast = cell.year < todayYear ||
+        (cell.year === todayYear && cell.month < todayMonth) ||
+        (cell.year === todayYear && cell.month === todayMonth && cell.dayOfMonth < todayDay);
+
+      // Selected active focus highlight (circular grey background)
+      if (day.dayNum === state.selectedPlanDay) {
+        dayCell.classList.add("active");
+      }
+
+      if (isToday) {
+        dayCell.classList.add("today");
+      }
+
+      if (isDayCompleted) {
+        dayCell.classList.add("completed");
+      }
+
+      if (isPast && !isDayCompleted && totalChapters > 0) {
+        dayCell.classList.add("past-unread");
+      }
+
+      if (isPartiallyCompleted) {
+        const progressContainer = document.createElement("div");
+        progressContainer.className = "micro-progress-container";
+        const progressBar = document.createElement("div");
+        progressBar.className = "micro-progress-bar";
+        progressBar.style.width = `${(completedChapters / totalChapters) * 100}%`;
+        progressContainer.appendChild(progressBar);
+        dayCell.appendChild(progressContainer);
+      }
+
+      // Status dot indicator
+      if (!isToday) {
+        const dot = document.createElement("div");
+        dot.className = "day-status-dot";
+        if (isDayCompleted) {
+          dot.classList.add("dot-completed");
+        } else if (isPast && totalChapters > 0) {
+          dot.classList.add("dot-behind");
+        } else {
+          dot.classList.add("dot-grey");
+        }
+        dayCell.appendChild(dot);
+      }
+
+      // Click handler with race condition cancellation
+      dayCell.addEventListener("click", (e) => {
+        e.stopPropagation();
+
+        const clickedDate = `${cell.year}/${String(cell.month).padStart(2, '0')}/${String(cell.dayOfMonth).padStart(2, '0')}`;
+        console.log('📅 [日曆切換防護] 已成功鎖定日期：', clickedDate, '準備渲染對應章節');
+
+        if (window._dateSwitchAbortController) {
+          window._dateSwitchAbortController.abort();
+        }
+        window._dateSwitchAbortController = new AbortController();
+        const signal = window._dateSwitchAbortController.signal;
+
+        state.selectedPlanDay = day.dayNum;
+
+        // Redraw to refresh active highlights
+        renderHorizontalDateStrip();
+        renderPlanScheduleTracker(true, signal);
+      });
+
+    } else {
+      // Not part of the reading plan
+      dayCell.style.cursor = "default";
+      dayCell.classList.add("other-month");
+
+      const isToday = cell.year === todayYear && cell.month === todayMonth && cell.dayOfMonth === todayDay;
+      if (isToday) {
+        dayCell.classList.add("today");
+      } else {
+        const dot = document.createElement("div");
+        dot.className = "day-status-dot dot-grey";
+        dayCell.appendChild(dot);
+      }
+    }
+
+    gridDiv.appendChild(dayCell);
   });
 
+
+
+  scrollContainer.appendChild(gridDiv);
   calendarWrapper.appendChild(scrollContainer);
   container.appendChild(calendarWrapper);
 
@@ -1533,12 +1479,12 @@ window.toggleYouVersionChapter = function (checkboxEl, book, chapter, taskRound 
   const updateLocalReadingLogs = (book, chapter, round, checked) => {
     if (!state.readingLogs) state.readingLogs = [];
     if (checked) {
-      const exists = state.readingLogs.some(l => 
-        l.book === book && 
-        Number(l.chapter) === Number(chapter) && 
+      const exists = state.readingLogs.some(l =>
+        l.book === book &&
+        Number(l.chapter) === Number(chapter) &&
         Number(l.round || 1) === Number(round) &&
-        (l.plan_id === (state.activePlan ? state.activePlan.id : null) || 
-         l.presetKey === (state.activePlan ? state.activePlan.presetKey : null))
+        (l.plan_id === (state.activePlan ? state.activePlan.id : null) ||
+          l.presetKey === (state.activePlan ? state.activePlan.presetKey : null))
       );
       if (!exists) {
         state.readingLogs.push({
@@ -1553,13 +1499,13 @@ window.toggleYouVersionChapter = function (checkboxEl, book, chapter, taskRound 
       }
     } else {
       state.readingLogs = state.readingLogs.filter(l => !(
-        l.book === book && 
-        Number(l.chapter) === Number(chapter) && 
+        l.book === book &&
+        Number(l.chapter) === Number(chapter) &&
         Number(l.round || 1) === Number(round) &&
-        ((state.activePlan && l.plan_id && l.plan_id === state.activePlan.id) || 
-         (state.activePlan && l.presetKey && l.presetKey === state.activePlan.presetKey) || 
-         (!state.activePlan && !l.plan_id && !l.presetKey) ||
-         ((l.plan_id === null || l.plan_id === undefined) && (l.presetKey === null || l.presetKey === undefined)))
+        ((state.activePlan && l.plan_id && l.plan_id === state.activePlan.id) ||
+          (state.activePlan && l.presetKey && l.presetKey === state.activePlan.presetKey) ||
+          (!state.activePlan && !l.plan_id && !l.presetKey) ||
+          ((l.plan_id === null || l.plan_id === undefined) && (l.presetKey === null || l.presetKey === undefined)))
       ));
     }
   };
@@ -1568,10 +1514,10 @@ window.toggleYouVersionChapter = function (checkboxEl, book, chapter, taskRound 
   updateLocalReadingLogs(book, chapter, currentRound, willBeChecked);
   applyLocalReadState(chapterObj, willBeChecked);
   calculatePlanProgress();
-  
+
   // Set dataVersion to optimistically propagate changes to all listening views via CustomEvent
   window.setDataVersion(prev => prev + 1);
-  
+
   console.log('✅ [進度同步完成] 成功標記已讀，已強制驅動畫面更新');
 
   if (typeof updateDashboardView === "function") {
@@ -1602,7 +1548,7 @@ window.toggleYouVersionChapter = function (checkboxEl, book, chapter, taskRound 
 
 function renderPlanLevelEditor() {
   const currentLevel = state.activePlan ? (state.activePlan.level || "normal") : "normal";
-  
+
   // 💡 關鍵修復：直接從計畫各章節的打卡狀態（R2, R3）計算實際已讀的最大遍數，避免與 raw logs 型態不合
   let maxReadRound = 1;
   if (state.activePlan && state.activePlan.days) {
@@ -1784,7 +1730,7 @@ window.changePlanLevel = async function (newLevel) {
   if (!state.activePlan) return;
 
   const currentLevel = state.activePlan.level || "normal";
-  
+
   // 💡 關鍵修復：直接從計畫各章節的打卡狀態（R2, R3）計算實際已讀的最大遍數
   let maxReadRound = 1;
   if (state.activePlan && state.activePlan.days) {
@@ -2104,7 +2050,7 @@ async function renderAdminPlanManagement() {
 
 
 
-window.openPlanChapterInReader = function(bookName, chapter, dayNum, round = null) {
+window.openPlanChapterInReader = function (bookName, chapter, dayNum, round = null) {
   console.log('📖 [Debug] 已點選章節，進入全滿版沉浸閱讀模式');
   const book = BIBLE_BOOKS.find(b => b.name === bookName || b.eng === bookName);
   if (!book) {
@@ -2747,7 +2693,7 @@ async function renderPlanStatsView() {
 
     // 4. Makeup/Catch up days (🛡️ 進度救援)
     const statsStart = new Date(state.activePlan.startDate);
-    statsStart.setHours(0,0,0,0);
+    statsStart.setHours(0, 0, 0, 0);
     const targetRoundsVal = getPlanLevelRounds(state.activePlan.level || "normal");
     let catchUpDaysVal = 0;
     for (let r = 1; r <= targetRoundsVal; r++) {
@@ -2756,15 +2702,15 @@ async function renderPlanStatsView() {
         const scheduledDate = new Date(statsStart);
         scheduledDate.setDate(statsStart.getDate() + (d - 1));
         const scheduledDateStr = scheduledDate.toISOString().substring(0, 10);
-        
-        const roundLogs = (state.readingLogs || []).filter(l => 
+
+        const roundLogs = (state.readingLogs || []).filter(l =>
           (l.plan_id === state.activePlan.id || l.presetKey === state.activePlan.presetKey) &&
           (l.round || 1) === r
         );
-        
+
         let allChaptersCompleted = true;
         let maxReadDateStr = "";
-        
+
         for (const ch of day.chapters) {
           const log = roundLogs.find(l => l.book === ch.book && l.chapter === ch.chapter);
           if (!log) {
@@ -2776,7 +2722,7 @@ async function renderPlanStatsView() {
             maxReadDateStr = logDateStr;
           }
         }
-        
+
         if (allChaptersCompleted && maxReadDateStr) {
           if (maxReadDateStr > scheduledDateStr) {
             catchUpDaysVal++;
@@ -3414,9 +3360,9 @@ async function renderMyPersonalRankings() {
   const completedDaysCount = isCompletedOnce
     ? state.activePlan.days.length
     : state.activePlan.days.filter(d => {
-        if (!d.chapters || d.chapters.length === 0) return false;
-        return d.chapters.every(ch => ch.isRead);
-      }).length;
+      if (!d.chapters || d.chapters.length === 0) return false;
+      return d.chapters.every(ch => ch.isRead);
+    }).length;
 
   const planStart = new Date(state.activePlan.startDate);
   const today = new Date();
@@ -3577,9 +3523,9 @@ async function renderGroupParticipantsRankingTable() {
   const completedDaysCount = isCompletedOnce
     ? state.activePlan.days.length
     : state.activePlan.days.filter(d => {
-        if (!d.chapters || d.chapters.length === 0) return false;
-        return d.chapters.every(ch => ch.isRead);
-      }).length;
+      if (!d.chapters || d.chapters.length === 0) return false;
+      return d.chapters.every(ch => ch.isRead);
+    }).length;
 
   const planStart = new Date(state.activePlan.startDate);
   const today = new Date();
@@ -3909,7 +3855,7 @@ async function renderPlanMembersView() {
   }
 }
 
-window.showPlanStatsModal = function() {
+window.showPlanStatsModal = function () {
   if (!state.activePlan) {
     showToast("尚未加入任何計畫");
     return;
@@ -3966,15 +3912,15 @@ window.showPlanStatsModal = function() {
       const scheduledDate = new Date(start);
       scheduledDate.setDate(start.getDate() + (d - 1));
       const scheduledDateStr = scheduledDate.toISOString().substring(0, 10);
-      
-      const roundLogs = (state.readingLogs || []).filter(l => 
+
+      const roundLogs = (state.readingLogs || []).filter(l =>
         (l.plan_id === plan.id || l.presetKey === plan.presetKey) &&
         (l.round || 1) === r
       );
-      
+
       let allChaptersCompleted = true;
       let maxReadDateStr = "";
-      
+
       for (const ch of day.chapters) {
         const log = roundLogs.find(l => l.book === ch.book && l.chapter === ch.chapter);
         if (!log) {
@@ -3986,7 +3932,7 @@ window.showPlanStatsModal = function() {
           maxReadDateStr = logDateStr;
         }
       }
-      
+
       if (allChaptersCompleted && maxReadDateStr) {
         if (maxReadDateStr > scheduledDateStr) {
           catchUpDays++;
@@ -4034,16 +3980,16 @@ window.showPlanStatsModal = function() {
     sumChapters += plan.days[i].chapters.length;
     cumulativeScheduled.push(sumChapters * targetRounds);
   }
-  
+
   // Calculate actual completed chapters across rounds
   let actualCompletedChaptersTotal = 0;
   for (let r = 1; r <= targetRounds; r++) {
-    const roundLogs = (state.readingLogs || []).filter(l => 
+    const roundLogs = (state.readingLogs || []).filter(l =>
       (l.plan_id === plan.id || l.presetKey === plan.presetKey) &&
       (l.round || 1) === r
     );
     const uniqueChapters = new Set(roundLogs.map(l => `${l.book}_${l.chapter}`));
-    
+
     let planChaptersCount = 0;
     plan.days.forEach(day => {
       day.chapters.forEach(ch => {
@@ -4066,7 +4012,7 @@ window.showPlanStatsModal = function() {
   let statusLabel = "";
   let statusColor = "";
   let statusBg = "";
-  
+
   const currentRoundVal = plan.currentRound || 1;
   if (currentRoundVal >= 4) {
     statusLabel = "自主精修";
@@ -4163,7 +4109,7 @@ window.showPlanStatsModal = function() {
     </h3>
     <button class="circular-action-btn" style="width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border-card); background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; color: var(--text-secondary);" onclick="this.closest('.modal-overlay').remove()">✕</button>
   `;
-  
+
   headerDiv.querySelector("button").onclick = (e) => {
     e.stopPropagation();
     closeStatsModal();
@@ -4401,7 +4347,7 @@ function snapCalendarToToday() {
     state.selectedPlanDay = todayPlanDay.dayNum;
     state.calendarViewYear = todayYear;
     state.calendarViewMonth = todayMonth;
-    
+
     // Redraw if calendar is loaded in the DOM
     if (viewMode === 'calendar') {
       renderHorizontalDateStrip();
