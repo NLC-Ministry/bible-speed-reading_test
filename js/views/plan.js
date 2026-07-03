@@ -1424,6 +1424,9 @@ async function renderPlanScheduleTracker(skipCarouselUpdate = false, signal = nu
     state.selectedPlanDay = firstUncompleted ? firstUncompleted.dayNum : 1;
   }
 
+  // Ensure top view mode container is loaded (Card / Calendar mutual exclusion)
+  renderPlanScheduleView();
+
   // Update date carousel
   if (!skipCarouselUpdate) {
     renderHorizontalDateStrip();
