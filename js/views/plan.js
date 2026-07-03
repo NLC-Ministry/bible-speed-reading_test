@@ -1074,10 +1074,10 @@ function renderHorizontalDateStrip() {
   });
   calendarWrapper.appendChild(weekdaysDiv);
 
-  // 5. Create the Scroll Container (max-h-[380px] overflow-y-auto scrollbar-none)
+  // 5. Create the Scroll Container (visible area is capped to five calendar rows)
   const scrollContainer = document.createElement("div");
   scrollContainer.className = "calendar-scroll-container scrollbar-none";
-  scrollContainer.style.cssText = "max-height: 380px; overflow-y: auto; width: 100%; display: flex; flex-direction: column; scrollbar-width: none; -ms-overflow-style: none;";
+  scrollContainer.style.cssText = "overflow-y: auto; width: 100%; display: flex; flex-direction: column; scrollbar-width: none; -ms-overflow-style: none;";
 
   const now = new Date();
   const todayYear = now.getFullYear();
@@ -1234,6 +1234,33 @@ function renderHorizontalDateStrip() {
   scrollContainer.appendChild(gridDiv);
   calendarWrapper.appendChild(scrollContainer);
   container.appendChild(calendarWrapper);
+
+  const applyCalendarMaxRows = () => {
+    const firstCell = gridDiv.querySelector(".calendar-day");
+    if (!firstCell) return;
+
+    const gridStyles = getComputedStyle(gridDiv);
+    const rowGap = parseFloat(gridStyles.rowGap) || 0;
+    const paddingTop = parseFloat(gridStyles.paddingTop) || 0;
+    const paddingBottom = parseFloat(gridStyles.paddingBottom) || 0;
+    const rowHeight = firstCell.getBoundingClientRect().height;
+
+    if (rowHeight > 0) {
+      const visibleRows = 5;
+      const maxHeight = (rowHeight * visibleRows) + (rowGap * (visibleRows - 1)) + paddingTop + paddingBottom;
+      scrollContainer.style.maxHeight = Math.ceil(maxHeight) + "px";
+    }
+  };
+
+  applyCalendarMaxRows();
+  requestAnimationFrame(applyCalendarMaxRows);
+
+  if (container._calendarResizeCleanup) {
+    container._calendarResizeCleanup();
+  }
+  const resizeObserver = new ResizeObserver(applyCalendarMaxRows);
+  resizeObserver.observe(gridDiv);
+  container._calendarResizeCleanup = () => resizeObserver.disconnect();
 
   // Auto-scroll selected day into view (centered)
   setTimeout(() => {
@@ -4300,9 +4327,21 @@ function renderPlanScheduleView() {
     btnStats.innerHTML = `📊 我的進度`;
     btnStats.addEventListener("click", (e) => {
       e.stopPropagation();
-      if (window.showPlanStatsModal) {
-        window.showPlanStatsModal();
-      }
+      // Find first uncompleted day in the plan dynamically
+      const firstUncompleted = state.activePlan.days.find(day => {
+        if (!day.chapters || day.chapters.length === 0) return false;
+        const currentRound = state.activePlan.currentRound || 1;
+        return !day.chapters.every(ch => {
+          const taskRound = ch.round || currentRound;
+          if (taskRound === 1) return ch.isReadR1 || ch.isRead;
+          if (taskRound === 2) return ch.isReadR2;
+          if (taskRound >= 3) return ch.isReadR3;
+          return ch.isRead;
+        });
+      });
+      state.selectedPlanDay = firstUncompleted ? firstUncompleted.dayNum : 1;
+      setViewMode('card');
+      renderPlanScheduleTracker();
     });
 
     const btnToday = document.createElement("button");
