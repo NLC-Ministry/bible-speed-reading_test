@@ -996,11 +996,12 @@ async function renderPlanDetailView() {
   if (tabMembers) tabMembers.classList.remove("active");
   allSubviewsInit.forEach(s => s.classList.add("hidden"));
   if (subviewSchedule) subviewSchedule.classList.remove("hidden");
-  renderPlanScheduleTracker();
 
   // Initialize plan view mode (default is 'card')
-  if (!state.planViewMode) state.planViewMode = 'card';
-  setViewMode(state.planViewMode);
+  const initialViewMode = state.planViewMode === 'calendar' ? 'calendar' : 'card';
+  setViewMode(initialViewMode);
+
+  renderPlanScheduleTracker();
 }
 function renderHorizontalDateStrip() {
   console.log('🏗️ [系統審計] 進入資料讀寫，當前操作類型：渲染日曆格子', '資料版本:', state.dataVersion);
@@ -4370,8 +4371,9 @@ window.showPlanStatsModal = function() {
 };
 
 function setViewMode(mode) {
-  viewMode = mode;
-  state.planViewMode = mode;
+  // 🛡️ Strict fallback: if mode is not exactly 'calendar', default to 'card'
+  viewMode = (mode === 'calendar') ? 'calendar' : 'card';
+  state.planViewMode = viewMode;
   console.log('🔄 [視圖切換] 當前模式變更為：', viewMode);
   renderPlanScheduleView();
 }
@@ -4382,12 +4384,34 @@ function renderPlanScheduleView() {
 
   container.innerHTML = "";
 
-  if (viewMode === 'card') {
+  if (viewMode === 'calendar') {
+    // ─────────────────────────────────────────────
+    // Render State B: Full Calendar Mode
+    // ─────────────────────────────────────────────
+    const calContainer = document.createElement("div");
+    calContainer.id = "calendar-view-container";
+    calContainer.className = "w-full px-4 text-center";
+
+    // 1. Calendar Grid Component Container
+    const calendarCarousel = document.createElement("div");
+    calendarCarousel.className = "date-carousel";
+    calendarCarousel.id = "plan-date-carousel";
+    calendarCarousel.style.width = "100%";
+
+    calContainer.appendChild(calendarCarousel);
+    container.appendChild(calContainer);
+
+    // Render the actual calendar grid DOM
+    renderHorizontalDateStrip();
+
+  } else {
+    // 🛡️ 最高安全防線：只要不是 calendar，一律強制回退渲染「卡片模式」，絕不准開天窗！
     // ─────────────────────────────────────────────
     // Render State A: Card Mode (Themes & Progress Actions Bar)
     // ─────────────────────────────────────────────
     const cardContainer = document.createElement("div");
     cardContainer.id = "card-view-container";
+    cardContainer.className = "w-full";
 
     // 1. Purple Cover Card
     const coverCard = document.createElement("div");
@@ -4441,26 +4465,6 @@ function renderPlanScheduleView() {
     cardContainer.appendChild(coverCard);
     cardContainer.appendChild(actionsBar);
     container.appendChild(cardContainer);
-
-  } else {
-    // ─────────────────────────────────────────────
-    // Render State B: Full Calendar Mode
-    // ─────────────────────────────────────────────
-    const calContainer = document.createElement("div");
-    calContainer.id = "calendar-view-container";
-    calContainer.className = "w-full px-4 text-center";
-
-    // 1. Calendar Grid Component Container
-    const calendarCarousel = document.createElement("div");
-    calendarCarousel.className = "date-carousel";
-    calendarCarousel.id = "plan-date-carousel";
-    calendarCarousel.style.width = "100%";
-
-    calContainer.appendChild(calendarCarousel);
-    container.appendChild(calContainer);
-
-    // Render the actual calendar grid DOM
-    renderHorizontalDateStrip();
   }
 }
 
