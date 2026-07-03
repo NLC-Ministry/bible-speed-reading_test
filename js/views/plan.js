@@ -1003,20 +1003,60 @@ async function renderPlanDetailView() {
 
   renderPlanScheduleTracker();
 }
+
 function renderHorizontalDateStrip() {
-  console.log('🏗️ [系統審計] 進入資料讀寫，當前操作類型：渲染日曆格子', '資料版本:', state.dataVersion);
+  console.log('🏗️ [系統審計] 進入資料讀寫，當前操作類型：渲染日曆格子 (滑動視窗優化)', '資料版本:', state.dataVersion);
 
   const container = document.getElementById("plan-date-carousel");
   if (!container || !state.activePlan) return;
 
   container.innerHTML = "";
 
-  // 2. Create the Calendar Wrapper (Clean flat look, completely borderless)
+  // 1. Calculate active plan start/end dates
+  let planStartDate = null;
+  let planEndDate = null;
+
+  if (state.activePlan.startDate) {
+    planStartDate = new Date(state.activePlan.startDate);
+  }
+  if (state.activePlan.endDate) {
+    planEndDate = new Date(state.activePlan.endDate);
+  }
+
+  // Fallback to first/last day of plan if start/end dates are not explicitly set or invalid
+  if (!planStartDate || isNaN(planStartDate.getTime())) {
+    const firstDay = state.activePlan.days[0];
+    if (firstDay) {
+      const parts = firstDay.date.split('/');
+      planStartDate = new Date(Number(firstDay.year), Number(firstDay.month) - 1, Number(parts[1] || 1));
+    } else {
+      planStartDate = new Date();
+    }
+  }
+
+  if (!planEndDate || isNaN(planEndDate.getTime())) {
+    const lastDay = state.activePlan.days[state.activePlan.days.length - 1];
+    if (lastDay) {
+      const parts = lastDay.date.split('/');
+      planEndDate = new Date(Number(lastDay.year), Number(lastDay.month) - 1, Number(parts[1] || 28));
+    } else {
+      planEndDate = new Date();
+    }
+  }
+
+  // 2. Define Sliding Window boundaries: start - 5 days, end + 5 days
+  const windowStart = new Date(planStartDate);
+  windowStart.setDate(windowStart.getDate() - 5);
+
+  const windowEnd = new Date(planEndDate);
+  windowEnd.setDate(windowEnd.getDate() + 5);
+
+  // 3. Create the Calendar Wrapper (Clean flat look, completely borderless)
   const calendarWrapper = document.createElement("div");
   calendarWrapper.className = "calendar-component";
   calendarWrapper.style.cssText = "background: transparent !important; border: none !important; border-radius: 0 !important; box-shadow: none !important; padding: 0 !important; width: 100% !important; margin: 0 !important; display: flex; flex-direction: column;";
 
-  // 3. Create Global Static Weekday Header (outside the scroll container)
+  // 4. Create Global Static Weekday Header (outside the scroll container)
   const weekdaysDiv = document.createElement("div");
   weekdaysDiv.className = "calendar-weekdays";
   weekdaysDiv.style.cssText = "display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; margin-bottom: 0.4rem; padding-bottom: 0.4rem; border-bottom: none !important; font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;";
@@ -1028,7 +1068,7 @@ function renderHorizontalDateStrip() {
   });
   calendarWrapper.appendChild(weekdaysDiv);
 
-  // 4. Create the Scroll Container (max-h-[380px] overflow-y-auto scrollbar-none)
+  // 5. Create the Scroll Container (max-h-[380px] overflow-y-auto scrollbar-none)
   const scrollContainer = document.createElement("div");
   scrollContainer.className = "calendar-scroll-container scrollbar-none";
   scrollContainer.style.cssText = "max-height: 380px; overflow-y: auto; width: 100%; display: flex; flex-direction: column; gap: 1.5rem; scrollbar-width: none; -ms-overflow-style: none;";
@@ -1047,15 +1087,17 @@ function renderHorizontalDateStrip() {
     });
   };
 
-  // Group plan days into unique year-month segments dynamically (continuous months)
+  // Group sliding window dates into unique year-month segments dynamically
   const planMonths = [];
-  state.activePlan.days.forEach(d => {
-    const y = Number(d.year);
-    const m = Number(d.month);
+  let temp = new Date(windowStart);
+  while (temp <= windowEnd) {
+    const y = temp.getFullYear();
+    const m = temp.getMonth() + 1;
     if (!planMonths.some(pm => pm.year === y && pm.month === m)) {
       planMonths.push({ year: y, month: m });
     }
-  });
+    temp.setDate(temp.getDate() + 1);
+  }
   planMonths.sort((a, b) => (a.year * 12 + a.month) - (b.year * 12 + b.month));
 
   // Render each month block
@@ -1075,45 +1117,50 @@ function renderHorizontalDateStrip() {
     gridDiv.className = "calendar-grid";
     gridDiv.style.cssText = "display: grid; grid-template-columns: repeat(7, 1fr); gap: 24px 4px !important; padding: 8px 0 !important;";
 
-    // Cells calculation
-    const firstDayIndex = new Date(pm.year, pm.month - 1, 1).getDay(); // 0-6
-    const totalDaysInMonth = new Date(pm.year, pm.month, 0).getDate();
+    // Calculate dates within this month that fall in the sliding window
+    const startDateTime = Math.max(new Date(pm.year, pm.month - 1, 1).getTime(), windowStart.getTime());
+    const startDate = new Date(startDateTime);
+
+    const endDateTime = Math.min(new Date(pm.year, pm.month, 0).getTime(), windowEnd.getTime());
+    const endDate = new Date(endDateTime);
 
     let cells = [];
 
-    // Previous Month padding
-    const prevMonthYear = pm.month === 1 ? pm.year - 1 : pm.year;
-    const prevMonthVal = pm.month === 1 ? 12 : pm.month - 1;
-    const totalDaysInPrevMonth = new Date(prevMonthYear, prevMonthVal, 0).getDate();
-    for (let i = firstDayIndex - 1; i >= 0; i--) {
+    // Pre-padding back to Sunday to align weekday columns
+    const padCount = startDate.getDay();
+    for (let i = padCount; i > 0; i--) {
+      const padDate = new Date(startDate);
+      padDate.setDate(startDate.getDate() - i);
       cells.push({
-        year: prevMonthYear,
-        month: prevMonthVal,
-        dayOfMonth: totalDaysInPrevMonth - i,
-        isOtherMonth: true
+        year: padDate.getFullYear(),
+        month: padDate.getMonth() + 1,
+        dayOfMonth: padDate.getDate(),
+        isOtherMonth: padDate.getMonth() + 1 !== pm.month
       });
     }
 
-    // Current Month days
-    for (let i = 1; i <= totalDaysInMonth; i++) {
+    // Window days for current month block
+    let curr = new Date(startDate);
+    while (curr <= endDate) {
       cells.push({
-        year: pm.year,
-        month: pm.month,
-        dayOfMonth: i,
+        year: curr.getFullYear(),
+        month: curr.getMonth() + 1,
+        dayOfMonth: curr.getDate(),
         isOtherMonth: false
       });
+      curr.setDate(curr.getDate() + 1);
     }
 
-    // Next Month padding
-    const nextMonthYear = pm.month === 12 ? pm.year + 1 : pm.year;
-    const nextMonthVal = pm.month === 12 ? 1 : pm.month + 1;
-    const paddingSize = (7 - (cells.length % 7)) % 7;
-    for (let i = 1; i <= paddingSize; i++) {
+    // Post-padding forward to Saturday to complete the grid row
+    const endPadCount = (7 - (cells.length % 7)) % 7;
+    for (let i = 1; i <= endPadCount; i++) {
+      const padDate = new Date(endDate);
+      padDate.setDate(endDate.getDate() + i);
       cells.push({
-        year: nextMonthYear,
-        month: nextMonthVal,
-        dayOfMonth: i,
-        isOtherMonth: true
+        year: padDate.getFullYear(),
+        month: padDate.getMonth() + 1,
+        dayOfMonth: padDate.getDate(),
+        isOtherMonth: padDate.getMonth() + 1 !== pm.month
       });
     }
 
@@ -1232,8 +1279,8 @@ function renderHorizontalDateStrip() {
         }
       }
 
-    gridDiv.appendChild(dayCell);
-  });
+      gridDiv.appendChild(dayCell);
+    });
 
     monthBlock.appendChild(gridDiv);
     scrollContainer.appendChild(monthBlock);
