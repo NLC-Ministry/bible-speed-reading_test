@@ -6025,19 +6025,29 @@ body.dark-theme .reader-bottom-action-bar.scenario-a .capsule-action-btn {
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: var(--text-secondary);
   cursor: pointer;
   position: relative;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   -webkit-tap-highlight-color: transparent;
   user-select: none;
-  border: 1px solid transparent;
+  border: 2px solid transparent;
+  padding: 2px 0;
+}
+
+.calendar-day .day-number {
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.1;
+  color: var(--text-primary);
 }
 
 .calendar-day:hover {
   background: rgba(99, 102, 241, 0.05);
+}
+
+.calendar-day:active {
+  transform: scale(0.92);
+  background: rgba(99, 102, 241, 0.08);
 }
 
 /* Day states */
@@ -6045,40 +6055,60 @@ body.dark-theme .reader-bottom-action-bar.scenario-a .capsule-action-btn {
 /* Selected day */
 .calendar-day.active {
   color: var(--text-primary) !important;
-  background: rgba(99, 102, 241, 0.12);
-  border: 1.5px solid var(--primary-color) !important;
+  background: rgba(99, 102, 241, 0.08) !important;
+  border: 2px solid var(--primary-color) !important;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
   font-weight: 800;
 }
 
-/* Today */
+/* Today (Real Today) */
 .calendar-day.today {
-  outline: 2px solid var(--primary-color);
-  outline-offset: -2px;
-  box-shadow: 0 0 8px rgba(99, 102, 241, 0.4);
-  font-weight: 700;
+  border: 2px solid var(--primary-color) !important;
+  font-weight: 800 !important;
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.15) !important;
+}
+.calendar-day.today .day-number {
+  color: var(--primary-color) !important;
+  font-weight: 800 !important;
 }
 
 /* Past Unread / Behind (Catch-up Hot Zone) */
 .calendar-day.past-unread {
-  border: 1.5px solid rgba(249, 115, 22, 0.4);
-  background-color: rgba(249, 115, 22, 0.05);
-  color: #ea580c;
+  border: 1.5px solid rgba(249, 115, 22, 0.4) !important;
+  background-color: rgba(249, 115, 22, 0.04) !important;
+}
+.calendar-day.past-unread .day-number {
+  color: #ea580c !important;
 }
 
-/* Fully read (completed) - Light mode */
+/* Fully read (completed) - Light mode (Low saturation emerald-50 background) */
 .calendar-day.completed {
-  background: var(--accent-gradient) !important;
-  color: #ffffff !important;
+  background: #ecfdf5 !important;
   border-color: transparent !important;
-  box-shadow: 0 3px 8px rgba(16, 185, 129, 0.25);
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.08) !important;
   animation: pulseCompleted 0.4s ease-out;
 }
+.calendar-day.completed .day-number {
+  color: #047857 !important; /* emerald-700 */
+}
 
-/* Fully read (completed) - Dark mode override (blue) */
+/* Fully read (completed) - Dark mode override (translucent emerald-950/40) */
 body.dark-theme .calendar-day.completed {
-  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
-  color: #ffffff !important;
-  box-shadow: 0 3px 8px rgba(59, 130, 246, 0.25);
+  background: rgba(6, 78, 59, 0.4) !important;
+  box-shadow: none !important;
+}
+body.dark-theme .calendar-day.completed .day-number {
+  color: #34d399 !important; /* emerald-400 */
+}
+
+/* Combine Today + Completed visually */
+.calendar-day.today.completed {
+  border: 2px solid var(--primary-color) !important;
+  background: #ecfdf5 !important;
+}
+body.dark-theme .calendar-day.today.completed {
+  border: 2px solid var(--primary-color) !important;
+  background: rgba(6, 78, 59, 0.4) !important;
 }
 
 /* Micro progress bar for partially completed days */
@@ -6103,22 +6133,31 @@ body.dark-theme .calendar-day .micro-progress-bar {
 
 /* Greyed out days from other months */
 .calendar-day.other-month {
-  opacity: 0.35;
+  opacity: 0.3;
+}
+.calendar-day.other-month .day-number {
+  color: var(--text-muted);
 }
 
-/* Small indicator showing Day Number (e.g. D18) inside cell or as tooltip */
+/* Small indicator showing Day Number (e.g. D18) inside cell */
 .calendar-day .day-plan-indicator {
-  position: absolute;
-  top: 2px;
-  font-size: 0.58rem;
+  font-size: 10px;
   color: var(--text-muted);
   font-weight: 500;
-  scale: 0.85;
+  margin-top: 1px;
+  line-height: 1;
 }
-.calendar-day.completed .day-plan-indicator,
-.calendar-day.active .day-plan-indicator {
-  color: inherit;
+.calendar-day.completed .day-plan-indicator {
+  color: #059669 !important;
   opacity: 0.8;
+}
+body.dark-theme .calendar-day.completed .day-plan-indicator {
+  color: #10b981 !important;
+  opacity: 0.8;
+}
+.calendar-day.active .day-plan-indicator {
+  color: var(--primary-color) !important;
+  opacity: 0.9;
 }
 
 /* Micro pulse animation for completed cells */
@@ -6127,31 +6166,33 @@ body.dark-theme .calendar-day .micro-progress-bar {
     transform: scale(0.9);
   }
   50% {
-    transform: scale(1.08);
+    transform: scale(1.06);
   }
   100% {
     transform: scale(1);
   }
 }
 
-/* Today Floating Button */
+/* Today Floating Button (glassmorphic, shifted down to prevent overlap) */
 .calendar-today-btn {
   position: absolute;
-  bottom: -44px;
-  right: 12px;
-  background: var(--primary-gradient);
-  color: white;
-  border: none;
+  bottom: -58px;
+  right: 16px;
+  background: rgba(99, 102, 241, 0.75) !important;
+  backdrop-filter: blur(10px) !important;
+  -webkit-backdrop-filter: blur(10px) !important;
+  color: white !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
   padding: 6px 14px;
   border-radius: 20px;
   font-size: 0.8rem;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.25) !important;
   display: flex;
   align-items: center;
   gap: 4px;
-  z-index: 10;
+  z-index: 100;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   opacity: 1;
   transform: translateY(0);

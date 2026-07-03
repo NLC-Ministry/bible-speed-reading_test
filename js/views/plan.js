@@ -1193,7 +1193,7 @@ function renderHorizontalDateStrip() {
   cells.forEach(cell => {
     const dayCell = document.createElement("div");
     dayCell.className = "calendar-day";
-    dayCell.textContent = cell.dayOfMonth;
+    dayCell.innerHTML = `<span class="day-number">${cell.dayOfMonth}</span>`;
 
     if (cell.isOtherMonth) {
       dayCell.classList.add("other-month");
@@ -2811,15 +2811,15 @@ async function renderPlanStatsView() {
     }
 
     // 4. Makeup/Catch up days (🛡️ 進度救援)
-    const planStart = new Date(state.activePlan.startDate);
-    planStart.setHours(0,0,0,0);
+    const statsStart = new Date(state.activePlan.startDate);
+    statsStart.setHours(0,0,0,0);
     const targetRoundsVal = getPlanLevelRounds(state.activePlan.level || "normal");
     let catchUpDaysVal = 0;
     for (let r = 1; r <= targetRoundsVal; r++) {
       state.activePlan.days.forEach((day, index) => {
         const d = index + 1;
-        const scheduledDate = new Date(planStart);
-        scheduledDate.setDate(planStart.getDate() + (d - 1));
+        const scheduledDate = new Date(statsStart);
+        scheduledDate.setDate(statsStart.getDate() + (d - 1));
         const scheduledDateStr = scheduledDate.toISOString().substring(0, 10);
         
         const roundLogs = (state.readingLogs || []).filter(l => 
