@@ -231,6 +231,12 @@ const appRouter = {
   },
 
   switchTab(tabId, options = {}) {
+    if (tabId !== "reader-view" || !options.fromPlan) {
+      if (state.readerState) {
+        state.readerState.fromPlan = false;
+      }
+    }
+
     // Stop reading audio if switching away from reader-view
     if (tabId !== "reader-view" && typeof window.speechSynthesis !== "undefined") {
       window.speechSynthesis.cancel();

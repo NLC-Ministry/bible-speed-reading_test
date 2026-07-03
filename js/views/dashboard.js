@@ -1031,6 +1031,7 @@ window.startReadingCurrentChapter = function() {
     if (bookObj) {
       state.readerState.bookId = bookObj.id;
       state.readerState.chapter = targetChapter;
+      state.readerState.fromPlan = true;
 
       // Save preferences to local storage
       if (typeof saveReaderPreferences === 'function') {
@@ -1047,5 +1048,5 @@ window.startReadingCurrentChapter = function() {
   state.readerState.returnTab = "dashboard-view";
 
   // Navigate to reader
-  appRouter.switchTab('reader-view');
+  appRouter.switchTab('reader-view', { fromPlan: true });
 };

@@ -1004,6 +1004,72 @@ async function renderPlanDetailView() {
   renderPlanScheduleTracker();
 }
 
+
+function isChapterReadForRound(ch, round) {
+  if (!ch) return false;
+  if (round === 1) return Boolean(ch.isReadR1 || ch.isRead);
+  if (round === 2) return Boolean(ch.isReadR2);
+  if (round >= 3) return Boolean(ch.isReadR3);
+  return Boolean(ch.isRead);
+}
+
+function isPlanDayCompletedForRound(day, round) {
+  if (!day || !day.chapters || day.chapters.length === 0) return false;
+  return day.chapters.every(ch => isChapterReadForRound(ch, round));
+}
+
+function countCompletedPlanDaysForRound(plan, round) {
+  if (!plan || !plan.days) return 0;
+  return plan.days.filter(day => isPlanDayCompletedForRound(day, round)).length;
+}
+
+function getNextReadingPlanDay(plan = state.activePlan) {
+  if (!plan || !plan.days || plan.days.length === 0) return null;
+  const currentRound = plan.currentRound || 1;
+  return plan.days.find(day => !isPlanDayCompletedForRound(day, currentRound)) || plan.days[plan.days.length - 1];
+}
+
+function getExpectedPlanDayCount(plan = state.activePlan, now = new Date()) {
+  if (!plan || !plan.days || plan.days.length === 0 || !plan.startDate) return 0;
+  const planStart = new Date(plan.startDate);
+  if (isNaN(planStart.getTime())) return 0;
+  planStart.setHours(0, 0, 0, 0);
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0);
+  const elapsedDays = Math.floor((today - planStart) / (1000 * 60 * 60 * 24)) + 1;
+  return Math.max(0, Math.min(plan.days.length, elapsedDays));
+}
+
+function getPlanProgressStatus(plan = state.activePlan) {
+  if (!plan || !plan.days || plan.days.length === 0) {
+    return { label: "進度一致", color: "var(--text-primary)", bg: "rgba(59, 130, 246, 0.15)", diff: 0 };
+  }
+
+  const currentRound = plan.currentRound || 1;
+  if (currentRound > 1 || plan.isPlanCompleted) {
+    return {
+      label: "第" + currentRound + "遍",
+      color: currentRound === 2 ? "#6366f1" : "#f59e0b",
+      bg: currentRound === 2 ? "rgba(99, 102, 241, 0.15)" : "rgba(245, 158, 11, 0.15)",
+      diff: 0
+    };
+  }
+
+  const nextDay = getNextReadingPlanDay(plan);
+  const nextDayNum = nextDay ? Number(nextDay.dayNum || 1) : 1;
+  const completedBeforeNext = Math.max(0, nextDayNum - 1);
+  const expectedDays = getExpectedPlanDayCount(plan);
+  const diff = completedBeforeNext - expectedDays;
+
+  if (diff > 0) {
+    return { label: "超前 " + diff + "天", color: "#10b981", bg: "rgba(16, 185, 129, 0.15)", diff };
+  }
+  if (diff < 0) {
+    return { label: "落後 " + Math.abs(diff) + "天", color: "#ef4444", bg: "rgba(239, 68, 68, 0.15)", diff };
+  }
+  return { label: "進度一致", color: "var(--text-primary)", bg: "rgba(59, 130, 246, 0.15)", diff: 0 };
+}
+
 function renderHorizontalDateStrip() {
   console.log('[系統審計] 進入資料讀寫，當前操作類型：渲染日曆格子 (無縫滑動視窗優化)', '資料版本:', state.dataVersion);
 
@@ -1285,11 +1351,8 @@ async function renderPlanScheduleTracker(skipCarouselUpdate = false, signal = nu
 
   // Set default selected day if not set
   if (!state.selectedPlanDay) {
-    const firstUncompleted = state.activePlan.days.find(day => {
-      if (!day.chapters || day.chapters.length === 0) return false;
-      return !day.chapters.every(ch => ch.isRead);
-    });
-    state.selectedPlanDay = firstUncompleted ? firstUncompleted.dayNum : 1;
+    const nextReadingDay = getNextReadingPlanDay(state.activePlan);
+    state.selectedPlanDay = nextReadingDay ? nextReadingDay.dayNum : 1;
   }
 
   // Ensure top view mode container is loaded (Card / Calendar mutual exclusion)
@@ -2101,7 +2164,7 @@ window.openPlanChapterInReader = function (bookName, chapter, dayNum, round = nu
     }));
   }
 
-  appRouter.switchTab('reader-view');
+  appRouter.switchTab('reader-view', { fromPlan: true });
 };
 
 // Initialize state for inline reader
@@ -2696,26 +2759,12 @@ async function renderPlanStatsView() {
     const diffDays = Math.max(0, Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1);
     const expectedDaysCount = Math.min(totalPlanDays, diffDays);
 
-    // 3. Progress Status (進度狀態)
+    // 3. Progress Status
     const reportStatProgressStatus = document.getElementById("report-stat-progress-status");
     if (reportStatProgressStatus) {
-      if (currentRound > 1) {
-        // 第二遍以後：顯示「第N遍 第X天」，不再顯示落後/超前
-        reportStatProgressStatus.textContent = `第${currentRound}遍 第${completedCurrentRound}天`;
-        reportStatProgressStatus.style.color = currentRound === 2 ? "#6366f1" : "#f59e0b";
-      } else {
-        const diff = completedR1 - expectedDaysCount;
-        if (diff > 0) {
-          reportStatProgressStatus.textContent = `超前 ${diff}天`;
-          reportStatProgressStatus.style.color = "#10b981";
-        } else if (diff < 0) {
-          reportStatProgressStatus.textContent = `落後 ${Math.abs(diff)}天`;
-          reportStatProgressStatus.style.color = "#ef4444";
-        } else {
-          reportStatProgressStatus.textContent = "進度一致";
-          reportStatProgressStatus.style.color = "var(--text-primary)";
-        }
-      }
+      const progressStatus = getPlanProgressStatus(state.activePlan);
+      reportStatProgressStatus.textContent = progressStatus.label;
+      reportStatProgressStatus.style.color = progressStatus.color;
     }
 
     // 4. Makeup/Catch up days (🛡️ 進度救援)
@@ -4036,35 +4085,10 @@ window.showPlanStatsModal = function () {
     }
   }
 
-  let statusLabel = "";
-  let statusColor = "";
-  let statusBg = "";
-
-  const currentRoundVal = plan.currentRound || 1;
-  if (currentRoundVal >= 4) {
-    statusLabel = "自主精修";
-    statusColor = "#818cf8"; // light purple/blue
-    statusBg = "rgba(129, 140, 248, 0.15)";
-  } else if (elapsedDays > 0) {
-    const diff = equivalentDay - elapsedDays;
-    if (diff > 0) {
-      statusLabel = `超前 ${diff} 天`;
-      statusColor = "#10b981"; // green
-      statusBg = "rgba(16, 185, 129, 0.15)";
-    } else if (diff < 0) {
-      statusLabel = `落後 ${Math.abs(diff)} 天`;
-      statusColor = "#f59e0b"; // orange
-      statusBg = "rgba(245, 158, 11, 0.15)";
-    } else {
-      statusLabel = "精準緊跟";
-      statusColor = "#3b82f6"; // blue
-      statusBg = "rgba(59, 130, 246, 0.15)";
-    }
-  } else {
-    statusLabel = "精準緊跟";
-    statusColor = "#3b82f6";
-    statusBg = "rgba(59, 130, 246, 0.15)";
-  }
+  const progressStatus = getPlanProgressStatus(plan);
+  const statusLabel = progressStatus.label;
+  const statusColor = progressStatus.color;
+  const statusBg = progressStatus.bg;
 
   // Mandatory debug log injection representing modal useEffect mount hook
   console.log('📊 [統計面板載入] 真實讀取 -> 累計章數:', totalReadChapters, '成功追回天數:', catchUpDays);
@@ -4194,7 +4218,7 @@ window.showPlanStatsModal = function () {
 
   // Card D: 計畫狀態 (Badge text with specific colors)
   const badgeHtml = `
-    <span style="font-size: 0.75rem; font-weight: 800; background: ${statusBg}; color: ${statusColor}; padding: 0.25rem 0.6rem; border-radius: 20px; display: inline-block; border: 1px solid rgba(${statusColor === '#10b981' ? '16,185,129' : (statusColor === '#f59e0b' ? '245,158,11' : '59,130,246')}, 0.25);">
+    <span style="font-size: 0.75rem; font-weight: 800; background: ${statusBg}; color: ${statusColor}; padding: 0.25rem 0.6rem; border-radius: 20px; display: inline-block; border: 1px solid rgba(${statusColor === '#10b981' ? '16,185,129' : (statusColor === '#ef4444' ? '239,68,68' : (statusColor === '#f59e0b' ? '245,158,11' : '59,130,246'))}, 0.25);">
       ${statusLabel}
     </span>
   `;
@@ -4327,19 +4351,8 @@ function renderPlanScheduleView() {
     btnStats.innerHTML = `📊 我的進度`;
     btnStats.addEventListener("click", (e) => {
       e.stopPropagation();
-      // Find first uncompleted day in the plan dynamically
-      const firstUncompleted = state.activePlan.days.find(day => {
-        if (!day.chapters || day.chapters.length === 0) return false;
-        const currentRound = state.activePlan.currentRound || 1;
-        return !day.chapters.every(ch => {
-          const taskRound = ch.round || currentRound;
-          if (taskRound === 1) return ch.isReadR1 || ch.isRead;
-          if (taskRound === 2) return ch.isReadR2;
-          if (taskRound >= 3) return ch.isReadR3;
-          return ch.isRead;
-        });
-      });
-      state.selectedPlanDay = firstUncompleted ? firstUncompleted.dayNum : 1;
+      const nextReadingDay = getNextReadingPlanDay(state.activePlan);
+      state.selectedPlanDay = nextReadingDay ? nextReadingDay.dayNum : 1;
       setViewMode('card');
       renderPlanScheduleTracker();
     });

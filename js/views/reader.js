@@ -1361,6 +1361,20 @@ function updateReaderBottomActionBar() {
   const planDay = state.readerState.planDayNum || 1;
   const selectedDay = plan.days.find(d => d.dayNum === planDay);
   const dayChapters = (selectedDay && selectedDay.chapters) || [];
+
+  const currentRound = state.readerState.planRound || plan.currentRound || 1;
+  const isDayCompletedBefore = dayChapters.length > 0 && dayChapters.every(ch => {
+    const taskRound = ch.round || currentRound;
+    if (taskRound === 1) return ch.isReadR1 || ch.isRead;
+    if (taskRound === 2) return ch.isReadR2;
+    if (taskRound >= 3) return ch.isReadR3;
+    return ch.isRead;
+  });
+
+  if (isDayCompletedBefore) {
+    // If the day is already fully completed, do not show the bottom action bar
+    return;
+  }
   
   // Find current index
   const currentChIndex = dayChapters.findIndex(ch => 
