@@ -1078,19 +1078,8 @@ function renderHorizontalDateStrip() {
     renderHorizontalDateStrip();
   });
 
-  // Back to Card Mode Button (Sleek modern minimal "✕ 關閉" button)
-  const backBtn = document.createElement("button");
-  backBtn.className = "calendar-toggle-view-btn";
-  backBtn.style.cssText = "background: rgba(255, 255, 255, 0.08); color: var(--text-secondary); font-weight: 700; border: none; padding: 0.35rem 0.75rem; border-radius: 8px; cursor: pointer; font-size: 0.8rem; transition: all 0.2s ease;";
-  backBtn.innerHTML = `✕ 關閉`;
-  backBtn.addEventListener("click", (e) => {
-    e.stopPropagation();
-    setViewMode('card');
-  });
-
   actionsDiv.appendChild(prevBtn);
   actionsDiv.appendChild(nextBtn);
-  actionsDiv.appendChild(backBtn);
 
   headerDiv.appendChild(titleDiv);
   headerDiv.appendChild(actionsDiv);
@@ -4418,3 +4407,8 @@ function snapCalendarToToday() {
     showToast("今日不在計畫期間內");
   }
 }
+
+// Decoupled back navigation integration from top bar
+document.addEventListener("plan-view-back-to-card", () => {
+  setViewMode('card');
+});

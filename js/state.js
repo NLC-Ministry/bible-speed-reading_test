@@ -194,6 +194,13 @@ const appRouter = {
         return;
       }
 
+      // If in calendar view mode, return to card mode via decoupled Custom Event
+      if (state.planViewMode === 'calendar') {
+        document.dispatchEvent(new CustomEvent("plan-view-back-to-card"));
+        this.updateNavigationChrome();
+        return;
+      }
+
       const levelSubview = document.getElementById("subview-plan-level");
       if (levelSubview && !levelSubview.classList.contains("hidden")) {
         const scheduleSubview = document.getElementById("subview-plan-schedule");
