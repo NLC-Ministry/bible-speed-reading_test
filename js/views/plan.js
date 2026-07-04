@@ -1434,9 +1434,7 @@ async function renderPlanScheduleTracker(skipCarouselUpdate = false, signal = nu
 
   const currentRequestId = ++lastTrackerRequestId;
 
-  container.innerHTML = typeof ComponentSkeletonLoader !== "undefined"
-    ? ComponentSkeletonLoader.getHtml("task-list", { count: 3 })
-    : "";
+  container.innerHTML = "";
 
   // Set default selected day if not set
   if (!state.selectedPlanDay) {
