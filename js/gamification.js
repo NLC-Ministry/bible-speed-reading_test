@@ -87,13 +87,6 @@ async function checkAchievements() {
   if (newlyUnlocked.length > 0) {
     const updatedUnlocked = [...unlocked, ...newlyUnlocked];
     localStorage.setItem("unlocked_badges", JSON.stringify(updatedUnlocked));
-
-    // Launch popups sequentially with minor delays
-    newlyUnlocked.forEach((badgeId, index) => {
-      setTimeout(() => {
-        triggerBadgeUnlockEffect(badgeId);
-      }, index * 4500);
-    });
   }
 }
 
@@ -296,7 +289,7 @@ function renderUnlockedBadgesWall() {
 
 // YouVersion One-Time congratulatory unlock dialog trigger
 window.triggerBadgeUnlockNotification = function(badgeId, badgeName) {
-  const hasNotified = localStorage.getItem(`notified_${badgeId}`) === 'true';
+  const hasNotified = localStorage.getItem(`notified_${badgeId}`) === 'true' || localStorage.getItem(`notified_badge-share`) === 'true';
   if (hasNotified) return;
 
   const isDark = state.theme === "dark" || document.body.classList.contains("dark-theme");
@@ -308,16 +301,32 @@ window.triggerBadgeUnlockNotification = function(badgeId, badgeName) {
     localStorage.setItem("unlocked_badges", JSON.stringify(unlocked));
   }
 
-  // Open the detail modal to congratulate the user
-  if (typeof window.openBadgeModal === "function") {
-    window.openBadgeModal({
-      title: `🎉 恭喜解鎖：${badgeName}`,
-      description: `您剛剛成功分享了每日金句，榮獲此至高榮譽徽章！已同步收藏至您的個人榮譽牆。`,
-      iconClass: "bi-share"
-    }, true, isDark);
+  // Look up the badge object
+  const badge = ACHIEVEMENTS.find(a => a.id === badgeId) || {
+    id: badgeId,
+    title: badgeName,
+    description: `恭喜解鎖：${badgeName}`,
+    iconClass: "bi-share"
+  };
+
+  // Open the detail page subpanel to congratulate the user
+  const page = document.getElementById("badge-detail-page");
+  if (page) {
+    page.classList.remove("hidden");
+  }
+  if (typeof window.openBadgeDetailPage === "function") {
+    window.openBadgeDetailPage(badge, true, isDark);
+  }
+
+  // In addition, trigger the fireworks animation!
+  if (typeof launchFireworks === "function") {
+    launchFireworks();
   }
 
   // Persist lock state so this alert will never show up on page refreshes or re-logins
   localStorage.setItem(`notified_${badgeId}`, 'true');
+  if (badgeId === "share_verse" || badgeId === "badge-share") {
+    localStorage.setItem(`notified_badge-share`, 'true');
+  }
   localStorage.setItem(`${badgeId}_unlocked`, 'true');
 };

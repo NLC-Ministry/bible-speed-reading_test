@@ -1074,7 +1074,7 @@ async function fetchRandomVerse(event) {
     const bgImgEl = document.getElementById("card-bg");
     
     if (textEl) textEl.textContent = verseData.text;
-    if (sourceEl) sourceEl.textContent = `— ${verseData.source}`;
+    if (sourceEl) sourceEl.textContent = verseData.source;
     
     if (bgImgEl) {
       bgImgEl.src = imageUrl;
@@ -1082,6 +1082,9 @@ async function fetchRandomVerse(event) {
     }
     
     currentVerse = { ...verseData, imageUrl };
+    if (typeof syncVerseLikes === "function") {
+      syncVerseLikes(verseData.source);
+    }
     
     // Release loading states
     isVerseLoading = false;
@@ -1170,6 +1173,127 @@ async function shareAsImage(e) {
   }
 }
 
+async function syncVerseLikes(verseSource) {
+  const isDark = state.theme === "dark" || document.body.classList.contains("dark-theme");
+  const likeBtn = document.getElementById("like-btn");
+  const label = document.getElementById("like-count-text");
+  if (!likeBtn || !label) return;
+
+  // 1. Initial optimistic local UI state
+  let count = parseInt(localStorage.getItem(`verse_like_count_${verseSource}`) || "716420");
+  let liked = localStorage.getItem(`verse_liked_${verseSource}`) === "true";
+  
+  const updateUI = () => {
+    const icon = likeBtn.querySelector("i");
+    if (icon) {
+      if (liked) {
+        icon.className = "bi bi-heart-fill";
+        icon.style.color = "#f43f5e";
+      } else {
+        icon.className = "bi bi-heart";
+        icon.style.color = "";
+      }
+    }
+    if (label) {
+      label.textContent = count >= 10000 ? `${(count / 10000).toFixed(1)}萬` : count;
+    }
+  };
+  
+  updateUI();
+
+  // 2. Fetch fresh like_count from Supabase
+  if (state.supabase && state.isSupabaseMode) {
+    try {
+      const { data, error } = await state.supabase.from("verse_likes").select("like_count").eq("source", verseSource).maybeSingle();
+      if (!error) {
+        if (data) {
+          count = data.like_count || 0;
+          localStorage.setItem(`verse_like_count_${verseSource}`, count.toString());
+          updateUI();
+        } else {
+          // Row does not exist yet: insert default random count
+          const initialCount = 716420 + Math.floor(Math.random() * 10000);
+          await state.supabase.from("verse_likes").insert({ source: verseSource, like_count: initialCount }).execute();
+          count = initialCount;
+          localStorage.setItem(`verse_like_count_${verseSource}`, count.toString());
+          updateUI();
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to sync like count from Supabase:", e);
+    }
+  }
+}
+
+async function toggleVerseLike(e) {
+  if (e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+  
+  if (!currentVerse || !currentVerse.source) return;
+  const verseSource = currentVerse.source;
+  
+  const likeBtn = document.getElementById("like-btn");
+  const label = document.getElementById("like-count-text");
+  if (!likeBtn || !label) return;
+
+  let liked = localStorage.getItem(`verse_liked_${verseSource}`) === "true";
+  let count = parseInt(localStorage.getItem(`verse_like_count_${verseSource}`) || "716420");
+
+  // Optimistic UI updates
+  liked = !liked;
+  count += liked ? 1 : -1;
+
+  localStorage.setItem(`verse_liked_${verseSource}`, liked ? "true" : "false");
+  localStorage.setItem(`verse_like_count_${verseSource}`, count.toString());
+
+  // Renders optimistic state instantly
+  const icon = likeBtn.querySelector("i");
+  if (icon) {
+    if (liked) {
+      icon.className = "bi bi-heart-fill";
+      icon.style.color = "#f43f5e";
+    } else {
+      icon.className = "bi bi-heart";
+      icon.style.color = "";
+    }
+  }
+  if (label) {
+    label.textContent = count >= 10000 ? `${(count / 10000).toFixed(1)}萬` : count;
+  }
+
+  // Persists async Supabase request in background
+  if (state.supabase && state.isSupabaseMode) {
+    try {
+      if (typeof state.supabase.rpc === "function") {
+        const rpcName = liked ? "increment_likes" : "decrement_likes";
+        const { data, error } = await state.supabase.rpc(rpcName, { verse_source: verseSource }).execute();
+        if (!error && typeof data === "number") {
+          localStorage.setItem(`verse_like_count_${verseSource}`, data.toString());
+          if (label) {
+            label.textContent = data >= 10000 ? `${(data / 10000).toFixed(1)}萬` : data;
+          }
+        }
+      } else {
+        const { data, error } = await state.supabase.from("verse_likes").select("like_count").eq("source", verseSource).maybeSingle();
+        if (!error && data) {
+          const latestDbCount = data.like_count || 0;
+          const newDbCount = latestDbCount + (liked ? 1 : -1);
+          await state.supabase.from("verse_likes").update({ like_count: newDbCount }).eq("source", verseSource).execute();
+          
+          localStorage.setItem(`verse_like_count_${verseSource}`, newDbCount.toString());
+          if (label) {
+            label.textContent = newDbCount >= 10000 ? `${(newDbCount / 10000).toFixed(1)}萬` : newDbCount;
+          }
+        }
+      }
+    } catch (dbErr) {
+      console.warn("Failed to toggle like on Supabase:", dbErr);
+    }
+  }
+}
+
 function renderDailyVerse() {
   const card = document.getElementById("verse-card");
   if (card && !card._hasFlipListener) {
@@ -1183,6 +1307,22 @@ function renderDailyVerse() {
     shareBtn._hasShareListener = true;
   }
 
+  const drawBtn = document.getElementById("draw-card-btn");
+  if (drawBtn && !drawBtn._hasDrawListener) {
+    drawBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      fetchRandomVerse();
+    });
+    drawBtn._hasDrawListener = true;
+  }
+
+  const likeBtn = document.getElementById("like-btn");
+  if (likeBtn && !likeBtn._hasLikeListener) {
+    likeBtn.addEventListener("click", toggleVerseLike);
+    likeBtn._hasLikeListener = true;
+  }
+
   if (!currentVerse) {
     const dayOfMonth = new Date().getDate();
     currentVerse = DAILY_VERSES[(dayOfMonth - 1) % DAILY_VERSES.length];
@@ -1190,20 +1330,22 @@ function renderDailyVerse() {
     const textEl = document.getElementById("daily-verse-text");
     const sourceEl = document.getElementById("daily-verse-source");
     if (textEl) textEl.textContent = currentVerse.text;
-    if (sourceEl) sourceEl.textContent = `— ${currentVerse.source}`;
+    if (sourceEl) sourceEl.textContent = currentVerse.source;
     
     fetchRandomVerse();
   } else {
     const textEl = document.getElementById("daily-verse-text");
     const sourceEl = document.getElementById("daily-verse-source");
     if (textEl) textEl.textContent = currentVerse.text;
-    if (sourceEl) sourceEl.textContent = `— ${currentVerse.source}`;
+    if (sourceEl) sourceEl.textContent = currentVerse.source;
     
     const bgImgEl = document.getElementById("card-bg");
     if (bgImgEl && currentVerse.imageUrl) {
       bgImgEl.src = currentVerse.imageUrl;
       bgImgEl.style.opacity = "1";
     }
+    
+    syncVerseLikes(currentVerse.source);
   }
 }
 

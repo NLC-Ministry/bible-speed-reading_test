@@ -371,17 +371,16 @@ window.openBadgeDetailPage = function(badge, isUnlocked, isDark) {
     page.style.background = "#0a0a0a"; // neutral-950
     page.style.color = "#ffffff";
     page.style.borderColor = "#262626"; // neutral-800
-    
-    hero.style.background = "#171717"; // neutral-900
-    hero.style.borderColor = "#262626"; // neutral-800
   } else {
     page.style.background = "#f8fafc"; // slate-50
     page.style.color = "#1e293b"; // slate-800
     page.style.borderColor = "#e2e8f0"; // slate-200
-    
-    hero.style.background = "#ffffff";
-    hero.style.borderColor = "#e2e8f0";
   }
+
+  // Always dark-themed hero container for premium YouVersion aesthetics
+  hero.style.background = "#171717"; // neutral-900
+  hero.style.borderColor = "#262626"; // neutral-800
+  hero.style.color = "#ffffff"; // Always white text inside hero
 
   // Render text contents
   title.textContent = badge.title;
