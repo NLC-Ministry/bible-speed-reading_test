@@ -165,41 +165,38 @@
             </div>
 
             <!-- 每日金句 (Verse of the Day) -->
-            <div id="daily-verse-card" class="daily-verse-card" style="perspective: 1000px; margin-bottom: 1.5rem; cursor: pointer;">
-              <div id="daily-verse-card-inner" style="background: rgba(15, 23, 42, 0.4) !important; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: none !important; border-radius: 16px; min-height: 150px; height: auto; display: flex; flex-direction: column; justify-content: center; transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), background-image 0.4s ease; position: relative; overflow: hidden; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.32);">
+            <div id="daily-verse-card" class="relative overflow-hidden rounded-2xl cursor-pointer select-none transition-all duration-700 ease-in-out" style="min-height: 160px; box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5); margin-bottom: 1.5rem;">
+              
+              <!-- Dynamic Image Background & Overlay (for maximum readability) -->
+              <div id="daily-verse-bg" class="absolute inset-0 bg-cover bg-center transition-all duration-700 ease-in-out" style="opacity: 0; z-index: 0; pointer-events: none;"></div>
+              <div id="daily-verse-overlay" class="absolute inset-0 bg-slate-950/40 backdrop-blur-[2px] transition-all duration-700 ease-in-out" style="z-index: 1; pointer-events: none;"></div>
+              
+              <!-- Card Face Content -->
+              <div id="daily-verse-face-content" class="relative z-10 flex flex-col justify-between h-full p-6 w-full text-white transition-all duration-700 ease-in-out">
                 
-                <!-- Dynamic Image Background & Overlay (for maximum readability) -->
-                <div id="daily-verse-bg" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-size: cover; background-position: center; transition: opacity 0.5s ease; opacity: 0; z-index: 0; pointer-events: none;"></div>
-                <div id="daily-verse-overlay" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.55); z-index: 1; pointer-events: none; transition: background 0.3s ease;"></div>
+                <!-- Title Header -->
+                <div class="flex items-center gap-2 mb-4 text-xs font-bold uppercase tracking-wider text-purple-300">
+                  <i class="bi bi-stars text-amber-200"></i> 每日金句
+                </div>
                 
-                <div id="daily-verse-face-content" style="transform-style: preserve-3d; transition: transform 0.6s ease; display: flex; flex-direction: column; height: 100%; z-index: 2; position: relative; padding: 1.5rem; width: 100%;">
-                  
-                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                    <div style="font-size: 0.75rem; font-weight: 700; color: #c084fc; letter-spacing: 0.05em; display: flex; align-items: center; gap: 0.35rem; text-transform: uppercase;">
-                      <i class="bi bi-stars"></i> 每日金句
-                    </div>
-                  </div>
-                  
-                  <!-- Loaded Content -->
-                  <div id="daily-verse-content" style="transition: opacity 0.3s ease;">
-                    <blockquote id="daily-verse-text" style="font-size: 1.15rem; font-weight: 500; color: #ffffff; line-height: 1.7; margin: 0 0 0.75rem 0; font-family: 'Outfit', sans-serif; tracking-style: tracking-wide;">
-                      「神的話是我腳前的燈，是我路上的光。」
-                    </blockquote>
-                    <cite id="daily-verse-source" style="font-size: 0.8rem; color: rgba(241, 245, 249, 0.75); font-style: normal; font-weight: 600; text-align: right; display: block;">— 詩篇 119:105</cite>
-                  </div>
+                <!-- Loaded Content -->
+                <div id="daily-verse-content" class="transition-all duration-700 ease-in-out">
+                  <blockquote id="daily-verse-text" class="text-lg text-white font-medium leading-relaxed tracking-wide mb-3">
+                    「神的話是我腳前的燈，是我路上的光。」
+                  </blockquote>
+                  <cite id="daily-verse-source" class="block text-right text-xs font-semibold text-slate-200/80 not-italic">— 詩篇 119:105</cite>
+                </div>
 
-                  <!-- Skeleton Loader (hidden by default) -->
-                  <div id="daily-verse-skeleton" class="hidden" style="flex-direction: column; gap: 0.65rem; width: 100%;">
-                    <div class="skeleton-bar" style="background: rgba(255, 255, 255, 0.15); height: 1rem; width: 90%; border-radius: 4px;"></div>
-                    <div class="skeleton-bar" style="background: rgba(255, 255, 255, 0.15); height: 1rem; width: 70%; border-radius: 4px; margin-bottom: 0.5rem;"></div>
-                    <div class="skeleton-bar" style="background: rgba(255, 255, 255, 0.15); height: 0.8rem; width: 30%; border-radius: 4px; align-self: flex-end;"></div>
-                  </div>
-                  
-                  <!-- Bottom Info Badge -->
-                  <div style="margin-top: 1rem; font-size: 0.68rem; color: rgba(226, 232, 240, 0.35); display: flex; align-items: center; justify-content: center; gap: 0.25rem; font-weight: 500; border-top: 1px solid rgba(255, 255, 255, 0.08); padding-top: 0.75rem;">
-                    <i class="bi bi-arrow-repeat"></i> 點擊卡片隨機領取今日話語
-                  </div>
-
+                <!-- Skeleton Loader (hidden by default) -->
+                <div id="daily-verse-skeleton" class="hidden flex-col gap-3 w-full animate-pulse my-2">
+                  <div class="h-4 bg-white/20 rounded-md w-11/12"></div>
+                  <div class="h-4 bg-white/20 rounded-md w-3/4"></div>
+                  <div class="h-3 bg-white/20 rounded-md w-1/4 self-end"></div>
+                </div>
+                
+                <!-- Bottom Info Badge -->
+                <div class="mt-4 pt-3 border-t border-white/10 flex items-center justify-center gap-1.5 text-[11px] font-medium text-slate-300/60 tracking-wider">
+                  <i class="bi bi-arrow-repeat animate-spin-slow"></i> 點擊卡片隨機領取今日話語
                 </div>
 
               </div>
