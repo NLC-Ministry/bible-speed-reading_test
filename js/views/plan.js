@@ -2986,18 +2986,15 @@ async function renderGroupMiniStats() {
 
   if (labelTotal) labelTotal.textContent = scopeLabel === "全教會" ? '全教會總閱讀章數' : `${scopeLabel} 總閱讀章數`;
   if (labelMembers) labelMembers.textContent = scopeLabel === "全教會" ? '全教會參與人數' : `${scopeLabel} 參與人數`;
-  if (labelActive) labelActive.textContent = scopeLabel === "全教會" ? '本週全教會活躍人數' : `${scopeLabel} 本週活躍人數`;
-
-  const legacyMiniStatsGrid = document.getElementById("grp-total-read")?.parentElement?.parentElement;
-  if (legacyMiniStatsGrid) legacyMiniStatsGrid.style.display = "none";
+  if (labelActive) labelActive.textContent = scopeLabel === "全教會" ? '每日活躍' : `${scopeLabel} 每日活躍`;
 
   const elTotal = document.getElementById('grp-total-read');
   const elMembers = document.getElementById('grp-total-members');
   const elActive = document.getElementById('grp-active-members');
 
-  if (elTotal) elTotal.textContent = totalChapters + ' 章';
-  if (elMembers) elMembers.textContent = totalMembers + ' 人';
-  if (elActive) elActive.textContent = totalActive + ' 人';
+  if (elTotal) elTotal.textContent = totalChapters;
+  if (elMembers) elMembers.textContent = totalMembers;
+  if (elActive) elActive.textContent = totalActive;
 
   // Also stash for charts
   window._grpScopedUsers = scopedUsers;
@@ -3007,13 +3004,6 @@ async function renderGroupMiniStats() {
 function renderGroupProgressDistribution() {
   const scopedUsers = window._grpScopedUsers || [];
   const totalCount = scopedUsers.length;
-  const distCard = document.getElementById("grp-distribution-card");
-
-  if (totalCount === 0) {
-    if (distCard) distCard.style.display = "none";
-    return;
-  }
-  if (distCard) distCard.style.display = "";
 
   let titleSuffix = "團體進度狀態分佈";
   const rankingZoneSelector = document.getElementById("ranking-zone-selector");
@@ -3064,83 +3054,40 @@ function renderGroupProgressDistribution() {
     else onCount++;
   });
 
-  const segments = [
-    { key: "behind", label: "落後", count: behindCount, color: "#ef4444" },
-    { key: "on", label: "在進度上", count: onCount, color: "#64748b" },
-    { key: "ahead", label: "超前", count: aheadCount, color: "#10b981" }
-  ].map(item => ({
-    ...item,
-    pct: totalCount ? Math.round((item.count / totalCount) * 100) : 0
-  }));
+  const behindPct = totalCount ? Math.round((behindCount / totalCount) * 100) : 0;
+  const onPct = totalCount ? Math.round((onCount / totalCount) * 100) : 0;
+  const aheadPct = totalCount ? Math.round((aheadCount / totalCount) * 100) : 0;
 
-  const titleEl = document.getElementById("grp-distribution-title");
-  if (titleEl) titleEl.textContent = titleSuffix;
+  // Direct DOM Updates for Group Stats Bento Cards
+  const elTotal = document.getElementById('grp-total-read');
+  const elMembers = document.getElementById('grp-total-members');
+  const elActive = document.getElementById('grp-active-members');
+  const elTodayRate = document.getElementById('grp-today-rate');
+  const elReread = document.getElementById('grp-reread-count');
 
-  Array.from(distCard.children).forEach(child => {
-    if (child !== titleEl) child.remove();
-  });
+  if (elTotal) elTotal.textContent = totalChapters;
+  if (elMembers) elMembers.textContent = totalCount;
+  if (elActive) elActive.textContent = dailyActiveCount;
+  if (elTodayRate) elTodayRate.textContent = todayRate;
+  if (elReread) elReread.textContent = rereadCount;
 
-  const body = document.createElement("div");
-  body.className = "stacked-progress-body distribution-redesign";
-  body.innerHTML = `
-    <div class="distribution-primary-stats">
-      <div class="distribution-metric-card primary">
-        <span>總閱讀章數</span>
-        <strong>${totalChapters} 章</strong>
-        <small>目前範圍累計</small>
-      </div>
-      <div class="distribution-metric-card success">
-        <span>參與人數</span>
-        <strong>${totalCount} 人</strong>
-        <small>目前範圍</small>
-      </div>
-      <div class="distribution-metric-card warning">
-        <span>每日活躍人數</span>
-        <strong>${dailyActiveCount} 人</strong>
-        <small>今日有讀即計入</small>
-      </div>
-    </div>
-    <div class="distribution-secondary-stats">
-      <div class="distribution-metric-card compact">
-        <span>今日已完成</span>
-        <strong>${todayRate}%</strong>
-        <small>${todayDoneCount} / ${totalCount} 人</small>
-      </div>
-      <div class="distribution-metric-card compact">
-        <span>複讀人數</span>
-        <strong>${rereadCount} 人</strong>
-        <small>${totalCount ? Math.round((rereadCount / totalCount) * 100) : 0}%</small>
-      </div>
-    </div>
-    <div class="stacked-progress-summary">
-      <span>落後</span>
-      <span>在進度上</span>
-      <span>超前</span>
-    </div>
-    <div class="stacked-percent-bar" role="img" aria-label="讀經進度分佈百分比堆疊條形圖：落後、在進度上、超前">
-      ${segments.map(seg => `
-        <div class="stacked-segment ${seg.key}" style="--segment-width: ${seg.pct}%; --segment-color: ${seg.color};" title="${seg.label}: ${seg.count} 人 (${seg.pct}%)">
-          ${seg.pct >= 10 ? `<span>${seg.pct}%</span>` : ""}
-        </div>
-      `).join("")}
-    </div>
-    <div class="stacked-progress-legend">
-      ${segments.map(seg => `
-        <div class="stacked-legend-item ${seg.key}">
-          <span class="stacked-dot" style="background: ${seg.color};"></span>
-          <span class="stacked-label">${seg.label}</span>
-          <strong>${seg.count} 人</strong>
-          <span>${seg.pct}%</span>
-        </div>
-      `).join("")}
-    </div>
-  `;
-  distCard.appendChild(body);
-  requestAnimationFrame(() => {
-    body.querySelectorAll(".stacked-segment").forEach(seg => {
-      seg.style.width = seg.style.getPropertyValue("--segment-width");
-    });
-  });
+  // Update segments of three-color progress bar
+  const barBehind = document.getElementById('grp-today-bar-behind');
+  const barOn = document.getElementById('grp-today-bar-on-schedule');
+  const barAhead = document.getElementById('grp-today-bar-ahead');
+
+  if (barBehind) {
+    barBehind.style.width = `${behindPct}%`;
+    barBehind.title = `落後: ${behindCount} 人 (${behindPct}%)`;
+  }
+  if (barOn) {
+    barOn.style.width = `${onPct}%`;
+    barOn.title = `在進度上: ${onCount} 人 (${onPct}%)`;
+  }
+  if (barAhead) {
+    barAhead.style.width = `${aheadPct}%`;
+    barAhead.title = `超前: ${aheadCount} 人 (${aheadPct}%)`;
+  }
 }
 
 function renderGroupPastoralChart() {

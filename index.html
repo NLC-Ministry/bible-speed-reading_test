@@ -687,121 +687,122 @@
             </div>
 
             <!-- 團體統計部分 -->
-            <div id="stats-group-section" class="hidden" style="display: flex; flex-direction: column; gap: 1.2rem; width: 100%;">
-              <!-- 3 個團體 Mini 統計卡片 -->
-              <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
-                <div style="background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 16px; padding: 1.2rem; text-align: center;">
-                  <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.4rem; font-weight: 700;" id="grp-label-total-read">牧區總閱讀章數</div>
-                  <div style="font-size: 2rem; font-weight: 800; color: var(--primary-color);" id="grp-total-read">--</div>
-                </div>
-                <div style="background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 16px; padding: 1.2rem; text-align: center;">
-                  <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.4rem; font-weight: 700;" id="grp-label-members">參與人數</div>
-                  <div style="font-size: 2rem; font-weight: 800; color: #10b981;" id="grp-total-members">--</div>
-                </div>
-                <div style="background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 16px; padding: 1.2rem; text-align: center;">
-                  <div style="font-size: 0.78rem; color: var(--text-muted); margin-bottom: 0.4rem; font-weight: 700;" id="grp-label-active">本週活躍人數</div>
-                  <div style="font-size: 2rem; font-weight: 800; color: #f59e0b;" id="grp-active-members">--</div>
-                </div>
-              </div>
-
-              <!-- 團體進度狀態分佈 -->
-              <div class="glass-card hidden" id="grp-distribution-card" style="margin-bottom: 1.2rem; display: flex; flex-direction: column; gap: 1rem; padding: 1.2rem;">
-                <h3 class="card-title" id="grp-distribution-title" style="margin-bottom: 0.2rem; font-size: 1.05rem; font-weight: 800; color: var(--text-primary);">團體進度狀態分佈</h3>
+            <div id="stats-group-section" class="hidden" style="display: flex; flex-direction: column; gap: 0.8rem; width: 100%;">
+              
+              <!-- 第一層：5格不對稱團體便當盒網格 + 融合三色進度條 -->
+              <div class="grid grid-cols-2 gap-3 px-4 pt-4" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; width: 100%;">
                 
-                <!-- Metrics Grid -->
-                <div style="display: grid; grid-template-columns: 1.5fr 1fr 1fr; gap: 1rem; flex-wrap: wrap;">
-                  
-                  <!-- Hero Card: 今日已完成 -->
-                  <div style="background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(99, 102, 241, 0.15); border-radius: 12px; padding: 1rem; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; position: relative;">
-                    <span style="font-size: 0.8rem; font-weight: 800; color: var(--text-secondary); margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.25rem;">⚡ 今日已完成</span>
-                    <div style="font-size: 2.2rem; font-weight: 900; color: var(--primary-color);" id="grp-today-rate">--%</div>
-                    
-                    <div style="width: 100%; background: var(--bg-input); border-radius: 4px; height: 6px; overflow: hidden; margin-top: 0.6rem;">
-                      <div id="grp-today-bar" style="height: 100%; width: 0%; background: var(--primary-color); transition: width 0.6s ease;"></div>
+                <!-- 卡片 1 - 總閱讀章數 (核心主卡，橫跨兩欄) -->
+                <div class="col-span-2 p-4 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border border-slate-100 dark:border-zinc-800/40 flex flex-col justify-between" style="grid-column: span 2 / span 2; border-radius: 1rem; padding: 1rem; border: 1px solid rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between; min-height: 90px; text-align: left;">
+                  <div class="flex items-center justify-between w-full">
+                    <div style="font-size: 1.875rem; font-weight: 800;" class="text-slate-800 dark:text-white">
+                      <span id="grp-total-read">0</span>
+                      <span style="font-size: 0.875rem; font-weight: 700; margin-left: 0.1rem; color: var(--text-secondary);">章</span>
                     </div>
+                    <i class="bi bi-people-fill text-blue-500 dark:text-blue-400" style="font-size: 1.25rem;"></i>
+                  </div>
+                  <span class="text-xs text-slate-500 dark:text-zinc-400 font-medium" style="margin-top: 0.25rem;" id="grp-label-total-read">總閱讀章數</span>
+                </div>
+
+                <!-- 卡片 2 - 參與人數 -->
+                <div class="p-3 rounded-2xl bg-white dark:bg-zinc-900/60 border border-slate-100 dark:border-zinc-800/40 flex flex-col justify-between" style="border-radius: 1rem; padding: 0.75rem; border: 1px solid rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between; min-height: 80px; text-align: left;">
+                  <div class="flex items-center justify-between w-full">
+                    <div style="font-size: 1.5rem; font-weight: 800;" class="text-slate-800 dark:text-white">
+                      <span id="grp-total-members">0</span>
+                      <span style="font-size: 0.75rem; font-weight: 700; margin-left: 0.1rem; color: var(--text-secondary);">人</span>
+                    </div>
+                    <i class="bi bi-people text-emerald-500" style="font-size: 1.15rem;"></i>
+                  </div>
+                  <span class="text-xs text-slate-500 dark:text-zinc-400 font-medium" style="margin-top: 0.25rem;" id="grp-label-members">參與人數</span>
+                </div>
+
+                <!-- 卡片 3 - 每日活躍 -->
+                <div class="p-3 rounded-2xl bg-white dark:bg-zinc-900/60 border border-slate-100 dark:border-zinc-800/40 flex flex-col justify-between" style="border-radius: 1rem; padding: 0.75rem; border: 1px solid rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between; min-height: 80px; text-align: left;">
+                  <div class="flex items-center justify-between w-full">
+                    <div style="font-size: 1.5rem; font-weight: 800;" class="text-slate-800 dark:text-white">
+                      <span id="grp-active-members">0</span>
+                      <span style="font-size: 0.75rem; font-weight: 700; margin-left: 0.1rem; color: var(--text-secondary);">人</span>
+                    </div>
+                    <i class="bi bi-lightning-charge text-amber-500" style="font-size: 1.15rem;"></i>
+                  </div>
+                  <span class="text-xs text-slate-500 dark:text-zinc-400 font-medium" style="margin-top: 0.25rem;" id="grp-label-active">每日活躍</span>
+                </div>
+
+                <!-- 卡片 4 - 今日完成% -->
+                <div class="p-3 rounded-2xl bg-white dark:bg-zinc-900/60 border border-slate-100 dark:border-zinc-800/40 flex flex-col justify-between" style="border-radius: 1rem; padding: 0.75rem; border: 1px solid rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between; min-height: 80px; text-align: left;">
+                  <div class="flex items-center justify-between w-full">
+                    <div style="font-size: 1.5rem; font-weight: 800;" class="text-slate-800 dark:text-white">
+                      <span id="grp-today-rate">0</span>
+                      <span style="font-size: 0.75rem; font-weight: 700; margin-left: 0.1rem; color: var(--text-secondary);">%</span>
+                    </div>
+                    <i class="bi bi-check-circle text-sky-500" style="font-size: 1.15rem;"></i>
                   </div>
                   
-                  <!-- Status Grid right column (2x2 mini grid) -->
-                  <div style=" display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
-                    
-                    <!-- 超前進度 -->
-                    <div style="background: rgba(16, 185, 129, 0.04); border: 1px solid rgba(16, 185, 129, 0.12); border-radius: 10px; padding: 0.6rem 0.8rem; display: flex; flex-direction: column; justify-content: space-between;">
-                      <span style="font-size: 0.72rem; font-weight: 800; color: #10b981; display: flex; align-items: center; gap: 0.2rem;">🚀 超前進度</span>
-                      <div style="font-size: 1.1rem; font-weight: 800; color: #10b981; margin-top: 0.3rem;" id="grp-ahead-label">--</div>
-                      
-                      <div style="width: 100%; background: rgba(16, 185, 129, 0.1); border-radius: 2px; height: 4px; overflow: hidden; margin-top: 0.4rem;">
-                        <div id="grp-ahead-bar" style="height: 100%; width: 0%; background: #10b981; transition: width 0.6s ease;"></div>
-                      </div>
-                    </div>
-                    
-                    <!-- 進度一致 -->
-                    <div style="background: rgba(148, 163, 184, 0.04); border: 1px solid rgba(148, 163, 184, 0.12); border-radius: 10px; padding: 0.6rem 0.8rem; display: flex; flex-direction: column; justify-content: space-between;">
-                      <span style="font-size: 0.72rem; font-weight: 800; color: var(--text-secondary); display: flex; align-items: center; gap: 0.2rem;">✅ 進度一致</span>
-                      <div style="font-size: 1.1rem; font-weight: 800; color: var(--text-primary); margin-top: 0.3rem;" id="grp-on-schedule-label">--</div>
-                      
-                      <div style="width: 100%; background: rgba(148, 163, 184, 0.1); border-radius: 2px; height: 4px; overflow: hidden; margin-top: 0.4rem;">
-                        <div id="grp-on-schedule-bar" style="height: 100%; width: 0%; background: #94a3b8; transition: width 0.6s ease;"></div>
-                      </div>
-                    </div>
-                    
-                    <!-- 落後進度 -->
-                    <div style="background: rgba(239, 68, 68, 0.04); border: 1px solid rgba(239, 68, 68, 0.12); border-radius: 10px; padding: 0.6rem 0.8rem; display: flex; flex-direction: column; justify-content: space-between;">
-                      <span style="font-size: 0.72rem; font-weight: 800; color: #ef4444; display: flex; align-items: center; gap: 0.2rem;">⚠️ 落後進度</span>
-                      <div style="font-size: 1.1rem; font-weight: 800; color: #ef4444; margin-top: 0.3rem;" id="grp-behind-label">--</div>
-                      
-                      <div style="width: 100%; background: rgba(239, 68, 68, 0.1); border-radius: 2px; height: 4px; overflow: hidden; margin-top: 0.4rem;">
-                        <div id="grp-behind-bar" style="height: 100%; width: 0%; background: #ef4444; transition: width 0.6s ease;"></div>
-                      </div>
-                    </div>
-                    
-                    <!-- 多輪挑戰 -->
-                    <div style="background: rgba(245, 158, 11, 0.04); border: 1px solid rgba(245, 158, 11, 0.12); border-radius: 10px; padding: 0.6rem 0.8rem; display: flex; flex-direction: column; justify-content: space-between;">
-                      <span style="font-size: 0.72rem; font-weight: 800; color: #f59e0b; display: flex; align-items: center; gap: 0.2rem;">🏅 多輪挑戰</span>
-                      <div style="font-size: 1.1rem; font-weight: 800; color: #f59e0b; margin-top: 0.3rem;" id="grp-round2-label">--</div>
-                      
-                      <div style="width: 100%; background: rgba(245, 158, 11, 0.1); border-radius: 2px; height: 4px; overflow: hidden; margin-top: 0.4rem;">
-                        <div id="grp-round2-bar" style="height: 100%; width: 0%; background: #f59e0b; transition: width 0.6s ease;"></div>
-                      </div>
-                    </div>
-                    
+                  <!-- 三色進度條 -->
+                  <div class="w-full h-2 bg-slate-100 dark:bg-neutral-800 rounded-full flex overflow-hidden mt-1.5" style="display: flex; height: 8px; border-radius: 9999px; overflow: hidden; background-color: rgba(148,163,184,0.12);">
+                    <div id="grp-today-bar-behind" class="bg-rose-400 h-full" style="width: 0%" title="落後"></div>
+                    <div id="grp-today-bar-on-schedule" class="bg-sky-400 h-full" style="width: 0%" title="在進度上"></div>
+                    <div id="grp-today-bar-ahead" class="bg-emerald-400 h-full" style="width: 0%" title="超前"></div>
                   </div>
                   
+                  <span class="text-[10px] text-slate-400 dark:text-zinc-500 font-medium" style="margin-top: 0.25rem;">今日完成 %</span>
                 </div>
+
+                <!-- 卡片 5 - 複讀人數 -->
+                <div class="p-3 rounded-2xl bg-white dark:bg-zinc-900/60 border border-slate-100 dark:border-zinc-800/40 flex flex-col justify-between" style="border-radius: 1rem; padding: 0.75rem; border: 1px solid rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between; min-height: 80px; text-align: left;">
+                  <div class="flex items-center justify-between w-full">
+                    <div style="font-size: 1.5rem; font-weight: 800;" class="text-slate-800 dark:text-white">
+                      <span id="grp-reread-count">0</span>
+                      <span style="font-size: 0.75rem; font-weight: 700; margin-left: 0.1rem; color: var(--text-secondary);">人</span>
+                    </div>
+                    <i class="bi bi-arrow-repeat text-indigo-500" style="font-size: 1.15rem;"></i>
+                  </div>
+                  <span class="text-xs text-slate-500 dark:text-zinc-400 font-medium" style="margin-top: 0.25rem;">複讀人數</span>
+                </div>
+
               </div>
 
-
-              <!-- 團隊讀經熱點地圖 -->
-              <div class="glass-card" id="grp-heatmap-card">
-                <h3 class="card-title" id="grp-heatmap-title" style="margin-bottom: 1rem; font-size: 1.05rem; font-weight: 800; color: var(--text-primary);">團隊讀經熱點地圖 (計畫期間打卡活躍度)</h3>
-                <div id="grp-bible-heatmap-container" style="overflow-x: auto; background: var(--bg-input); border-radius: 10px; padding: 1.2rem; border: 1px solid var(--border-card); display: flex; align-items: center; justify-content: center;">
-                  <!-- Generated dynamically -->
-                </div>
-                <div class="heatmap-legend" style="display: flex; justify-content: flex-end; align-items: center; gap: 0.4rem; font-size: 0.72rem; color: var(--text-muted); margin-top: 0.6rem;">
-                  <span>少</span>
-                  <span style="width: 10px; height: 10px; border-radius: 2px; background: var(--border-card); opacity: 0.2;"></span>
-                  <span style="width: 10px; height: 10px; border-radius: 2px; background: rgba(99, 102, 241, 0.4);"></span>
-                  <span style="width: 10px; height: 10px; border-radius: 2px; background: rgba(99, 102, 241, 0.6);"></span>
-                  <span style="width: 10px; height: 10px; border-radius: 2px; background: rgba(99, 102, 241, 0.8);"></span>
-                  <span style="width: 10px; height: 10px; border-radius: 2px; background: rgba(99, 102, 241, 1);"></span>
-                  <span>多</span>
-                </div>
+              <!-- 隱藏但保留的舊 ID，防止 JS 崩潰 -->
+              <div id="grp-distribution-card" class="hidden" style="display: none;">
+                <span id="grp-distribution-title"></span>
               </div>
 
-              <!-- 屬靈旅程 -->
-              <div class="glass-card pilgrimage-card" id="grp-pilgrimage-card" style="display: flex; flex-direction: column; padding: 1.2rem; background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 16px;">
-                <div class="card-header-flex" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem;">
-                  <h3 class="card-title" style="margin-bottom: 0; display: flex; align-items: center; gap: 0.5rem;">
-                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="var(--primary-color)" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              <!-- 第二層：C位重塑「屬靈旅程 — 牧區競賽」地圖卡片 -->
+              <div class="mx-4 my-3 p-4 rounded-2xl bg-white dark:bg-zinc-900/60 border border-slate-100 dark:border-zinc-800/40 shadow-md pilgrimage-card" id="grp-pilgrimage-card" style="border-radius: 1rem; padding: 1rem; border: 1px solid rgba(0,0,0,0.05); margin-left: 1rem; margin-right: 1rem; margin-top: 0.5rem; margin-bottom: 0.5rem; display: flex; flex-direction: column;">
+                <div class="card-header-flex" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                  <h3 class="card-title text-slate-800 dark:text-white" style="margin-bottom: 0; font-size: 0.95rem; font-weight: 800; display: flex; align-items: center; gap: 0.25rem; text-align: left;">
                     🏃 屬靈旅程 — 牧區競賽
                   </h3>
-                  <div id="pilgrimage-legend" style="display: flex; gap: 0.5rem; flex-wrap: wrap; font-size: 0.75rem;"></div>
+                  <!-- 頂部選單極簡化 -->
+                  <div id="pilgrimage-legend" class="text-[10px] space-x-2 text-slate-400 dark:text-zinc-500" style="display: flex; align-items: center; gap: 8px; font-size: 10px;">
+                    <!-- Populated dynamically as mini-labels -->
+                  </div>
                 </div>
-                <div class="trail-scroll-wrapper" style="overflow: auto; max-height: 480px; background: var(--bg-input); border-radius: var(--radius-sm); border: 1px solid var(--border-card); padding: 0.8rem; position: relative;">
+                <div class="trail-scroll-wrapper" style="overflow: auto; max-height: 380px; background: var(--bg-input); border-radius: 12px; border: 1px solid var(--border-card); padding: 0.5rem; position: relative;">
                   <div id="pilgrimage-trail-board" style="position: relative; transform-origin: top left; transition: transform 0.2s ease; display: inline-block;">
                     <canvas id="pilgrimage-canvas" style="display: block;"></canvas>
                   </div>
                 </div>
               </div>
+
+              <!-- 第三層：收斂版「團隊讀經熱點地圖」卡片 -->
+              <div class="mx-4 my-2 p-4 rounded-2xl bg-white dark:bg-zinc-900/60 border border-slate-100 dark:border-zinc-800/40 shadow-sm" id="grp-heatmap-card" style="border-radius: 1rem; padding: 1rem; border: 1px solid rgba(0,0,0,0.05); margin-left: 1rem; margin-right: 1rem; margin-top: 0.5rem; margin-bottom: 0.5rem;">
+                <h3 class="card-title text-slate-800 dark:text-white" id="grp-heatmap-title" style="margin-bottom: 0.75rem; font-size: 0.95rem; font-weight: 800; text-align: left;">團隊讀經熱點地圖</h3>
+                
+                <div id="grp-bible-heatmap-container" style="overflow-x: auto; width: 100%; display: flex; align-items: center; justify-content: flex-start; padding: 0.25rem 0;">
+                  <!-- Generated dynamically -->
+                </div>
+                
+                <div class="flex items-center space-x-1 text-[10px] text-slate-400 justify-end mt-2" style="display: flex; align-items: center; justify-content: flex-end; gap: 4px; font-size: 10px; color: #94a3b8; margin-top: 0.5rem;">
+                  <span>少</span>
+                  <span class="w-2.5 h-2.5 rounded bg-slate-100 dark:bg-neutral-800" style="width: 10px; height: 10px; border-radius: 2px;"></span>
+                  <span class="w-2.5 h-2.5 rounded bg-violet-300" style="width: 10px; height: 10px; border-radius: 2px;"></span>
+                  <span class="w-2.5 h-2.5 rounded bg-violet-500" style="width: 10px; height: 10px; border-radius: 2px;"></span>
+                  <span>多</span>
+                </div>
+              </div>
+
+            </div>
             </div>
           </div>
 

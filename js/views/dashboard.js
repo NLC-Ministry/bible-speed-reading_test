@@ -499,10 +499,10 @@ state.pilgrimageControlsInit = false;
 
 function getTileCoords(index) {
   const cols = 8;
-  const spacingX = 85;
-  const spacingY = 85;
-  const startX = 50;
-  const startY = 50;
+  const spacingX = 72;
+  const spacingY = 72;
+  const startX = 40;
+  const startY = 40;
   
   const row = Math.floor(index / cols);
   const col = index % cols;
@@ -606,15 +606,15 @@ async function renderPilgrimageTrail() {
 
   // ── 5. Canvas sizing ──────────────────────────────────────────────────
   const cols = 8;
-  const spacingX = 90;
-  const spacingY = 95;
+  const spacingX = 72;
+  const spacingY = 72;
   const rowsCount = Math.ceil((maxDrawIndex + 1) / cols);
-  canvas.width  = cols * spacingX + 20;
-  canvas.height = rowsCount * spacingY + 20;
+  canvas.width  = cols * spacingX + 15;
+  canvas.height = rowsCount * spacingY + 15;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   // ── 6. Path line helper ───────────────────────────────────────────────
-  function drawPathLine(startIndex, endIndex, color, width = 8) {
+  function drawPathLine(startIndex, endIndex, color, width = 7) {
     if (endIndex < startIndex) return;
     ctx.beginPath();
     ctx.strokeStyle = color;
@@ -632,18 +632,18 @@ async function renderPilgrimageTrail() {
 
   // ── 7. Draw path lines ────────────────────────────────────────────────
   // Background grey path
-  drawPathLine(0, maxDrawIndex, "rgba(226, 232, 240, 0.8)");
+  drawPathLine(0, maxDrawIndex, "rgba(226, 232, 240, 0.8)", 7);
   // Round 1 footprint underlay (visible only on round 2+)
   if (currentRound >= 2 && myR1Count > 1) {
-    drawPathLine(0, Math.min(myR1Count - 1, maxDrawIndex), "rgba(99, 102, 241, 0.2)", 6);
+    drawPathLine(0, Math.min(myR1Count - 1, maxDrawIndex), "rgba(99, 102, 241, 0.2)", 5);
   }
   // Group path
   if (maxChaptersRead > 1) {
-    drawPathLine(0, Math.min(maxChaptersRead - 1, maxDrawIndex), pal.grpPath, 7);
+    drawPathLine(0, Math.min(maxChaptersRead - 1, maxDrawIndex), pal.grpPath, 6);
   }
   // My path
   if (myChaptersRead > 1) {
-    drawPathLine(0, Math.min(myChaptersRead - 1, maxDrawIndex), pal.myPath, 9);
+    drawPathLine(0, Math.min(myChaptersRead - 1, maxDrawIndex), pal.myPath, 8);
   }
 
   // ── 8. Draw tile nodes ────────────────────────────────────────────────
@@ -654,7 +654,7 @@ async function renderPilgrimageTrail() {
 
     // Large circle for book start, small for regular chapters
     const isBookStart = ch.isBookStart;
-    const r = isBookStart ? 26 : 15;
+    const r = isBookStart ? 22 : 13;
 
     let fillStyle  = "#f8fafc";
     let strokeStyle = "#cbd5e1";
@@ -675,7 +675,7 @@ async function renderPilgrimageTrail() {
       if (currentRound >= 2) {
         ctx.save();
         ctx.shadowColor = pal.myStroke;
-        ctx.shadowBlur  = isBookStart ? 18 : 10;
+        ctx.shadowBlur  = isBookStart ? 15 : 8;
         ctx.beginPath();
         ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
         ctx.fillStyle = fillStyle;
@@ -701,7 +701,7 @@ async function renderPilgrimageTrail() {
     // Round 2+: draw dim R1 inner ring on tiles that were read in R1 but not yet in current round
     if (currentRound >= 2 && ch.isReadR1 && !isMineRead) {
       ctx.beginPath();
-      ctx.arc(pos.x, pos.y, r - 4, 0, Math.PI * 2);
+      ctx.arc(pos.x, pos.y, r - 3, 0, Math.PI * 2);
       ctx.strokeStyle = "rgba(99, 102, 241, 0.35)";
       ctx.lineWidth   = 1.5;
       ctx.stroke();
@@ -710,7 +710,7 @@ async function renderPilgrimageTrail() {
     // Book-start: outer ring for emphasis
     if (isBookStart && isMineRead) {
       ctx.beginPath();
-      ctx.arc(pos.x, pos.y, r + 4, 0, Math.PI * 2);
+      ctx.arc(pos.x, pos.y, r + 3, 0, Math.PI * 2);
       ctx.strokeStyle = strokeStyle + "55";
       ctx.lineWidth   = 2;
       ctx.stroke();
@@ -724,10 +724,10 @@ async function renderPilgrimageTrail() {
     const bookData = BIBLE_BOOKS ? BIBLE_BOOKS.find(b => b.name === ch.bookName) : null;
     if (isBookStart) {
       const abbrev = bookData ? bookData.abbrev : ch.bookName.substring(0, 2);
-      ctx.font = `bold 11px sans-serif`;
+      ctx.font = `bold 10px sans-serif`;
       ctx.fillText(abbrev, pos.x, pos.y);
     } else {
-      ctx.font = isBold ? "bold 9px sans-serif" : "8px sans-serif";
+      ctx.font = isBold ? "bold 8px sans-serif" : "7px sans-serif";
       ctx.fillText(ch.chapterNum, pos.x, pos.y);
     }
   }
@@ -747,7 +747,7 @@ async function renderPilgrimageTrail() {
     const count = list.length;
     list.forEach((m, idx) => {
       const angle  = count > 1 ? (idx * 2 * Math.PI) / count : 0;
-      const offset = count > 1 ? 18 : 0;
+      const offset = count > 1 ? 15 : 0;
       const x = tilePos.x + Math.cos(angle) * offset;
       const y = tilePos.y + Math.sin(angle) * offset;
       const isMe = m.name === state.currentUser.name;
@@ -757,7 +757,7 @@ async function renderPilgrimageTrail() {
       ctx.shadowBlur    = 5;
       ctx.shadowOffsetY = 2;
       ctx.beginPath();
-      ctx.arc(x, y, 15, 0, Math.PI * 2);
+      ctx.arc(x, y, 13, 0, Math.PI * 2);
       ctx.fillStyle = getMemberColor(m.name);
       ctx.fill();
       ctx.lineWidth   = isMe ? 2.5 : 1.5;
