@@ -202,7 +202,7 @@ function buildHeatmapGrid(containerId, logsByDate, teamSize = 1, label = "章", 
   container.appendChild(wrapper);
 }
 function renderBadgeWall(containerId) {
-  const container = document.getElementById(containerId);
+  const container = document.getElementById("badges-grid") || document.getElementById(containerId);
   if (!container) return;
 
   container.innerHTML = "";
@@ -236,7 +236,7 @@ function renderBadgeWall(containerId) {
   }
 
   // Force grid layout styling on container
-  container.style.cssText = "display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 1rem; width: 100%;";
+  container.style.cssText = "display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem 1rem; margin-top: 1rem; width: 100%;";
 
   ACHIEVEMENTS.forEach(badge => {
     const isUnlocked = unlocked.includes(badge.id);
@@ -244,18 +244,19 @@ function renderBadgeWall(containerId) {
     const badgeItem = document.createElement("div");
     badgeItem.className = isUnlocked ? "honor-badge-item unlocked" : "honor-badge-item locked";
     
-    // Grid card styling
+    // Shield shape styling (rounded top, tapered bottom)
     const baseCardStyle = `
       display: flex;
       flex-direction: column;
       align-items: center;
       text-align: center;
-      padding: 0.75rem 0.5rem;
-      border-radius: 0.75rem;
+      padding: 0.9rem 0.5rem;
+      border-radius: 1rem 1rem 30% 30%;
       transition: all 0.3s ease;
       cursor: pointer;
       position: relative;
       user-select: none;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     `;
     
     let stateStyle = "";
@@ -264,7 +265,7 @@ function renderBadgeWall(containerId) {
     let lockColor = "";
 
     if (isUnlocked) {
-      // Unlocked
+      // Unlocked State Styling
       if (isDark) {
         stateStyle = "background: linear-gradient(to tr, rgba(69, 26, 3, 0.4) 0%, rgba(124, 45, 18, 0.4) 100%); border: 1px solid rgba(245, 158, 11, 0.2);";
         iconColor = "color: #fbbf24;"; // dark:text-amber-400
@@ -275,7 +276,7 @@ function renderBadgeWall(containerId) {
         textColor = "color: #1e293b; font-weight: 500;"; // text-slate-800 font-medium
       }
     } else {
-      // Locked
+      // Locked State Styling
       if (isDark) {
         stateStyle = "border: 1px dashed rgba(63, 63, 70, 0.8); background: rgba(39, 39, 42, 0.6);";
         iconColor = "color: #52525b;"; // dark:text-zinc-600
@@ -299,50 +300,164 @@ function renderBadgeWall(containerId) {
         </div>
       ` : ""}
       
+      <!-- Double Ring Circles Inside -->
+      <div style="position: absolute; width: 44px; height: 44px; top: 0.9rem; border: 1px solid currentColor; border-radius: 50%; opacity: 0.08; pointer-events: none; ${iconColor}"></div>
+      <div style="position: absolute; width: 38px; height: 38px; top: 1.1rem; border: 1px dashed currentColor; border-radius: 50%; opacity: 0.15; pointer-events: none; ${iconColor}"></div>
+
       <!-- Badge Icon -->
-      <div style="font-size: 1.6rem; display: flex; width: 44px; height: 44px; justify-content: center; align-items: center; flex-shrink: 0; ${iconColor}">
-        <i class="${badge.iconClass}"></i>
+      <div style="font-size: 1.4rem; display: flex; width: 44px; height: 44px; justify-content: center; align-items: center; flex-shrink: 0; position: relative; z-index: 10; ${iconColor}">
+        <i class="bi ${badge.iconClass}"></i>
       </div>
       
-      <!-- Short Title Only -->
-      <span style="font-size: 0.72rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; ${textColor}">
+      <!-- Short Title Only (4-6 words) -->
+      <span style="font-size: 0.72rem; margin-top: 0.5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; position: relative; z-index: 10; ${textColor}">
         ${badge.title}
       </span>
     `;
 
-    // Click handler to open the Toast showing requirements
+    // Click handler: Open dynamic modal popup detailing the achievement
     badgeItem.onclick = () => {
-      if (typeof window.showBadgeDetail === "function") {
-        window.showBadgeDetail(badge.title, badge.description, isUnlocked);
+      if (typeof window.openBadgeModal === "function") {
+        window.openBadgeModal(badge, isUnlocked, isDark);
       }
     };
 
-    // Hover effects
+    // Hover scale effects
     badgeItem.onmouseenter = () => {
       badgeItem.style.transform = "scale(1.05)";
       if (isUnlocked) {
         badgeItem.style.boxShadow = isDark 
-          ? "0 4px 12px rgba(245, 158, 11, 0.1)" 
-          : "0 4px 12px rgba(217, 119, 6, 0.15)";
+          ? "0 4px 12px rgba(245, 158, 11, 0.15)" 
+          : "0 4px 12px rgba(217, 119, 6, 0.2)";
       }
     };
     badgeItem.onmouseleave = () => {
       badgeItem.style.transform = "scale(1)";
-      badgeItem.style.boxShadow = "none";
+      badgeItem.style.boxShadow = "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)";
     };
 
     container.appendChild(badgeItem);
   });
+
+  // Attach modal overlay close listeners once
+  const overlay = document.getElementById("modal-overlay");
+  const closeBtn = document.getElementById("modal-close-btn");
+  if (overlay && !overlay._hasCloseListener) {
+    overlay.addEventListener("click", window.closeBadgeModal);
+    overlay._hasCloseListener = true;
+  }
+  if (closeBtn && !closeBtn._hasCloseListener) {
+    closeBtn.addEventListener("click", window.closeBadgeModal);
+    closeBtn._hasCloseListener = true;
+  }
 }
 
-// Global click drawer/toast
-window.showBadgeDetail = function(title, description, isUnlocked) {
-  const statusText = isUnlocked ? "【已解鎖】" : "【未解鎖】";
-  if (typeof showToast === "function") {
-    showToast(`${statusText} ${title}：\n${description.split('：').pop()}`, 4000);
+// YouVersion high-grade modal popup controls
+window.openBadgeModal = function(badge, isUnlocked, isDark) {
+  const modal = document.getElementById("badge-modal");
+  const card = document.getElementById("modal-card");
+  const shield = document.getElementById("modal-shield");
+  const icon = document.getElementById("modal-icon");
+  const title = document.getElementById("modal-title");
+  const status = document.getElementById("modal-status");
+  const desc = document.getElementById("modal-desc");
+  
+  if (!modal || !card) return;
+
+  // Render text contents
+  title.textContent = badge.title;
+  desc.textContent = badge.description; // Full text criteria
+
+  // Reset icon class
+  icon.className = `bi ${badge.iconClass}`;
+
+  // Apply card theme colors dynamically
+  if (isDark) {
+    card.style.background = "#18181b"; // zinc-900
+    card.style.color = "#ffffff";
+    const closeBtn = document.getElementById("modal-close-btn");
+    if (closeBtn) {
+      closeBtn.style.background = "#27272a";
+      closeBtn.style.color = "#ffffff";
+    }
   } else {
-    alert(`${statusText} ${title}：\n${description.split('：').pop()}`);
+    card.style.background = "#ffffff";
+    card.style.color = "#1e293b";
+    const closeBtn = document.getElementById("modal-close-btn");
+    if (closeBtn) {
+      closeBtn.style.background = "#f1f5f9";
+      closeBtn.style.color = "#1e293b";
+    }
   }
+
+  // Apply Shield styles in modal based on unlock state & theme
+  if (isUnlocked) {
+    status.textContent = "已解鎖徽章";
+    if (isDark) {
+      shield.style.background = "linear-gradient(to tr, rgba(69, 26, 3, 0.5) 0%, rgba(124, 45, 18, 0.5) 100%)";
+      shield.style.borderColor = "rgba(245, 158, 11, 0.25)";
+      shield.style.borderStyle = "solid";
+      shield.style.borderWidth = "1px";
+      shield.style.color = "#fbbf24"; // golden icon
+      status.style.background = "rgba(245, 158, 11, 0.2)";
+      status.style.color = "#fbbf24";
+    } else {
+      shield.style.background = "linear-gradient(to tr, rgba(254, 243, 199, 0.9) 0%, rgba(255, 237, 213, 0.9) 100%)";
+      shield.style.borderColor = "rgba(251, 191, 36, 0.6)";
+      shield.style.borderStyle = "solid";
+      shield.style.borderWidth = "1px";
+      shield.style.color = "#d97706"; // warm amber icon
+      status.style.background = "rgba(217, 119, 6, 0.15)";
+      status.style.color = "#d97706";
+    }
+  } else {
+    status.textContent = "未解鎖徽章";
+    if (isDark) {
+      shield.style.background = "rgba(39, 39, 42, 0.6)";
+      shield.style.borderColor = "rgba(63, 63, 70, 0.6)";
+      shield.style.borderStyle = "dashed";
+      shield.style.borderWidth = "1px";
+      shield.style.color = "#52525b"; // lock color icon
+      status.style.background = "rgba(63, 63, 70, 0.3)";
+      status.style.color = "#a1a1aa";
+    } else {
+      shield.style.background = "rgba(226, 232, 240, 0.6)";
+      shield.style.borderColor = "rgba(148, 163, 184, 0.6)";
+      shield.style.borderStyle = "dashed";
+      shield.style.borderWidth = "1px";
+      shield.style.color = "#94a3b8"; // grey icon
+      status.style.background = "rgba(226, 232, 240, 0.8)";
+      status.style.color = "#64748b";
+    }
+  }
+
+  // Display overlay & card animation
+  modal.classList.remove("hidden");
+  
+  // Force a browser reflow to trigger scale animation
+  modal.offsetHeight;
+  card.style.transform = "translate(-50%, -50%) scale(1)";
+  card.style.opacity = "1";
+};
+
+window.closeBadgeModal = function() {
+  const modal = document.getElementById("badge-modal");
+  const card = document.getElementById("modal-card");
+  if (!modal || !card) return;
+
+  card.style.transform = "translate(-50%, -50%) scale(0.95)";
+  card.style.opacity = "0";
+
+  setTimeout(() => {
+    modal.classList.add("hidden");
+  }, 300);
+};
+
+// Legacy backup compatibility
+window.showBadgeDetail = function(title, description, isUnlocked) {
+  const isDark = state.theme === "dark" || document.body.classList.contains("dark-theme");
+  const badgeObj = ACHIEVEMENTS.find(b => b.title === title) || { title, description };
+  window.openBadgeModal(badgeObj, isUnlocked, isDark);
 };
 
 // ── Global Premium Skeleton UI Loader ──────────────────────

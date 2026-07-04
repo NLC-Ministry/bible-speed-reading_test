@@ -1131,11 +1131,10 @@ async function shareAsImage(e) {
           
           localStorage.setItem("has_shared_verse", "true");
           localStorage.setItem("badge_share_verse_unlocked", "true");
-          if (typeof checkAchievements === "function") {
+          if (typeof window.triggerBadgeUnlockNotification === "function") {
+            window.triggerBadgeUnlockNotification("share_verse", "傳遞愛光芒");
+          } else if (typeof checkAchievements === "function") {
             checkAchievements();
-          }
-          if (typeof showToast === "function") {
-            showToast("分享成功！解鎖「傳遞愛光芒」成就！");
           }
         } catch (shareErr) {
           console.warn("Share cancelled or failed:", shareErr);
@@ -1148,11 +1147,10 @@ async function shareAsImage(e) {
         
         localStorage.setItem("has_shared_verse", "true");
         localStorage.setItem("badge_share_verse_unlocked", "true");
-        if (typeof checkAchievements === "function") {
+        if (typeof window.triggerBadgeUnlockNotification === "function") {
+          window.triggerBadgeUnlockNotification("share_verse", "傳遞愛光芒");
+        } else if (typeof checkAchievements === "function") {
           checkAchievements();
-        }
-        if (typeof showToast === "function") {
-          showToast("圖卡已成功下載，快發送給朋友吧！");
         }
       }
     }, 'image/png');
