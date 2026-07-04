@@ -922,6 +922,11 @@ window.applyAppTheme = function(themeName) {
   if (appLayout) appLayout.classList.toggle("reader-mode", Boolean(isReaderPage));
   localStorage.setItem("app_theme", themeName);
   
+  // Refresh theme configurations inside My Honor Badges wall dynamically
+  if (typeof renderBadgeWall === "function" && document.getElementById("profile-badge-wall-container")) {
+    renderBadgeWall("profile-badge-wall-container");
+  }
+  
   // Update settings dropdown active state if it exists
   document.querySelectorAll("#reader-settings-dropdown .theme-btn").forEach(btn => {
     btn.classList.toggle("active", btn.dataset.theme === themeName);

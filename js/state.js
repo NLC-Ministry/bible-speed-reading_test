@@ -318,6 +318,11 @@ function initTheme() {
     state.theme = state.theme === "light" ? "dark" : "light";
     setBodyThemeClass(state.theme);
     localStorage.setItem("app_theme", state.theme);
+    
+    // Refresh theme configurations inside My Honor Badges wall dynamically
+    if (typeof renderBadgeWall === "function" && document.getElementById("profile-badge-wall-container")) {
+      renderBadgeWall("profile-badge-wall-container");
+    }
   });
 }
 

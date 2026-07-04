@@ -214,6 +214,27 @@ function renderBadgeWall(containerId) {
 
   const unlocked = JSON.parse(localStorage.getItem("unlocked_badges") || "[]");
 
+  // Determine current active theme
+  const isDark = state.theme === "dark" || document.body.classList.contains("dark-theme");
+
+  // Update outer card container theme styling
+  const outerCard = document.getElementById("profile-badges-inner-card");
+  if (outerCard) {
+    if (isDark) {
+      outerCard.style.background = "rgba(24, 24, 27, 0.6)"; // zinc-900/60
+      outerCard.style.borderColor = "rgba(39, 39, 42, 0.8)"; // zinc-800
+      outerCard.style.borderStyle = "solid";
+      outerCard.style.borderWidth = "1px";
+      outerCard.style.color = "#ffffff";
+    } else {
+      outerCard.style.background = "#f8fafc"; // slate-50
+      outerCard.style.borderColor = "#e2e8f0"; // slate-200
+      outerCard.style.borderStyle = "solid";
+      outerCard.style.borderWidth = "1px";
+      outerCard.style.color = "#1e293b";
+    }
+  }
+
   // Force grid layout styling on container
   container.style.cssText = "display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 1rem; width: 100%;";
 
@@ -237,20 +258,44 @@ function renderBadgeWall(containerId) {
       user-select: none;
     `;
     
-    const stateStyle = isUnlocked 
-      ? `background: linear-gradient(to tr, rgba(245, 158, 11, 0.1), rgba(249, 115, 22, 0.1)); border: 1px solid rgba(245, 158, 11, 0.25);`
-      : `border: 1px dashed rgba(71, 85, 105, 0.6); background: rgba(15, 23, 42, 0.15);`;
+    let stateStyle = "";
+    let iconColor = "";
+    let textColor = "";
+    let lockColor = "";
+
+    if (isUnlocked) {
+      // Unlocked
+      if (isDark) {
+        stateStyle = "background: linear-gradient(to tr, rgba(69, 26, 3, 0.4) 0%, rgba(124, 45, 18, 0.4) 100%); border: 1px solid rgba(245, 158, 11, 0.2);";
+        iconColor = "color: #fbbf24;"; // dark:text-amber-400
+        textColor = "color: #ffffff; font-weight: 500;"; // dark:text-white
+      } else {
+        stateStyle = "background: linear-gradient(to tr, rgba(254, 243, 199, 0.8) 0%, rgba(255, 237, 213, 0.8) 100%); border: 1px solid rgba(251, 191, 36, 0.5);";
+        iconColor = "color: #d97706;"; // text-amber-600
+        textColor = "color: #1e293b; font-weight: 500;"; // text-slate-800 font-medium
+      }
+    } else {
+      // Locked
+      if (isDark) {
+        stateStyle = "border: 1px dashed rgba(63, 63, 70, 0.8); background: rgba(39, 39, 42, 0.6);";
+        iconColor = "color: #52525b;"; // dark:text-zinc-600
+        textColor = "color: #71717a;"; // dark:text-zinc-500
+        lockColor = "color: #52525b;";
+      } else {
+        stateStyle = "border: 1px dashed rgba(148, 163, 184, 0.6); background: rgba(226, 232, 240, 0.6);";
+        iconColor = "color: #94a3b8;"; // text-slate-400
+        textColor = "color: #475569;"; // text-slate-600
+        lockColor = "color: #94a3b8;";
+      }
+    }
       
     badgeItem.style.cssText = baseCardStyle + stateStyle;
-    
-    const iconColor = isUnlocked ? "color: #fbbf24;" : "color: #94a3b8; opacity: 0.35;";
-    const textColor = isUnlocked ? "color: #ffffff;" : "color: #94a3b8; opacity: 0.55;";
     
     badgeItem.innerHTML = `
       <!-- Lock Badge for Locked State -->
       ${!isUnlocked ? `
-        <div style="position: absolute; top: 6px; right: 8px; opacity: 0.55;">
-          <i class="bi bi-lock-fill" style="font-size: 0.7rem; color: #64748b;"></i>
+        <div style="position: absolute; top: 6px; right: 8px; opacity: 0.75;">
+          <i class="bi bi-lock-fill" style="font-size: 0.7rem; ${lockColor}"></i>
         </div>
       ` : ""}
       
@@ -260,7 +305,7 @@ function renderBadgeWall(containerId) {
       </div>
       
       <!-- Short Title Only -->
-      <span style="font-size: 0.72rem; font-weight: 500; margin-top: 0.4rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; ${textColor}">
+      <span style="font-size: 0.72rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; ${textColor}">
         ${badge.title}
       </span>
     `;
@@ -276,7 +321,9 @@ function renderBadgeWall(containerId) {
     badgeItem.onmouseenter = () => {
       badgeItem.style.transform = "scale(1.05)";
       if (isUnlocked) {
-        badgeItem.style.boxShadow = "0 4px 12px rgba(245, 158, 11, 0.15)";
+        badgeItem.style.boxShadow = isDark 
+          ? "0 4px 12px rgba(245, 158, 11, 0.1)" 
+          : "0 4px 12px rgba(217, 119, 6, 0.15)";
       }
     };
     badgeItem.onmouseleave = () => {
