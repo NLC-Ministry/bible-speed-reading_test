@@ -1182,8 +1182,6 @@ function fallbackDownload(canvas) {
   } else if (typeof checkAchievements === "function") {
     checkAchievements();
   }
-  
-  alert('當前環境不支援原生分享（可能因未部署 HTTPS），已自動將精美金句圖片下載至您的裝置相簿！');
 }
 
 async function syncVerseLikes(verseSource) {
