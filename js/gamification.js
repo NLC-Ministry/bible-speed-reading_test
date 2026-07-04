@@ -68,7 +68,8 @@ async function checkAchievements() {
   }
 
   // 4. Check Share Verse
-  if (localStorage.getItem("has_shared_verse") === "true" && !unlocked.includes("share_verse")) {
+  const isShared = localStorage.getItem("has_shared_verse") === "true" || localStorage.getItem("badge_share_verse_unlocked") === "true";
+  if (isShared && !unlocked.includes("share_verse")) {
     newlyUnlocked.push("share_verse");
   }
 

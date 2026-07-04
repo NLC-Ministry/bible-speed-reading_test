@@ -1134,6 +1134,7 @@ async function shareAsImage(e) {
           });
           
           localStorage.setItem("has_shared_verse", "true");
+          localStorage.setItem("badge_share_verse_unlocked", "true");
           if (typeof checkAchievements === "function") {
             checkAchievements();
           }
@@ -1150,6 +1151,7 @@ async function shareAsImage(e) {
         link.click();
         
         localStorage.setItem("has_shared_verse", "true");
+        localStorage.setItem("badge_share_verse_unlocked", "true");
         if (typeof checkAchievements === "function") {
           checkAchievements();
         }
