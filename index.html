@@ -16,13 +16,13 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" crossorigin="anonymous">
   <!-- Vanilla CSS Stylesheet -->
-  <link rel="stylesheet" href="index.css?v=bottom-sheet-contrast-20260703-1">
+  <link rel="stylesheet" href="index.css?v=20260704_v2">
   <!-- Supabase JS Client library -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
   <!-- Chart.js for premium stats dashboard -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js" crossorigin="anonymous"></script>
 </head>
 <body class="light-theme">
   <!-- App Container -->
@@ -1215,20 +1215,32 @@
   </div>
 
   <!-- Import application modules -->
-  <script src="config.js?v=nlc-20260701-18"></script>
-  <script src="js/data/bible_data.js?v=immersive-reader-20260702-1"></script>
-  <script src="js/data/bible_verse_counts.js"></script>
+  <script src="config.js?v=20260704_v2"></script>
+  <script src="js/data/bible_data.js?v=20260704_v2"></script>
+  <script src="js/data/bible_verse_counts.js?v=20260704_v2"></script>
   <script>
     // 💡 行動端除錯工具：將所有 JavaScript 執行期錯誤捕獲並以紅底白字橫幅顯示在畫面上，協助排查手機端緩存或載入錯誤
-    window.onerror = function(message, source, lineno, colno, error) {
-      const filename = source ? source.split('/').pop().split('?')[0] : 'unknown';
-      const errText = `【JS 執行錯誤】\n訊息: ${message}\n檔案: ${filename}\n位置: 第 ${lineno} 行，第 ${colno} 字元`;
+    window.onerror = function (message, source, lineno, colno, error) {
+      // 判斷是否為無用資訊的 Script error
+      let errorMsg = message;
+      if (message === "Script error.") {
+        errorMsg = "【跨域或快取引起的腳本錯誤】請檢查員嘗試「強制重新整理 (Ctrl+F5)」或清除快取！最新版本號已更新。";
+      }
+      
+      // 如果有完整的 error object，印出詳細的 call stack 追蹤
+      if (error && error.stack) {
+        errorMsg += "\n追蹤: " + error.stack.split('\n').slice(0, 2).join('\n');
+      }
+
+      const filename = source ? source.split('/').pop().split('?')[0] : "可能是外部 CDN 或快取檔案";
+      const errText = `【JS 執行錯誤】\n訊息: ${errorMsg}\n檔案: ${filename}\n位置: 第 ${lineno || "未知"} 行，第 ${colno || "未知"} 字元`;
       console.error(errText, error);
+
       const errDiv = document.createElement("div");
       errDiv.style.cssText = "position:fixed;top:15px;left:15px;right:15px;background:rgba(239,68,68,0.95);color:white;padding:12px;border-radius:8px;font-size:11px;font-family:monospace;z-index:999999;box-shadow:0 4px 15px rgba(0,0,0,0.3);pointer-events:none;white-space:pre-wrap;line-height:1.5;font-weight:bold;border:2px solid #fecaca;";
       errDiv.textContent = errText;
       document.body.appendChild(errDiv);
-      setTimeout(() => { errDiv.remove(); }, 10000);
+      setTimeout(() => { errDiv.remove(); }, 15000);
       return false;
     };
 
@@ -1243,7 +1255,7 @@
     // Load local demo data only during local development.
     if (["localhost", "127.0.0.1", "::1"].includes(window.location.hostname)) {
       const mockScript = document.createElement("script");
-      mockScript.src = "demo/mock_stats.js";
+      mockScript.src = "demo/mock_stats.js?v=20260704_v2";
       mockScript.onerror = () => console.warn("Local demo data was not loaded.");
       document.head.appendChild(mockScript);
     }
@@ -1265,16 +1277,16 @@
     </div>
   </div>
 
-  <script src="js/state.js?v=app-shell-20260702-3"></script>
-  <script src="js/auth.js?v=nlc-edge-20260701-99"></script>
-  <script src="js/views/plan.js?v=next-progress-20260703-1"></script>
-  <script src="js/db.js?v=nlc-edge-20260702-3"></script>
-  <script src="js/utils.js?v=nlc-edge-20260701-99"></script>
-  <script src="js/gamification.js?v=nlc-edge-20260701-99"></script>
-  <script src="js/views/dashboard.js?v=nlc-edge-20260702-3"></script>
-  <script src="js/views/reader.js?v=reader-module-20260702-101"></script>
-  <script src="js/views/stats.js?v=nlc-edge-20260701-99"></script>
-  <script src="js/views/profile.js?v=nlc-edge-20260702-2"></script>
-  <script src="js/main.js?v=nlc-edge-20260702-2"></script>
+  <script src="js/state.js?v=20260704_v2"></script>
+  <script src="js/auth.js?v=20260704_v2"></script>
+  <script src="js/views/plan.js?v=20260704_v2"></script>
+  <script src="js/db.js?v=20260704_v2"></script>
+  <script src="js/utils.js?v=20260704_v2"></script>
+  <script src="js/gamification.js?v=20260704_v2"></script>
+  <script src="js/views/dashboard.js?v=20260704_v2"></script>
+  <script src="js/views/reader.js?v=20260704_v2"></script>
+  <script src="js/views/stats.js?v=20260704_v2"></script>
+  <script src="js/views/profile.js?v=20260704_v2"></script>
+  <script src="js/main.js?v=20260704_v2"></script>
 </body>
 </html>
