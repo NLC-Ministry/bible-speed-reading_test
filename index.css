@@ -6418,3 +6418,55 @@ body.dark-theme .calendar-day .micro-progress-bar {
   font-size: 0.6rem;
   height: 14px;
 }
+
+/* Fluid Bento Shell Styles */
+.bento-card {
+  border-radius: 1rem;
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 84px;
+  text-align: left;
+  border: 1px solid rgba(241, 245, 249, 0.6); /* border-slate-100/60 */
+  box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.03);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: rgba(248, 250, 252, 0.8); /* bg-slate-50/80 */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.dark-theme .bento-card {
+  background-color: rgba(9, 9, 11, 0.4); /* dark:bg-zinc-950/40 */
+  border-color: rgba(39, 39, 42, 0.4); /* dark:border-zinc-900/40 */
+}
+
+/* Upgraded Glass Card container */
+.glass-card-upgrade {
+  border-radius: 1.25rem;
+  padding: 1.25rem;
+  border: 1px solid rgba(241, 245, 249, 0.6);
+  box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.03);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  background-color: rgba(248, 250, 252, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.dark-theme .glass-card-upgrade {
+  background-color: rgba(9, 9, 11, 0.4);
+  border-color: rgba(39, 39, 42, 0.4);
+}
+
+/* Segmented Capsule Control */
+.capsule-segmented-control {
+  display: flex;
+  background: rgba(148, 163, 184, 0.08);
+  padding: 2px;
+  border-radius: 9999px;
+  border: 1px solid rgba(148, 163, 184, 0.08);
+}
+.dark-theme .capsule-segmented-control {
+  background: rgba(63, 63, 70, 0.3);
+  border-color: rgba(63, 63, 70, 0.2);
+}

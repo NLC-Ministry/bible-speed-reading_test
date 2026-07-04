@@ -752,21 +752,30 @@ async function renderPilgrimageTrail() {
       const y = tilePos.y + Math.sin(angle) * offset;
       const isMe = m.name === state.currentUser.name;
 
+      // Draw outer glowing ring (equivalent to ring-2 ring-violet-400/30)
       ctx.save();
-      ctx.shadowColor   = "rgba(0, 0, 0, 0.22)";
-      ctx.shadowBlur    = 5;
-      ctx.shadowOffsetY = 2;
       ctx.beginPath();
-      ctx.arc(x, y, 13, 0, Math.PI * 2);
+      ctx.arc(x, y, 15.5, 0, Math.PI * 2);
+      ctx.strokeStyle = "rgba(139, 92, 246, 0.35)";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.save();
+      ctx.shadowColor   = "rgba(0, 0, 0, 0.15)";
+      ctx.shadowBlur    = 4;
+      ctx.shadowOffsetY = 1;
+      ctx.beginPath();
+      ctx.arc(x, y, 12, 0, Math.PI * 2);
       ctx.fillStyle = getMemberColor(m.name);
       ctx.fill();
-      ctx.lineWidth   = isMe ? 2.5 : 1.5;
+      ctx.lineWidth   = isMe ? 2 : 1;
       ctx.strokeStyle = "#ffffff";
       ctx.stroke();
       ctx.restore();
 
       ctx.fillStyle    = "#ffffff";
-      ctx.font         = "bold 9px sans-serif";
+      ctx.font         = "bold 8px sans-serif";
       ctx.textAlign    = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(m.name.substring(0, 2), x, y);
@@ -778,15 +787,14 @@ async function renderPilgrimageTrail() {
   if (legendEl) {
     if (currentRound === 1) {
       legendEl.innerHTML = `
-        <span style="display:flex;align-items:center;gap:4px;margin-right:8px;"><span style="display:inline-block;width:14px;height:14px;background:${pal.myFill};border:2px solid ${pal.myStroke};border-radius:50%;"></span>我已讀</span>
-        <span style="display:flex;align-items:center;gap:4px;margin-right:8px;"><span style="display:inline-block;width:10px;height:10px;background:${pal.grpFill};border:1.5px solid ${pal.grpStroke};border-radius:50%;"></span>組員已讀</span>
-        <span style="display:flex;align-items:center;gap:4px;margin-right:8px;"><span style="display:inline-block;width:18px;height:18px;background:${pal.myFill};border:2.5px solid ${pal.myStroke};border-radius:50%;font-size:9px;text-align:center;line-height:18px;"></span>大圈＝新書卷</span>
-        <span style="display:flex;align-items:center;gap:4px;"><span style="display:inline-block;width:10px;height:10px;background:#f8fafc;border:1.5px solid #cbd5e1;border-radius:50%;"></span>後續道路</span>`;
+        <span class="px-2 py-0.5 rounded-full bg-slate-100/80 dark:bg-zinc-900/50 flex items-center gap-1" style="display:inline-flex;align-items:center;white-space:nowrap;"><span style="display:inline-block;width:6px;height:6px;background:${pal.myStroke};border-radius:50%;"></span>我</span>
+        <span class="px-2 py-0.5 rounded-full bg-slate-100/80 dark:bg-zinc-900/50 flex items-center gap-1" style="display:inline-flex;align-items:center;white-space:nowrap;"><span style="display:inline-block;width:6px;height:6px;background:${pal.grpStroke};border-radius:50%;"></span>組員</span>
+        <span class="px-2 py-0.5 rounded-full bg-slate-100/80 dark:bg-zinc-900/50 flex items-center gap-1" style="display:inline-flex;align-items:center;white-space:nowrap;"><span style="display:inline-block;width:6px;height:6px;background:#cbd5e1;border-radius:50%;"></span>後續</span>`;
     } else {
       legendEl.innerHTML = `
-        <span style="display:flex;align-items:center;gap:4px;margin-right:8px;"><span style="display:inline-block;width:14px;height:14px;background:${pal.myFill};border:2px solid ${pal.myStroke};border-radius:50%;box-shadow:0 0 6px ${pal.myStroke};"></span>第${currentRound}遍已讀</span>
-        <span style="display:flex;align-items:center;gap:4px;margin-right:8px;"><span style="display:inline-block;width:10px;height:10px;background:transparent;border:1.5px solid rgba(99,102,241,0.4);border-radius:50%;"></span>第1遍足跡</span>
-        <span style="display:flex;align-items:center;gap:4px;"><span style="display:inline-block;width:10px;height:10px;background:#f8fafc;border:1.5px solid #cbd5e1;border-radius:50%;"></span>後續道路</span>`;
+        <span class="px-2 py-0.5 rounded-full bg-slate-100/80 dark:bg-zinc-900/50 flex items-center gap-1" style="display:inline-flex;align-items:center;white-space:nowrap;"><span style="display:inline-block;width:6px;height:6px;background:${pal.myStroke};border-radius:50%;"></span>R${currentRound}</span>
+        <span class="px-2 py-0.5 rounded-full bg-slate-100/80 dark:bg-zinc-900/50 flex items-center gap-1" style="display:inline-flex;align-items:center;white-space:nowrap;"><span style="display:inline-block;width:6px;height:6px;background:rgba(99,102,241,0.6);border-radius:50%;"></span>R1足跡</span>
+        <span class="px-2 py-0.5 rounded-full bg-slate-100/80 dark:bg-zinc-900/50 flex items-center gap-1" style="display:inline-flex;align-items:center;white-space:nowrap;"><span style="display:inline-block;width:6px;height:6px;background:#cbd5e1;border-radius:50%;"></span>後續</span>`;
     }
   }
 

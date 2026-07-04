@@ -2768,6 +2768,8 @@ async function renderPlanStatsView() {
       const progressStatus = getPlanProgressStatus(state.activePlan);
       reportStatProgressStatus.textContent = progressStatus.label;
       reportStatProgressStatus.style.color = progressStatus.color;
+      reportStatProgressStatus.style.backgroundColor = progressStatus.bg;
+      reportStatProgressStatus.style.borderColor = progressStatus.color + "33";
     }
 
     // 4. Makeup/Catch up days (🛡️ 進度救援)

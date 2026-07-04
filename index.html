@@ -590,70 +590,70 @@
               <div class="grid grid-cols-2 gap-3 px-4 pt-4" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; width: 100%;">
                 
                 <!-- 卡片 1 - 累積閱讀章數 (核心主卡，橫跨兩欄) -->
-                <div class="col-span-2 p-4 rounded-2xl bg-gradient-to-r from-violet-50 to-indigo-50 dark:from-violet-950/20 dark:to-indigo-950/20 border border-slate-100 dark:border-zinc-800/40 flex flex-col justify-between" style="grid-column: span 2 / span 2; border-radius: 1rem; padding: 1rem; border: 1px solid rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between; min-height: 90px; text-align: left;">
+                <div class="col-span-2 bento-card bg-gradient-to-r from-violet-500/10 to-indigo-500/5 dark:from-violet-500/5 dark:to-indigo-500/2" style="grid-column: span 2 / span 2;">
                   <div class="flex items-center justify-between w-full">
-                    <div style="font-size: 1.875rem; font-weight: 800;" class="text-slate-800 dark:text-white">
+                    <div class="font-black tracking-tight text-slate-800 dark:text-neutral-100" style="font-size: 2.25rem; line-height: 1;">
                       <span id="report-stat-total-chapters">0</span>
-                      <span style="font-size: 0.875rem; font-weight: 700; margin-left: 0.1rem; color: var(--text-secondary);">章</span>
+                      <span class="text-xs font-semibold text-slate-400 dark:text-zinc-500 ml-0.5">章</span>
                     </div>
-                    <i class="bi bi-book-half text-violet-500 dark:text-violet-400" style="font-size: 1.25rem;"></i>
+                    <i class="bi bi-book-half text-violet-500" style="font-size: 1.25rem;"></i>
                   </div>
-                  <span class="text-xs text-slate-500 dark:text-zinc-400 font-medium" style="margin-top: 0.25rem;">累積閱讀章數</span>
+                  <span class="text-xs font-medium text-slate-400 dark:text-zinc-400" style="margin-top: 0.35rem;">累積閱讀章數</span>
                 </div>
 
                 <!-- 卡片 2 - 最高連續 -->
-                <div class="p-3 rounded-2xl bg-white dark:bg-zinc-900/60 border border-slate-100 dark:border-zinc-800/40 flex flex-col justify-between" style="border-radius: 1rem; padding: 0.75rem; border: 1px solid rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between; min-height: 80px; text-align: left;">
+                <div class="bento-card">
                   <div class="flex items-center justify-between w-full">
-                    <div style="font-size: 1.5rem; font-weight: 800;" class="text-slate-800 dark:text-white">
+                    <div class="font-black tracking-tight text-slate-800 dark:text-neutral-100" style="font-size: 1.75rem; line-height: 1;">
                       <span id="report-stat-streak">0</span>
-                      <span style="font-size: 0.75rem; font-weight: 700; margin-left: 0.1rem; color: var(--text-secondary);">天</span>
+                      <span class="text-xs font-semibold text-slate-400 dark:text-zinc-500 ml-0.5">天</span>
                     </div>
                     <i class="bi bi-fire text-amber-500" style="font-size: 1.15rem;"></i>
                   </div>
-                  <span class="text-xs text-slate-500 dark:text-zinc-400 font-medium" style="margin-top: 0.25rem;">最高連續</span>
+                  <span class="text-xs font-medium text-slate-400 dark:text-zinc-400" style="margin-top: 0.35rem;">最高連續</span>
                 </div>
 
                 <!-- 卡片 3 - 累計完成 -->
-                <div class="p-3 rounded-2xl bg-white dark:bg-zinc-900/60 border border-slate-100 dark:border-zinc-800/40 flex flex-col justify-between" style="border-radius: 1rem; padding: 0.75rem; border: 1px solid rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between; min-height: 80px; text-align: left;">
+                <div class="bento-card">
                   <div class="flex items-center justify-between w-full">
-                    <div style="font-size: 1.5rem; font-weight: 800;" class="text-slate-800 dark:text-white">
+                    <div class="font-black tracking-tight text-slate-800 dark:text-neutral-100" style="font-size: 1.75rem; line-height: 1;">
                       <span id="report-stat-completed">0</span>
-                      <span style="font-size: 0.75rem; font-weight: 700; margin-left: 0.1rem; color: var(--text-secondary);">天</span>
+                      <span class="text-xs font-semibold text-slate-400 dark:text-zinc-500 ml-0.5">天</span>
                     </div>
                     <i class="bi bi-calendar-check text-emerald-500" style="font-size: 1.15rem;"></i>
                   </div>
-                  <span class="text-xs text-slate-500 dark:text-zinc-400 font-medium" style="margin-top: 0.25rem;">累計完成</span>
+                  <span class="text-xs font-medium text-slate-400 dark:text-zinc-400" style="margin-top: 0.35rem;">累計完成</span>
                   <span id="report-stat-start-date" class="hidden" style="display: none;"></span>
                 </div>
 
                 <!-- 卡片 4 - 進度狀態 -->
-                <div class="p-3 rounded-2xl bg-white dark:bg-zinc-900/60 border border-slate-100 dark:border-zinc-800/40 flex flex-col justify-between" style="border-radius: 1rem; padding: 0.75rem; border: 1px solid rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between; min-height: 80px; text-align: left;">
+                <div class="bento-card">
                   <div class="flex items-center justify-between w-full">
-                    <div style="font-size: 1.125rem; font-weight: 800;" class="text-slate-800 dark:text-white">
-                      <span id="report-stat-progress-status">進度一致</span>
+                    <div class="font-bold text-slate-800 dark:text-neutral-100" style="font-size: 0.85rem; line-height: 1;">
+                      <span id="report-stat-progress-status" class="px-2 py-0.5 rounded-full bg-slate-200/50 dark:bg-zinc-800/60 font-semibold" style="font-size: 0.75rem; display: inline-block;">第 2 遍</span>
                     </div>
                     <i class="bi bi-arrow-repeat text-sky-500" style="font-size: 1.15rem;"></i>
                   </div>
-                  <span class="text-xs text-slate-500 dark:text-zinc-400 font-medium" style="margin-top: 0.25rem;">進度狀態</span>
+                  <span class="text-xs font-medium text-slate-400 dark:text-zinc-400" style="margin-top: 0.35rem;">進度狀態</span>
                 </div>
 
                 <!-- 卡片 5 - 補讀天數 -->
-                <div class="p-3 rounded-2xl bg-white dark:bg-zinc-900/60 border border-slate-100 dark:border-zinc-800/40 flex flex-col justify-between" style="border-radius: 1rem; padding: 0.75rem; border: 1px solid rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between; min-height: 80px; text-align: left;">
+                <div class="bento-card">
                   <div class="flex items-center justify-between w-full">
-                    <div style="font-size: 1.5rem; font-weight: 800; color: #ef4444;" class="text-rose-500">
+                    <div class="font-black tracking-tight text-rose-500" style="font-size: 1.75rem; line-height: 1;">
                       <span id="report-stat-makeup">0</span>
-                      <span style="font-size: 0.75rem; font-weight: 700; margin-left: 0.1rem; color: #f43f5e;">天</span>
+                      <span class="text-xs font-semibold text-rose-400 dark:text-rose-600 ml-0.5">天</span>
                     </div>
                     <i class="bi bi-hourglass-split text-rose-500" style="font-size: 1.15rem;"></i>
                   </div>
-                  <span class="text-xs text-slate-500 dark:text-zinc-400 font-medium" style="margin-top: 0.25rem;">補讀天數</span>
+                  <span class="text-xs font-medium text-slate-400 dark:text-zinc-400" style="margin-top: 0.35rem;">補讀天數</span>
                 </div>
 
               </div>
 
               <!-- 第二層：微縮 GitHub 風「讀經熱點地圖」卡片 -->
-              <div class="mx-4 my-2 p-4 rounded-2xl bg-white dark:bg-zinc-900/60 border border-slate-100 dark:border-zinc-800/40" style="border-radius: 1rem; padding: 1rem; border: 1px solid rgba(0,0,0,0.05); margin-left: 1rem; margin-right: 1rem; margin-top: 0.5rem; margin-bottom: 0.5rem;">
-                <h3 class="card-title text-slate-800 dark:text-white" style="margin-bottom: 0.75rem; font-size: 0.95rem; font-weight: 800; text-align: left;">個人讀經熱點地圖</h3>
+              <div class="glass-card-upgrade mx-4 my-2">
+                <h3 class="card-title text-slate-800 dark:text-neutral-100" style="margin-bottom: 0.75rem; font-size: 0.95rem; font-weight: 800; text-align: left;">個人讀經熱點地圖</h3>
                 
                 <div id="bible-heatmap-container" style="overflow-x: auto; width: 100%; display: flex; align-items: center; justify-content: flex-start; padding: 0.25rem 0;">
                   <!-- Generated dynamically -->
@@ -669,15 +669,15 @@
               </div>
 
               <!-- 第三層：一線大廠感「每日讀經章數趨勢圖」卡片 -->
-              <div class="mx-4 my-3 p-4 rounded-2xl bg-white dark:bg-zinc-900/60 border border-slate-100 dark:border-zinc-800/40" style="border-radius: 1rem; padding: 1rem; border: 1px solid rgba(0,0,0,0.05); margin-left: 1rem; margin-right: 1rem; margin-top: 0.5rem; margin-bottom: 0.5rem;">
+              <div class="glass-card-upgrade mx-4 my-3">
                 <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; margin-bottom: 0.8rem;">
-                  <h3 class="card-title text-slate-800 dark:text-white" style="margin-bottom: 0; font-size: 0.95rem; font-weight: 800; text-align: left;">每日讀經章數趨勢</h3>
+                  <h3 class="card-title text-slate-800 dark:text-neutral-100" style="margin-bottom: 0; font-size: 0.95rem; font-weight: 800; text-align: left;">每日讀經章數趨勢</h3>
                   
                   <!-- 右上角微縮切換鈕 Segmented Control -->
-                  <div style="display: flex; background: var(--bg-input); padding: 2px; border-radius: 8px; border: 1px solid var(--border-card);">
-                    <button id="trend-range-week" style="background: none; border: none; color: var(--text-muted); font-size: 0.72rem; font-weight: 800; padding: 0.25rem 0.55rem; border-radius: 6px; cursor: pointer; transition: all 0.2s;" onclick="window.changePersonalTrendRange('week')">週</button>
-                    <button id="trend-range-month" style="background: none; border: none; color: var(--text-muted); font-size: 0.72rem; font-weight: 800; padding: 0.25rem 0.55rem; border-radius: 6px; cursor: pointer; transition: all 0.2s;" onclick="window.changePersonalTrendRange('month')">月</button>
-                    <button id="trend-range-year" style="background: none; border: none; color: var(--text-muted); font-size: 0.72rem; font-weight: 800; padding: 0.25rem 0.55rem; border-radius: 6px; cursor: pointer; transition: all 0.2s;" onclick="window.changePersonalTrendRange('year')">年</button>
+                  <div class="capsule-segmented-control">
+                    <button id="trend-range-week" style="background: none; border: none; color: var(--text-muted); font-size: 0.72rem; font-weight: 800; padding: 0.25rem 0.55rem; border-radius: 9999px; cursor: pointer; transition: all 0.2s;" onclick="window.changePersonalTrendRange('week')">週</button>
+                    <button id="trend-range-month" style="background: none; border: none; color: var(--text-muted); font-size: 0.72rem; font-weight: 800; padding: 0.25rem 0.55rem; border-radius: 9999px; cursor: pointer; transition: all 0.2s;" onclick="window.changePersonalTrendRange('month')">月</button>
+                    <button id="trend-range-year" style="background: none; border: none; color: var(--text-muted); font-size: 0.72rem; font-weight: 800; padding: 0.25rem 0.55rem; border-radius: 9999px; cursor: pointer; transition: all 0.2s;" onclick="window.changePersonalTrendRange('year')">年</button>
                   </div>
                 </div>
                 <div style="position: relative; height: 180px; width: 100%;">
@@ -687,77 +687,78 @@
             </div>
 
             <!-- 團體統計部分 -->
+            <!-- 團體統計部分 -->
             <div id="stats-group-section" class="hidden" style="display: flex; flex-direction: column; gap: 0.8rem; width: 100%;">
               
               <!-- 第一層：5格不對稱團體便當盒網格 + 融合三色進度條 -->
               <div class="grid grid-cols-2 gap-3 px-4 pt-4" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; width: 100%;">
                 
                 <!-- 卡片 1 - 總閱讀章數 (核心主卡，橫跨兩欄) -->
-                <div class="col-span-2 p-4 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border border-slate-100 dark:border-zinc-800/40 flex flex-col justify-between" style="grid-column: span 2 / span 2; border-radius: 1rem; padding: 1rem; border: 1px solid rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between; min-height: 90px; text-align: left;">
+                <div class="col-span-2 bento-card bg-gradient-to-r from-blue-500/10 to-indigo-500/5 dark:from-blue-500/5 dark:to-indigo-500/2" style="grid-column: span 2 / span 2;">
                   <div class="flex items-center justify-between w-full">
-                    <div style="font-size: 1.875rem; font-weight: 800;" class="text-slate-800 dark:text-white">
+                    <div class="font-black tracking-tight text-slate-800 dark:text-neutral-100" style="font-size: 2.25rem; line-height: 1;">
                       <span id="grp-total-read">0</span>
-                      <span style="font-size: 0.875rem; font-weight: 700; margin-left: 0.1rem; color: var(--text-secondary);">章</span>
+                      <span class="text-xs font-semibold text-slate-400 dark:text-zinc-500 ml-0.5">章</span>
                     </div>
-                    <i class="bi bi-people-fill text-blue-500 dark:text-blue-400" style="font-size: 1.25rem;"></i>
+                    <i class="bi bi-people-fill text-blue-500" style="font-size: 1.25rem;"></i>
                   </div>
-                  <span class="text-xs text-slate-500 dark:text-zinc-400 font-medium" style="margin-top: 0.25rem;" id="grp-label-total-read">總閱讀章數</span>
+                  <span class="text-xs font-medium text-slate-400 dark:text-zinc-400" style="margin-top: 0.35rem;" id="grp-label-total-read">總閱讀章數</span>
                 </div>
 
                 <!-- 卡片 2 - 參與人數 -->
-                <div class="p-3 rounded-2xl bg-white dark:bg-zinc-900/60 border border-slate-100 dark:border-zinc-800/40 flex flex-col justify-between" style="border-radius: 1rem; padding: 0.75rem; border: 1px solid rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between; min-height: 80px; text-align: left;">
+                <div class="bento-card">
                   <div class="flex items-center justify-between w-full">
-                    <div style="font-size: 1.5rem; font-weight: 800;" class="text-slate-800 dark:text-white">
+                    <div class="font-black tracking-tight text-slate-800 dark:text-neutral-100" style="font-size: 1.75rem; line-height: 1;">
                       <span id="grp-total-members">0</span>
-                      <span style="font-size: 0.75rem; font-weight: 700; margin-left: 0.1rem; color: var(--text-secondary);">人</span>
+                      <span class="text-xs font-semibold text-slate-400 dark:text-zinc-500 ml-0.5">人</span>
                     </div>
                     <i class="bi bi-people text-emerald-500" style="font-size: 1.15rem;"></i>
                   </div>
-                  <span class="text-xs text-slate-500 dark:text-zinc-400 font-medium" style="margin-top: 0.25rem;" id="grp-label-members">參與人數</span>
+                  <span class="text-xs font-medium text-slate-400 dark:text-zinc-400" style="margin-top: 0.35rem;" id="grp-label-members">參與人數</span>
                 </div>
 
                 <!-- 卡片 3 - 每日活躍 -->
-                <div class="p-3 rounded-2xl bg-white dark:bg-zinc-900/60 border border-slate-100 dark:border-zinc-800/40 flex flex-col justify-between" style="border-radius: 1rem; padding: 0.75rem; border: 1px solid rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between; min-height: 80px; text-align: left;">
+                <div class="bento-card">
                   <div class="flex items-center justify-between w-full">
-                    <div style="font-size: 1.5rem; font-weight: 800;" class="text-slate-800 dark:text-white">
+                    <div class="font-black tracking-tight text-slate-800 dark:text-neutral-100" style="font-size: 1.75rem; line-height: 1;">
                       <span id="grp-active-members">0</span>
-                      <span style="font-size: 0.75rem; font-weight: 700; margin-left: 0.1rem; color: var(--text-secondary);">人</span>
+                      <span class="text-xs font-semibold text-slate-400 dark:text-zinc-500 ml-0.5">人</span>
                     </div>
                     <i class="bi bi-lightning-charge text-amber-500" style="font-size: 1.15rem;"></i>
                   </div>
-                  <span class="text-xs text-slate-500 dark:text-zinc-400 font-medium" style="margin-top: 0.25rem;" id="grp-label-active">每日活躍</span>
+                  <span class="text-xs font-medium text-slate-400 dark:text-zinc-400" style="margin-top: 0.35rem;" id="grp-label-active">每日活躍</span>
                 </div>
 
                 <!-- 卡片 4 - 今日完成% -->
-                <div class="p-3 rounded-2xl bg-white dark:bg-zinc-900/60 border border-slate-100 dark:border-zinc-800/40 flex flex-col justify-between" style="border-radius: 1rem; padding: 0.75rem; border: 1px solid rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between; min-height: 80px; text-align: left;">
+                <div class="bento-card">
                   <div class="flex items-center justify-between w-full">
-                    <div style="font-size: 1.5rem; font-weight: 800;" class="text-slate-800 dark:text-white">
+                    <div class="font-black tracking-tight text-slate-800 dark:text-neutral-100" style="font-size: 1.75rem; line-height: 1;">
                       <span id="grp-today-rate">0</span>
-                      <span style="font-size: 0.75rem; font-weight: 700; margin-left: 0.1rem; color: var(--text-secondary);">%</span>
+                      <span class="text-xs font-semibold text-slate-400 dark:text-zinc-500 ml-0.5">%</span>
                     </div>
                     <i class="bi bi-check-circle text-sky-500" style="font-size: 1.15rem;"></i>
                   </div>
                   
                   <!-- 三色進度條 -->
-                  <div class="w-full h-2 bg-slate-100 dark:bg-neutral-800 rounded-full flex overflow-hidden mt-1.5" style="display: flex; height: 8px; border-radius: 9999px; overflow: hidden; background-color: rgba(148,163,184,0.12);">
+                  <div class="w-full bg-slate-100 dark:bg-neutral-850 rounded-full flex overflow-hidden mt-1.5" style="display: flex; height: 6px; border-radius: 9999px; overflow: hidden; background-color: rgba(148,163,184,0.12);">
                     <div id="grp-today-bar-behind" class="bg-rose-400 h-full" style="width: 0%" title="落後"></div>
                     <div id="grp-today-bar-on-schedule" class="bg-sky-400 h-full" style="width: 0%" title="在進度上"></div>
                     <div id="grp-today-bar-ahead" class="bg-emerald-400 h-full" style="width: 0%" title="超前"></div>
                   </div>
                   
-                  <span class="text-[10px] text-slate-400 dark:text-zinc-500 font-medium" style="margin-top: 0.25rem;">今日完成 %</span>
+                  <span class="text-xs font-medium text-slate-400 dark:text-zinc-400" style="margin-top: 0.35rem;">今日完成 %</span>
                 </div>
 
                 <!-- 卡片 5 - 複讀人數 -->
-                <div class="p-3 rounded-2xl bg-white dark:bg-zinc-900/60 border border-slate-100 dark:border-zinc-800/40 flex flex-col justify-between" style="border-radius: 1rem; padding: 0.75rem; border: 1px solid rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between; min-height: 80px; text-align: left;">
+                <div class="bento-card">
                   <div class="flex items-center justify-between w-full">
-                    <div style="font-size: 1.5rem; font-weight: 800;" class="text-slate-800 dark:text-white">
+                    <div class="font-black tracking-tight text-slate-800 dark:text-neutral-100" style="font-size: 1.75rem; line-height: 1;">
                       <span id="grp-reread-count">0</span>
-                      <span style="font-size: 0.75rem; font-weight: 700; margin-left: 0.1rem; color: var(--text-secondary);">人</span>
+                      <span class="text-xs font-semibold text-slate-400 dark:text-zinc-500 ml-0.5">人</span>
                     </div>
                     <i class="bi bi-arrow-repeat text-indigo-500" style="font-size: 1.15rem;"></i>
                   </div>
-                  <span class="text-xs text-slate-500 dark:text-zinc-400 font-medium" style="margin-top: 0.25rem;">複讀人數</span>
+                  <span class="text-xs font-medium text-slate-400 dark:text-zinc-400" style="margin-top: 0.35rem;">複讀人數</span>
                 </div>
 
               </div>
@@ -768,9 +769,9 @@
               </div>
 
               <!-- 第二層：C位重塑「屬靈旅程 — 牧區競賽」地圖卡片 -->
-              <div class="mx-4 my-3 p-4 rounded-2xl bg-white dark:bg-zinc-900/60 border border-slate-100 dark:border-zinc-800/40 shadow-md pilgrimage-card" id="grp-pilgrimage-card" style="border-radius: 1rem; padding: 1rem; border: 1px solid rgba(0,0,0,0.05); margin-left: 1rem; margin-right: 1rem; margin-top: 0.5rem; margin-bottom: 0.5rem; display: flex; flex-direction: column;">
+              <div class="glass-card-upgrade mx-4 my-3 pilgrimage-card" id="grp-pilgrimage-card" style="display: flex; flex-direction: column;">
                 <div class="card-header-flex" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-                  <h3 class="card-title text-slate-800 dark:text-white" style="margin-bottom: 0; font-size: 0.95rem; font-weight: 800; display: flex; align-items: center; gap: 0.25rem; text-align: left;">
+                  <h3 class="card-title text-slate-800 dark:text-neutral-100" style="margin-bottom: 0; font-size: 0.95rem; font-weight: 800; display: flex; align-items: center; gap: 0.25rem; text-align: left;">
                     🏃 屬靈旅程 — 牧區競賽
                   </h3>
                   <!-- 頂部選單極簡化 -->
@@ -786,8 +787,8 @@
               </div>
 
               <!-- 第三層：收斂版「團隊讀經熱點地圖」卡片 -->
-              <div class="mx-4 my-2 p-4 rounded-2xl bg-white dark:bg-zinc-900/60 border border-slate-100 dark:border-zinc-800/40 shadow-sm" id="grp-heatmap-card" style="border-radius: 1rem; padding: 1rem; border: 1px solid rgba(0,0,0,0.05); margin-left: 1rem; margin-right: 1rem; margin-top: 0.5rem; margin-bottom: 0.5rem;">
-                <h3 class="card-title text-slate-800 dark:text-white" id="grp-heatmap-title" style="margin-bottom: 0.75rem; font-size: 0.95rem; font-weight: 800; text-align: left;">團隊讀經熱點地圖</h3>
+              <div class="glass-card-upgrade mx-4 my-2" id="grp-heatmap-card">
+                <h3 class="card-title text-slate-800 dark:text-neutral-100" id="grp-heatmap-title" style="margin-bottom: 0.75rem; font-size: 0.95rem; font-weight: 800; text-align: left;">團隊讀經熱點地圖</h3>
                 
                 <div id="grp-bible-heatmap-container" style="overflow-x: auto; width: 100%; display: flex; align-items: center; justify-content: flex-start; padding: 0.25rem 0;">
                   <!-- Generated dynamically -->
