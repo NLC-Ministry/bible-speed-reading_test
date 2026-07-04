@@ -974,6 +974,7 @@ async function updateAnnouncementsList() {
 
 let currentVerse = null;
 let isVerseLoading = false;
+let isImgLoading = false;
 
 // Map Chinese book names to English ones for Bible-API.com
 const CHINESE_TO_ENGLISH_BOOKS = {
@@ -994,13 +995,50 @@ const CHINESE_TO_ENGLISH_BOOKS = {
   "馬可福音": "mark"
 };
 
+function getKeywordsForVerse(source) {
+  const src = source || "";
+  if (src.includes("詩篇 119:105")) return "lantern,forest,night";
+  if (src.includes("以賽亞書 40:31")) return "eagle,flying,mountain,sky";
+  if (src.includes("箴言 3:5-6")) return "forest,path,sunrise";
+  if (src.includes("約翰福音 16:33") || src.includes("約約翰福音 16:33")) return "peaceful,calm,ocean";
+  if (src.includes("詩篇 23:1")) return "meadow,pasture,shepherd";
+  if (src.includes("腓立比書 4:6-7")) return "lake,sunset,peaceful";
+  if (src.includes("羅馬書 8:28")) return "sunrise,mountain,morning";
+  if (src.includes("馬太福音 6:34")) return "field,flowers,sunlight";
+  if (src.includes("腓立比書 4:13")) return "climbing,mountain,peak";
+  if (src.includes("以賽亞書 54:10")) return "mountains,river,nature";
+  if (src.includes("約翰福音 3:16")) return "sunlight,glowing,forest";
+  if (src.includes("馬太福音 6:33")) return "wheat,field,golden,sunlight";
+  if (src.includes("以賽亞書 41:10")) return "hand,mountain,pathway";
+  if (src.includes("馬太福音 4:4")) return "wheat,field,sunset";
+  if (src.includes("以賽亞書 53:5")) return "sky,clouds,sunset";
+  if (src.includes("腓立比書 4:4")) return "flowers,sunny,field";
+  if (src.includes("以賽亞書 26:3")) return "lake,calm,reflection";
+  if (src.includes("希伯來書 4:16")) return "light,glowing,clouds";
+  if (src.includes("提摩太前書 4:12")) return "tree,sprout,forest";
+  if (src.includes("約翰福音 13:35")) return "beach,friends,sunset";
+  if (src.includes("馬太福音 11:28")) return "lake,calm,rest";
+  if (src.includes("約書亞記 24:15")) return "cabin,warm,home";
+  if (src.includes("申命記 31:8")) return "pathway,forest,light";
+  if (src.includes("加拉太書 5:22-23")) return "garden,fruits,nature";
+  if (src.includes("約翰福音 13:34")) return "hands,warmth,light";
+  if (src.includes("詩篇 27:1")) return "lighthouse,ocean,night";
+  if (src.includes("約翰福音 1:9")) return "light,canopy,woods";
+  if (src.includes("詩篇 121:7-8")) return "mountain,shield,forest";
+  if (src.includes("希伯來書 4:12")) return "stream,river,forest";
+  if (src.includes("約翰一書 4:19")) return "heart,leaf,sunlight";
+  if (src.includes("馬可福音 9:23")) return "stars,night,space";
+  
+  return "nature,landscape,scenic";
+}
+
 async function flipAndFetchVerse(event) {
   if (event) {
     event.preventDefault();
     event.stopPropagation();
   }
   
-  if (isVerseLoading) return;
+  if (isVerseLoading || isImgLoading) return;
   
   const card = document.getElementById("daily-verse-card");
   const content = document.getElementById("daily-verse-content");
@@ -1073,26 +1111,69 @@ async function flipAndFetchVerse(event) {
       result = await fetchPromise;
     }
     
-    const textEl = document.getElementById("daily-verse-text");
-    const sourceEl = document.getElementById("daily-verse-source");
-    if (textEl) textEl.textContent = result.text;
-    if (sourceEl) sourceEl.textContent = `— ${result.source}`;
+    // Unsplash natural backdrop logic
+    const keywords = getKeywordsForVerse(result.source);
+    let targetImageUrl = `https://source.unsplash.com/featured/1600x900/?${encodeURIComponent(keywords)}`;
     
-    currentVerse = result;
-    isVerseLoading = false;
+    isImgLoading = true;
     
-    card.classList.remove("animate-pulse");
-    if (skeleton) {
-      skeleton.classList.add("hidden");
-      skeleton.style.display = "none";
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2000);
+      const testRes = await fetch(targetImageUrl, { method: "HEAD", signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (testRes.ok) {
+        targetImageUrl = testRes.url;
+      } else {
+        targetImageUrl = `https://loremflickr.com/1600/900/${encodeURIComponent(keywords)}`;
+      }
+    } catch (e) {
+      targetImageUrl = `https://loremflickr.com/1600/900/${encodeURIComponent(keywords)}`;
     }
-    if (content) {
-      content.classList.remove("hidden");
-      content.style.opacity = "0";
+    
+    const img = new Image();
+    img.onload = () => {
+      const bgEl = document.getElementById("daily-verse-bg");
+      if (bgEl) {
+        bgEl.style.backgroundImage = `url('${targetImageUrl}')`;
+        bgEl.style.opacity = "1";
+      }
+      isImgLoading = false;
+      revealContent(result, targetImageUrl);
+    };
+    img.onerror = () => {
+      const bgEl = document.getElementById("daily-verse-bg");
+      if (bgEl) {
+        bgEl.style.backgroundImage = "none";
+        bgEl.style.opacity = "0";
+      }
+      isImgLoading = false;
+      revealContent(result, "");
+    };
+    img.src = targetImageUrl;
+    
+    function revealContent(verseData, imageUrl) {
+      const textEl = document.getElementById("daily-verse-text");
+      const sourceEl = document.getElementById("daily-verse-source");
+      if (textEl) textEl.textContent = verseData.text;
+      if (sourceEl) sourceEl.textContent = `— ${verseData.source}`;
       
-      content.classList.remove("animate-fadeIn");
-      void content.offsetWidth; // Force CSS reflow
-      content.classList.add("animate-fadeIn");
+      currentVerse = { ...verseData, imageUrl };
+      isVerseLoading = false;
+      
+      card.classList.remove("animate-pulse");
+      if (skeleton) {
+        skeleton.classList.add("hidden");
+        skeleton.style.display = "none";
+      }
+      if (content) {
+        content.classList.remove("hidden");
+        content.style.opacity = "0";
+        
+        content.classList.remove("animate-fadeIn");
+        void content.offsetWidth; // Force CSS reflow
+        content.classList.add("animate-fadeIn");
+      }
     }
   }, 300);
 };
@@ -1119,6 +1200,12 @@ function renderDailyVerse() {
     const sourceEl = document.getElementById("daily-verse-source");
     if (textEl) textEl.textContent = currentVerse.text;
     if (sourceEl) sourceEl.textContent = `— ${currentVerse.source}`;
+    
+    const bgEl = document.getElementById("daily-verse-bg");
+    if (bgEl && currentVerse.imageUrl) {
+      bgEl.style.backgroundImage = `url('${currentVerse.imageUrl}')`;
+      bgEl.style.opacity = "1";
+    }
   }
 }
 
