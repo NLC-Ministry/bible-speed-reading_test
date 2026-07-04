@@ -4369,88 +4369,23 @@ function renderPlanScheduleView() {
     renderHorizontalDateStrip();
 
   } else {
-    // 🛡️ 最高安全防線：只要不是 calendar，一律強制回退渲染「卡片模式」，絕不准開天窗！
     // ─────────────────────────────────────────────
-    // Render State A: Card Mode (Themes & Progress Actions Bar)
+    // Render State A: Card Mode → 直接渲染橫向日曆
+    // 黑底封面日期卡 & 三大按鈕已由 HTML 靜態雙雷達狀態條永久取代，不再渲染
     // ─────────────────────────────────────────────
-    const cardContainer = document.createElement("div");
-    cardContainer.id = "card-view-container";
-    cardContainer.className = "w-full";
+    const calContainer = document.createElement("div");
+    calContainer.id = "calendar-view-container";
+    calContainer.className = "w-full mx-0";
 
-    // 1. Purple Cover Card
-    const coverCard = document.createElement("div");
-    coverCard.className = "plan-cover-card";
-    coverCard.id = "plan-detail-cover";
-    coverCard.innerHTML = `
-      <div class="cover-title" id="plan-cover-title">${state.activePlan.name}</div>
-      <div class="cover-subtitle" id="plan-cover-subtitle">
-        <i class="bi bi-calendar3" aria-hidden="true"></i> <span id="plan-cover-dates">${state.activePlan.startDate || ''} ~ ${state.activePlan.endDate || ''}</span>
-      </div>
-    `;
+    const calendarCarousel = document.createElement("div");
+    calendarCarousel.className = "date-carousel";
+    calendarCarousel.id = "plan-date-carousel";
+    calendarCarousel.style.width = "100%";
 
-    // Compute active state based on selected date vs today
-    const now = new Date();
-    const todayYear = now.getFullYear();
-    const todayMonth = now.getMonth() + 1;
-    const todayDay = now.getDate();
-    const todayPlanDay = state.activePlan.days.find(d => {
-      if (Number(d.year) !== todayYear || Number(d.month) !== todayMonth) return false;
-      const parts = d.date.split('/');
-      return parts.length === 2 && Number(parts[1]) === todayDay;
-    });
-    const isTodayActive = todayPlanDay && (state.selectedPlanDay === todayPlanDay.dayNum);
+    calContainer.appendChild(calendarCarousel);
+    container.appendChild(calContainer);
 
-    console.log('🎨 [按鈕視覺更新] 當前高亮亮起的按鈕為：', viewMode === 'calendar' ? '查看日曆' : (isTodayActive ? '今天進度' : '我的進度'));
-
-    // Tailwind CSS dynamic flat theme style rules (No borders, rounded-xl 12px, transition & active scale)
-    const activeStyleStr = "flex: 1; font-weight: 500; font-size: 0.82rem; padding: 0.65rem; display: flex; align-items: center; justify-content: center; gap: 0.3rem; border-radius: 12px; border: 1px solid var(--color-brand) !important; background: var(--color-brand) !important; color: white !important; cursor: pointer; transition: all 0.2s ease; box-shadow: none;";
-    const inactiveStyleStr = "flex: 1; font-weight: 500; font-size: 0.82rem; padding: 0.65rem; display: flex; align-items: center; justify-content: center; gap: 0.3rem; border-radius: 12px; border: 1px solid var(--border-card) !important; background: var(--bg-input) !important; color: var(--text-secondary) !important; cursor: pointer; transition: all 0.2s ease; box-shadow: none;";
-
-    const calActiveStyleStr = "flex: 1.2; font-weight: 500; font-size: 0.82rem; padding: 0.65rem; display: flex; align-items: center; justify-content: center; gap: 0.3rem; border-radius: 12px; border: 1px solid var(--color-brand) !important; background: var(--color-brand) !important; color: white !important; cursor: pointer; transition: all 0.2s ease; box-shadow: none;";
-    const calInactiveStyleStr = "flex: 1.2; font-weight: 500; font-size: 0.82rem; padding: 0.65rem; display: flex; align-items: center; justify-content: center; gap: 0.3rem; border-radius: 12px; border: 1px solid var(--border-card) !important; background: var(--bg-input) !important; color: var(--text-secondary) !important; cursor: pointer; transition: all 0.2s ease; box-shadow: none;";
-
-    // 2. Action Buttons Row (我的進度, 今天進度, 查看日曆)
-    const actionsBar = document.createElement("div");
-    actionsBar.id = "plan-view-actions-bar";
-    actionsBar.style.cssText = "display: flex; gap: 0.6rem; margin-bottom: 1rem; width: 100%; margin-top: 1rem;";
-
-    const btnStats = document.createElement("button");
-    btnStats.className = !isTodayActive ? "secondary-btn active-focus active:scale-95" : "secondary-btn inactive-focus active:scale-95";
-    btnStats.style.cssText = !isTodayActive ? activeStyleStr : inactiveStyleStr;
-    btnStats.innerHTML = iconLabel("bi-bar-chart", "我的進度");
-    btnStats.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const nextReadingDay = getNextReadingPlanDay(state.activePlan);
-      state.selectedPlanDay = nextReadingDay ? nextReadingDay.dayNum : 1;
-      setViewMode('card');
-      renderPlanScheduleTracker();
-    });
-
-    const btnToday = document.createElement("button");
-    btnToday.className = isTodayActive ? "secondary-btn active-focus active:scale-95" : "secondary-btn inactive-focus active:scale-95";
-    btnToday.style.cssText = isTodayActive ? activeStyleStr : inactiveStyleStr;
-    btnToday.innerHTML = iconLabel("bi-calendar3", "今天進度");
-    btnToday.addEventListener("click", (e) => {
-      e.stopPropagation();
-      snapCalendarToToday();
-    });
-
-    const btnCal = document.createElement("button");
-    btnCal.className = (viewMode === 'calendar') ? "primary-btn active-focus active:scale-95" : "primary-btn inactive-focus active:scale-95";
-    btnCal.style.cssText = (viewMode === 'calendar') ? calActiveStyleStr : calInactiveStyleStr;
-    btnCal.innerHTML = iconLabel("bi-calendar3", "查看日曆");
-    btnCal.addEventListener("click", (e) => {
-      e.stopPropagation();
-      setViewMode('calendar');
-    });
-
-    actionsBar.appendChild(btnStats);
-    actionsBar.appendChild(btnToday);
-    actionsBar.appendChild(btnCal);
-
-    cardContainer.appendChild(coverCard);
-    cardContainer.appendChild(actionsBar);
-    container.appendChild(cardContainer);
+    renderHorizontalDateStrip();
   }
 }
 

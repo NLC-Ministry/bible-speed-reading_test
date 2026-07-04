@@ -1199,20 +1199,24 @@ const db = {
 
     if (state.isSupabaseMode && state.supabase) {
       try {
-        const { data: usersProfiles } = await state.supabase.from("profiles").select("id, name, great_region, pastoral_zone, small_group, role").eq("is_demo", false);
+        const { data: usersProfiles, error: profilesError } = await state.supabase.from("profiles").select("id, name, great_region, pastoral_zone, small_group, role").eq("is_demo", false);
+        console.log(`🔍 [AdminDebug] profiles 查詢結果: ${usersProfiles ? usersProfiles.length : 0} 筆`, profilesError ? `錯誤: ${profilesError.message}` : '');
+        if (usersProfiles) console.log('🔍 [AdminDebug] profiles 名單:', usersProfiles.map(u => `${u.name}(${u.role})`));
         
         let plansQuery = state.supabase.from("reading_plans").select("id, user_id, name, preset_key, global_plan_id, target_books, current_round, level");
         if (filterPresetKey) {
           plansQuery = plansQuery.or(`preset_key.eq."${filterPresetKey}",global_plan_id.eq."${filterPresetKey}",name.eq."${filterPresetKey}"`);
         }
-        const { data: allPlans } = await plansQuery;
+        const { data: allPlans, error: plansError } = await plansQuery;
+        console.log(`🔍 [AdminDebug] reading_plans 查詢結果: ${allPlans ? allPlans.length : 0} 筆`, plansError ? `錯誤: ${plansError.message}` : '');
 
         let logsQuery = state.supabase.from("reading_logs").select("user_id, book, chapter, read_at, plan_id, round");
         if (allPlans && allPlans.length > 0) {
           const planIds = allPlans.map(p => p.id);
           logsQuery = logsQuery.in("plan_id", planIds);
         }
-        const { data: allLogs } = await logsQuery;
+        const { data: allLogs, error: logsError } = await logsQuery;
+        console.log(`🔍 [AdminDebug] reading_logs 查詢結果: ${allLogs ? allLogs.length : 0} 筆`, logsError ? `錯誤: ${logsError.message}` : '');
         state.allLogsCache = allLogs || [];
 
         window.userPlanIdCache = {};
