@@ -497,9 +497,28 @@
             <!-- Unified Chapters Card (Flat & Borderless) -->
             <div class="plan-chapters-card" style="background: transparent; border-radius: 0; padding: 0; margin-top: 1rem; overflow: visible; display: flex; flex-direction: column; border: none; width: 100%;">
               
-              <div class="plan-day-heading" style="background: rgba(148, 163, 184, 0.12); border: none; padding: 0.75rem 1rem; display: flex; align-items: center; justify-content: space-between; border-radius: 0; margin-bottom: 0.5rem; width: 100%;">
-                <span id="plan-day-subtitle" style="font-size: 0.92rem; font-weight: 500; color: var(--text-primary); letter-spacing: 0.5px;">第 18 天 (2026年7月3日)</span>
-                <span id="plan-day-status-pill" class="role-badge hidden" style="display: none;">進行中</span>
+              <!-- 雙軌時間導航欄 (Dual-Track Time Navigation Bar) -->
+              <div class="px-4 py-2 flex items-center justify-between text-xs border-b border-slate-100/50 dark:border-zinc-800/30" style="display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 1rem; border-bottom: 1px solid var(--border-card); font-size: 0.75rem; width: 100%; margin-bottom: 0.8rem; background: rgba(148, 163, 184, 0.05); border-radius: 8px;">
+                <!-- 左側：一鍵回到【我的進度】雷達 -->
+                <button id="go-my-progress-btn" class="flex items-center space-x-1 text-slate-400 hover:text-violet-500 dark:text-zinc-500 dark:hover:text-violet-400 transition-colors font-medium" style="display: flex; align-items: center; gap: 4px; color: var(--text-muted); background: none; border: none; cursor: pointer; font-weight: 500; transition: color 0.2s; padding: 0;" onmouseover="this.style.color='var(--color-brand)'" onmouseout="this.style.color='var(--text-muted)'">
+                  <i class="bi bi-person-bounding-box" style="font-size: 0.85rem;"></i>
+                  <span>↺ 我的進度</span>
+                </button>
+
+                <!-- 中間：當前日曆選中的天數標示 -->
+                <div class="text-center" style="text-align: center; display: flex; align-items: center; gap: 4px;">
+                  <span id="current-view-day" class="font-bold text-slate-700 dark:text-zinc-300" style="font-weight: 700; color: var(--text-primary);">第 -- 天</span>
+                  <span id="current-view-date" class="text-slate-400 dark:text-zinc-500 ml-1" style="color: var(--text-muted); margin-left: 0.25rem;">----/--/--</span>
+                  <!-- Keep original ID hidden to prevent JS issues -->
+                  <span id="plan-day-subtitle" class="hidden" style="display: none;"></span>
+                  <span id="plan-day-status-pill" class="role-badge hidden" style="display: none;">進行中</span>
+                </div>
+
+                <!-- 右側：一鍵看【今天進度】雷達 -->
+                <button id="go-today-plan-btn" class="flex items-center space-x-1 text-slate-400 hover:text-emerald-500 dark:text-zinc-500 dark:hover:text-emerald-400 transition-colors font-medium" style="display: flex; align-items: center; gap: 4px; color: var(--text-muted); background: none; border: none; cursor: pointer; font-weight: 500; transition: color 0.2s; padding: 0;" onmouseover="this.style.color='#10b981'" onmouseout="this.style.color='var(--text-muted)'">
+                  <span>今天計畫 ↻</span>
+                  <i class="bi bi-calendar-event" style="font-size: 0.85rem;"></i>
+                </button>
               </div>
 
               <!-- Tasks list (checklist) -->

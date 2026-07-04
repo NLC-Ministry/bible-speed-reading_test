@@ -58,6 +58,24 @@ window.switchStatTab = async function (tab) {
 function initPlanControls() {
   renderPresetPlansList();
 
+  const goMyProgressBtn = document.getElementById("go-my-progress-btn");
+  if (goMyProgressBtn) {
+    goMyProgressBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      snapCalendarToMyProgress();
+    });
+  }
+
+  const goTodayPlanBtn = document.getElementById("go-today-plan-btn");
+  if (goTodayPlanBtn) {
+    goTodayPlanBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      snapCalendarToToday();
+    });
+  }
+
   // Back Button
   const backBtn = document.getElementById("btn-back-to-plans");
   if (backBtn) {
@@ -1442,11 +1460,23 @@ async function renderPlanScheduleTracker(skipCarouselUpdate = false, signal = nu
 
   // Render day subtitle
   const daySubtitle = document.getElementById("plan-day-subtitle");
+  const currentViewDay = document.getElementById("current-view-day");
+  const currentViewDate = document.getElementById("current-view-date");
+
+  const year = selectedDay.year || new Date().getFullYear();
+  const month = selectedDay.month || (new Date().getMonth() + 1);
+  const dayOfMonth = selectedDay.date ? selectedDay.date.split('/')[1] : new Date().getDate();
+  const formattedDayText = `第 ${state.selectedPlanDay} 天`;
+  const formattedDateText = `${year}-${String(month).padStart(2, '0')}-${String(dayOfMonth).padStart(2, '0')}`;
+
   if (daySubtitle) {
-    const year = selectedDay.year || new Date().getFullYear();
-    const month = selectedDay.month || (new Date().getMonth() + 1);
-    const dayOfMonth = selectedDay.date ? selectedDay.date.split('/')[1] : new Date().getDate();
-    daySubtitle.textContent = `第 ${state.selectedPlanDay} 天 (${year}年${month}月${dayOfMonth}日)`;
+    daySubtitle.textContent = `${formattedDayText} (${year}年${month}月${dayOfMonth}日)`;
+  }
+  if (currentViewDay) {
+    currentViewDay.textContent = formattedDayText;
+  }
+  if (currentViewDate) {
+    currentViewDate.textContent = formattedDateText;
   }
 
   // Check checkPlanSchedule
@@ -4437,6 +4467,24 @@ function snapCalendarToToday() {
     showToast("已跳轉至今日進度");
   } else {
     showToast("今日不在計畫期間內");
+  }
+}
+
+function snapCalendarToMyProgress() {
+  if (!state.activePlan) return;
+  const nextReadingDay = getNextReadingPlanDay(state.activePlan);
+  if (nextReadingDay) {
+    state.selectedPlanDay = nextReadingDay.dayNum;
+    state.calendarViewYear = nextReadingDay.year || new Date().getFullYear();
+    state.calendarViewMonth = nextReadingDay.month || (new Date().getMonth() + 1);
+
+    if (viewMode === 'calendar') {
+      renderHorizontalDateStrip();
+    }
+    renderPlanScheduleTracker();
+    showToast("已回到您的實際讀經進度");
+  } else {
+    showToast("計畫已全部完成！");
   }
 }
 
