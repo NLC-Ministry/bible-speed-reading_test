@@ -315,10 +315,10 @@ function renderBadgeWall(containerId) {
       </span>
     `;
 
-    // Click handler: Open dynamic modal popup detailing the achievement
+    // Click handler: Open dynamic detail page subpage panel
     badgeItem.onclick = () => {
-      if (typeof window.openBadgeModal === "function") {
-        window.openBadgeModal(badge, isUnlocked, isDark);
+      if (typeof window.openBadgeDetailPage === "function") {
+        window.openBadgeDetailPage(badge, isUnlocked, isDark);
       }
     };
 
@@ -339,125 +339,222 @@ function renderBadgeWall(containerId) {
     container.appendChild(badgeItem);
   });
 
-  // Attach modal overlay close listeners once
-  const overlay = document.getElementById("modal-overlay");
-  const closeBtn = document.getElementById("modal-close-btn");
-  if (overlay && !overlay._hasCloseListener) {
-    overlay.addEventListener("click", window.closeBadgeModal);
-    overlay._hasCloseListener = true;
-  }
-  if (closeBtn && !closeBtn._hasCloseListener) {
-    closeBtn.addEventListener("click", window.closeBadgeModal);
-    closeBtn._hasCloseListener = true;
+  // Attach back button close event listener once
+  const backBtn = document.getElementById("badge-page-back-btn");
+  if (backBtn && !backBtn._hasBackListener) {
+    backBtn.addEventListener("click", function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      const page = document.getElementById("badge-detail-page");
+      if (page) page.classList.add("hidden");
+    });
+    backBtn._hasBackListener = true;
   }
 }
 
-// YouVersion high-grade modal popup controls
-window.openBadgeModal = function(badge, isUnlocked, isDark) {
-  const modal = document.getElementById("badge-modal");
-  const card = document.getElementById("modal-card");
-  const shield = document.getElementById("modal-shield");
-  const icon = document.getElementById("modal-icon");
-  const title = document.getElementById("modal-title");
-  const status = document.getElementById("modal-status");
-  const desc = document.getElementById("modal-desc");
+// YouVersion high-grade full-screen detail subpage controller
+window.openBadgeDetailPage = function(badge, isUnlocked, isDark) {
+  const page = document.getElementById("badge-detail-page");
+  const hero = document.getElementById("badge-detail-hero");
+  const shield = document.getElementById("detail-shield");
+  const icon = document.getElementById("detail-icon");
+  const title = document.getElementById("detail-title");
+  const desc = document.getElementById("detail-desc");
+  const timeline = document.getElementById("detail-timeline-container");
+  const levelPill = document.getElementById("detail-level-pill");
+  const shareBtn = document.getElementById("badge-page-share-btn");
   
-  if (!modal || !card) return;
+  if (!page) return;
+
+  // Apply general theme colors dynamically to prevent contrast and visual bugs
+  if (isDark) {
+    page.style.background = "#0a0a0a"; // neutral-950
+    page.style.color = "#ffffff";
+    page.style.borderColor = "#262626"; // neutral-800
+    
+    hero.style.background = "#171717"; // neutral-900
+    hero.style.borderColor = "#262626"; // neutral-800
+  } else {
+    page.style.background = "#f8fafc"; // slate-50
+    page.style.color = "#1e293b"; // slate-800
+    page.style.borderColor = "#e2e8f0"; // slate-200
+    
+    hero.style.background = "#ffffff";
+    hero.style.borderColor = "#e2e8f0";
+  }
 
   // Render text contents
   title.textContent = badge.title;
-  desc.textContent = badge.description; // Full text criteria
-
-  // Reset icon class
+  desc.textContent = badge.description.split("：").pop();
   icon.className = `bi ${badge.iconClass}`;
 
-  // Apply card theme colors dynamically
-  if (isDark) {
-    card.style.background = "#18181b"; // zinc-900
-    card.style.color = "#ffffff";
-    const closeBtn = document.getElementById("modal-close-btn");
-    if (closeBtn) {
-      closeBtn.style.background = "#27272a";
-      closeBtn.style.color = "#ffffff";
-    }
-  } else {
-    card.style.background = "#ffffff";
-    card.style.color = "#1e293b";
-    const closeBtn = document.getElementById("modal-close-btn");
-    if (closeBtn) {
-      closeBtn.style.background = "#f1f5f9";
-      closeBtn.style.color = "#1e293b";
-    }
-  }
-
-  // Apply Shield styles in modal based on unlock state & theme
+  // Apply Shield styles based on unlock state & theme
   if (isUnlocked) {
-    status.textContent = "已解鎖徽章";
     if (isDark) {
       shield.style.background = "linear-gradient(to tr, rgba(69, 26, 3, 0.5) 0%, rgba(124, 45, 18, 0.5) 100%)";
       shield.style.borderColor = "rgba(245, 158, 11, 0.25)";
       shield.style.borderStyle = "solid";
       shield.style.borderWidth = "1px";
       shield.style.color = "#fbbf24"; // golden icon
-      status.style.background = "rgba(245, 158, 11, 0.2)";
-      status.style.color = "#fbbf24";
     } else {
       shield.style.background = "linear-gradient(to tr, rgba(254, 243, 199, 0.9) 0%, rgba(255, 237, 213, 0.9) 100%)";
       shield.style.borderColor = "rgba(251, 191, 36, 0.6)";
       shield.style.borderStyle = "solid";
       shield.style.borderWidth = "1px";
       shield.style.color = "#d97706"; // warm amber icon
-      status.style.background = "rgba(217, 119, 6, 0.15)";
-      status.style.color = "#d97706";
     }
   } else {
-    status.textContent = "未解鎖徽章";
     if (isDark) {
       shield.style.background = "rgba(39, 39, 42, 0.6)";
       shield.style.borderColor = "rgba(63, 63, 70, 0.6)";
       shield.style.borderStyle = "dashed";
       shield.style.borderWidth = "1px";
       shield.style.color = "#52525b"; // lock color icon
-      status.style.background = "rgba(63, 63, 70, 0.3)";
-      status.style.color = "#a1a1aa";
     } else {
       shield.style.background = "rgba(226, 232, 240, 0.6)";
       shield.style.borderColor = "rgba(148, 163, 184, 0.6)";
       shield.style.borderStyle = "dashed";
       shield.style.borderWidth = "1px";
       shield.style.color = "#94a3b8"; // grey icon
-      status.style.background = "rgba(226, 232, 240, 0.8)";
-      status.style.color = "#64748b";
     }
   }
 
-  // Display overlay & card animation
-  modal.classList.remove("hidden");
-  
-  // Force a browser reflow to trigger scale animation
-  modal.offsetHeight;
-  card.style.transform = "translate(-50%, -50%) scale(1)";
-  card.style.opacity = "1";
+  // Dynamic milestone configurations for YouVersion level circles
+  const milestoneConfig = {
+    "badge-subscribe": { levels: [5, 3, 1], unit: "個計畫", getValue: () => (state.subscribedPlans ? state.subscribedPlans.length : 0) },
+    "subscribe_plan": { levels: [5, 3, 1], unit: "個計畫", getValue: () => (state.subscribedPlans ? state.subscribedPlans.length : 0) },
+    
+    "badge-streak": { levels: [30, 15, 7, 1], unit: "天打卡", getValue: () => (state.currentUser ? state.currentUser.streak || 0 : 0) },
+    "streak_30": { levels: [30, 15, 7, 1], unit: "天打卡", getValue: () => (state.currentUser ? state.currentUser.streak || 0 : 0) },
+    
+    "badge-complete": { levels: [5, 3, 1], unit: "個計畫", getValue: () => (state.completedPlans ? state.completedPlans.length : 0) },
+    "complete_plan": { levels: [5, 3, 1], unit: "個計畫", getValue: () => (state.completedPlans ? state.completedPlans.length : 0) },
+    
+    "badge-share": { levels: [50, 10, 5, 1], unit: "次分享", getValue: () => (localStorage.getItem("has_shared_verse") === "true" ? 1 : 0) },
+    "share_verse": { levels: [50, 10, 5, 1], unit: "次分享", getValue: () => (localStorage.getItem("has_shared_verse") === "true" ? 1 : 0) },
+    
+    "badge-bible": { levels: [1189, 500, 100, 10], unit: "章經文", getValue: () => {
+      const uniqueChapters = new Set();
+      if (state.readingLogs) {
+        state.readingLogs.forEach(l => uniqueChapters.add(`${l.book}_${l.chapter}`));
+      }
+      return uniqueChapters.size;
+    }}
+  };
+
+  const conf = milestoneConfig[badge.id] || { levels: [1], unit: "次", getValue: () => (isUnlocked ? 1 : 0) };
+  const currentVal = conf.getValue();
+
+  // Determine highest unlocked level
+  let highestUnlockedLevel = 0;
+  conf.levels.forEach(lvl => {
+    if (currentVal >= lvl) {
+      highestUnlockedLevel = Math.max(highestUnlockedLevel, lvl);
+    }
+  });
+
+  // Update level display count pill
+  if (levelPill) {
+    if (highestUnlockedLevel > 0) {
+      levelPill.textContent = highestUnlockedLevel;
+      levelPill.style.display = "block";
+    } else {
+      levelPill.style.display = "none";
+    }
+  }
+
+  // Populate milestone items dynamically
+  timeline.innerHTML = "";
+  conf.levels.forEach(lvl => {
+    const isLvlUnlocked = currentVal >= lvl;
+    
+    const item = document.createElement("div");
+    item.style.cssText = "display: flex; align-items: center; gap: 1rem; padding: 0.75rem 0; border-bottom: 1px solid rgba(128,128,128,0.1); width: 100%; box-sizing: border-box;";
+    
+    const circle = document.createElement("div");
+    circle.style.cssText = `
+      width: 2.2rem;
+      height: 2.2rem;
+      border-radius: 50%;
+      background: ${isLvlUnlocked ? (isDark ? "rgba(245, 158, 11, 0.2)" : "rgba(217, 119, 6, 0.15)") : (isDark ? "#27272a" : "#e2e8f0")};
+      color: ${isLvlUnlocked ? (isDark ? "#fbbf24" : "#d97706") : (isDark ? "#a1a1aa" : "#64748b")};
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    `;
+    circle.textContent = lvl;
+    
+    const contentBox = document.createElement("div");
+    contentBox.style.cssText = "flex: 1; display: flex; flex-direction: column; justify-content: center;";
+    
+    if (isLvlUnlocked) {
+      let dateStr = localStorage.getItem(`date_unlocked_${badge.id}_lvl_${lvl}`);
+      if (!dateStr) {
+        const today = new Date();
+        dateStr = `${today.getFullYear()}年${today.getMonth() + 1}月${today.getDate()}日`;
+        localStorage.setItem(`date_unlocked_${badge.id}_lvl_${lvl}`, dateStr);
+      }
+      contentBox.innerHTML = `
+        <div style="font-size: 0.875rem; font-weight: 600; color: ${isDark ? "#ffffff" : "#1e293b"};">完成於 ${dateStr}</div>
+      `;
+    } else {
+      const diff = lvl - currentVal;
+      const pct = Math.min(100, Math.floor((currentVal / lvl) * 100));
+      contentBox.innerHTML = `
+        <div style="font-size: 0.875rem; font-weight: 500; color: ${isDark ? "#a1a1aa" : "#64748b"};">還差 ${diff} ${conf.unit}</div>
+        <div style="width: 100px; height: 5px; background: ${isDark ? "#27272a" : "#e2e8f0"}; border-radius: 9999px; overflow: hidden; margin-top: 0.35rem;">
+          <div style="width: ${pct}%; height: 100%; background: ${isDark ? "#fbbf24" : "#d97706"}; border-radius: 9999px;"></div>
+        </div>
+      `;
+    }
+    
+    item.appendChild(circle);
+    item.appendChild(contentBox);
+    timeline.appendChild(item);
+  });
+
+  // Bind share button
+  if (shareBtn) {
+    shareBtn.onclick = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (navigator.share) {
+        navigator.share({
+          title: `我解鎖了「${badge.title}」榮譽徽章！`,
+          text: `我正在進行聖經速讀挑戰，解鎖了「${badge.title}」勳章！\n${badge.description}`,
+          url: window.location.href
+        }).catch(err => console.log(err));
+      } else {
+        if (typeof showToast === "function") {
+          showToast(`已複製「${badge.title}」分享文字，快傳送給朋友吧！`);
+        } else {
+          alert(`已解鎖「${badge.title}」徽章！`);
+        }
+      }
+    };
+  }
+
+  // Display page
+  page.classList.remove("hidden");
+};
+
+// Compatibility aliases
+window.openBadgeModal = function(badge, isUnlocked, isDark) {
+  window.openBadgeDetailPage(badge, isUnlocked, isDark);
 };
 
 window.closeBadgeModal = function() {
-  const modal = document.getElementById("badge-modal");
-  const card = document.getElementById("modal-card");
-  if (!modal || !card) return;
-
-  card.style.transform = "translate(-50%, -50%) scale(0.95)";
-  card.style.opacity = "0";
-
-  setTimeout(() => {
-    modal.classList.add("hidden");
-  }, 300);
+  const page = document.getElementById("badge-detail-page");
+  if (page) page.classList.add("hidden");
 };
 
-// Legacy backup compatibility
 window.showBadgeDetail = function(title, description, isUnlocked) {
   const isDark = state.theme === "dark" || document.body.classList.contains("dark-theme");
   const badgeObj = ACHIEVEMENTS.find(b => b.title === title) || { title, description };
-  window.openBadgeModal(badgeObj, isUnlocked, isDark);
+  window.openBadgeDetailPage(badgeObj, isUnlocked, isDark);
 };
 
 // ── Global Premium Skeleton UI Loader ──────────────────────

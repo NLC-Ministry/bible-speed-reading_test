@@ -1273,33 +1273,46 @@
     </div>
   </div>
 
-  <!-- YouVersion Achievement Badge Modal Popup -->
-  <div id="badge-modal" class="hidden" style="position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 99999;">
-    <!-- Overlay -->
-    <div id="modal-overlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm" style="position: absolute; inset: 0; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);"></div>
+  <!-- YouVersion Immersive Badge Detail Page -->
+  <div id="badge-detail-page" class="hidden" style="position: fixed; inset: 0; width: 100vw; height: 100vh; overflow-y: auto; z-index: 99999; display: flex; flex-direction: column; transition: all 0.3s ease;">
     
-    <!-- Modal Card Content -->
-    <div id="modal-card" class="fixed rounded-3xl p-6 bg-white dark:bg-zinc-900 text-slate-800 dark:text-white shadow-2xl scale-95 opacity-0 transition-all duration-300" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.95); opacity: 0; width: 85%; max-width: 340px; border-radius: 1.5rem; padding: 1.5rem; transition: transform 0.3s ease, opacity 0.3s ease;">
+    <!-- 1. Header Navigation Bar -->
+    <header style="display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 1rem; border-bottom: 1px solid rgba(128,128,128,0.1); width: 100%; box-sizing: border-box;">
+      <button id="badge-page-back-btn" style="background: none; border: none; font-size: 1.25rem; cursor: pointer; padding: 0.5rem; display: flex; align-items: center; justify-content: center; color: inherit;">
+        <i class="bi bi-chevron-left"></i>
+      </button>
+      <span id="detail-header-title" style="font-weight: 700; font-size: 1rem;">勳章詳情</span>
+      <button id="badge-page-share-btn" style="background: none; border: none; font-size: 1.25rem; cursor: pointer; padding: 0.5rem; display: flex; align-items: center; justify-content: center; color: inherit;" title="分享">
+        <i class="bi bi-share"></i>
+      </button>
+    </header>
+
+    <!-- Scrollable Content -->
+    <div style="flex: 1; overflow-y: auto; padding: 1.5rem 1rem; box-sizing: border-box; display: flex; flex-direction: column;">
       
-      <!-- Big Shield Display Area -->
-      <div class="flex justify-center my-4" style="display: flex; justify-content: center; margin-top: 1rem; margin-bottom: 1rem;">
-        <div id="modal-shield" class="w-24 h-24 rounded-t-3xl rounded-b-[30%] flex items-center justify-center relative shadow-inner" style="width: 96px; height: 96px; display: flex; align-items: center; justify-content: center; border-radius: 1.5rem 1.5rem 30% 30%; position: relative;">
+      <!-- 2. Upper Part: Giant Shield Display -->
+      <div id="badge-detail-hero" style="border-radius: 1.5rem; padding: 2rem; display: flex; flex-direction: column; align-items: center; margin: 0.5rem 1rem 1.5rem 1rem; border: 1px solid rgba(128,128,128,0.1);">
+        <div id="detail-shield" style="width: 144px; height: 160px; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 2rem 2rem 35% 35%; position: relative; box-shadow: inset 0 2px 8px rgba(0,0,0,0.15); padding-top: 0.5rem;">
           <!-- Double Ring Circles Inside -->
-          <div style="position: absolute; inset: 6px; border: 1.5px solid currentColor; border-radius: 50%; opacity: 0.15; pointer-events: none;"></div>
-          <div style="position: absolute; inset: 12px; border: 1px dashed currentColor; border-radius: 50%; opacity: 0.25; pointer-events: none;"></div>
-          <i id="modal-icon" class="text-4xl text-white" style="font-size: 2.25rem;"></i>
+          <div style="position: absolute; inset: 12px; border: 2px solid currentColor; border-radius: 50%; opacity: 0.15; pointer-events: none; height: 80px; width: 80px; margin: auto;"></div>
+          <div style="position: absolute; inset: 18px; border: 1.5px dashed currentColor; border-radius: 50%; opacity: 0.25; pointer-events: none; height: 68px; width: 68px; margin: auto;"></div>
+          <i id="detail-icon" style="font-size: 3rem; position: relative; z-index: 10;"></i>
+          
+          <!-- Small level count pill at the bottom center of the shield -->
+          <div id="detail-level-pill" style="background: rgba(0,0,0,0.6); color: #fff; border-radius: 9999px; padding: 0.15rem 0.5rem; font-size: 0.65rem; font-weight: 700; margin-top: 0.5rem; position: relative; z-index: 10;">1</div>
+        </div>
+        <h2 id="detail-title" style="margin-top: 1.25rem; font-size: 1.5rem; font-weight: 700; text-align: center;"></h2>
+        <p id="detail-desc" style="margin-top: 0.75rem; font-size: 0.85rem; line-height: 1.5; text-align: center; opacity: 0.8; padding: 0 1rem;"></p>
+      </div>
+
+      <!-- 3. Lower Part: Milestones Timeline -->
+      <div style="margin: 1rem 1rem 0 1rem; padding: 0.5rem;">
+        <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem;">里程碑</h3>
+        <div id="detail-timeline-container" style="display: flex; flex-direction: column; gap: 1rem; width: 100%;">
+          <!-- Dynamically populated timeline or progress bar -->
         </div>
       </div>
-      
-      <!-- Badge Details -->
-      <h3 id="modal-title" class="text-xl font-bold text-center mt-4 text-slate-900 dark:text-white" style="margin-top: 1rem; font-size: 1.25rem; font-weight: 700; text-align: center;"></h3>
-      <div id="modal-status" class="text-xs text-center px-3 py-1 rounded-full mx-auto w-max mt-2" style="margin: 0.5rem auto 0 auto; width: max-content; font-size: 0.75rem; font-weight: 700; border-radius: 9999px; padding: 0.15rem 0.6rem;"></div>
-      
-      <!-- Detailed explanation -->
-      <p id="modal-desc" class="text-sm text-slate-600 dark:text-slate-300 text-center mt-3 px-2 leading-relaxed border-t border-slate-100 dark:border-zinc-800/80 pt-3" style="margin-top: 0.75rem; font-size: 0.85rem; line-height: 1.5; text-align: center; border-top: 1px solid rgba(0,0,0,0.06); padding-top: 0.75rem;"></p>
-      
-      <!-- Close button -->
-      <button id="modal-close-btn" class="w-full mt-6 py-3 rounded-xl font-medium bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-center transition-colors" style="width: 100%; margin-top: 1.5rem; padding: 0.75rem; border-radius: 0.75rem; font-weight: 600; border: none; cursor: pointer; text-align: center;">關閉</button>
+
     </div>
   </div>
 
