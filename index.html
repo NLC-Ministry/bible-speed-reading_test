@@ -159,7 +159,7 @@
             </div>
 
             <!-- 每日金句 (Verse of the Day) -->
-            <div id="verse-card" class="relative w-full min-h-[320px] rounded-2xl overflow-hidden cursor-pointer shadow-lg" style="position: relative; width: 100%; min-height: 320px; overflow: hidden; border-radius: 1rem; cursor: pointer; margin-bottom: 1.5rem;">
+            <div id="verse-card" class="relative w-full min-h-[320px] rounded-2xl overflow-hidden cursor-default shadow-lg" style="position: relative; width: 100%; min-height: 320px; overflow: hidden; border-radius: 1rem; cursor: default; margin-bottom: 1.5rem;">
               
               <!-- Bottom Layer: Image (Absolute positioned backdrop) -->
               <img id="card-bg" class="absolute inset-0 w-full h-full object-cover transition-opacity duration-500" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; transition: opacity 0.5s;" src="" />
@@ -184,23 +184,23 @@
                 </div>
 
                 <!-- Bottom Social Toolbar -->
-                <div class="social-toolbar flex items-center justify-around w-full pt-4 border-t border-white/10 mt-auto text-slate-300 text-xs" style="display: flex; align-items: center; justify-content: space-around; width: 100%; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem; margin-top: auto; color: rgba(203, 213, 225, 0.9); font-size: 0.75rem;">
-                  <!-- Like Button -->
-                  <button id="like-btn" class="flex flex-col items-center space-y-1 text-slate-300" style="display: flex; flex-direction: column; align-items: center; gap: 4px; color: rgba(203, 213, 225, 0.9); background: none; border: none; cursor: pointer; padding: 0;">
-                    <i class="bi bi-heart text-base" style="font-size: 1rem;"></i>
+                <div id="verse-card-toolbar" class="flex items-center justify-between w-full pt-3 border-t border-white/10 mt-auto text-slate-300" style="display: flex; align-items: center; justify-content: space-between; width: 100%; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 0.75rem; margin-top: auto; color: rgba(203, 213, 225, 0.9); font-size: 0.75rem;">
+                  <!-- 1. 純按讚按鈕 -->
+                  <button id="like-btn" class="flex flex-col items-center justify-center flex-1 py-1 text-xs" style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; padding: 0.25rem 0; font-size: 0.75rem; background: none; border: none; cursor: pointer; color: inherit;">
+                    <i class="bi bi-heart text-lg mb-1" style="font-size: 1.125rem; margin-bottom: 0.25rem;"></i>
                     <span id="like-count-text">0</span>
                   </button>
                   
-                  <!-- Draw/Refresh Button -->
-                  <button id="draw-card-btn" class="flex flex-col items-center space-y-1 text-slate-300" style="display: flex; flex-direction: column; align-items: center; gap: 4px; color: rgba(203, 213, 225, 0.9); background: none; border: none; cursor: pointer; padding: 0;">
-                    <i class="bi bi-arrow-repeat text-base" style="font-size: 1rem;"></i>
-                    <span>更換金句</span>
+                  <!-- 2. 換一張按鈕（唯一允許觸發抽卡的入口） -->
+                  <button id="draw-card-btn" class="flex flex-col items-center justify-center flex-1 py-1 text-xs text-slate-200" style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; padding: 0.25rem 0; font-size: 0.75rem; background: none; border: none; cursor: pointer; color: #e2e8f0;">
+                    <i class="bi bi-arrow-repeat text-xl mb-1" style="font-size: 1.25rem; margin-bottom: 0.25rem;"></i>
+                    <span>換一張</span>
                   </button>
-
-                  <!-- Share Button -->
-                  <button id="share-card-btn" class="flex flex-col items-center space-y-1 text-white animate-pulse" style="display: flex; flex-direction: column; align-items: center; gap: 4px; color: #fff; background: none; border: none; cursor: pointer; padding: 0;">
-                    <i class="bi bi-share text-base" style="font-size: 1rem;"></i>
-                    <span>分享意境</span>
+                  
+                  <!-- 3. 分享按鈕 -->
+                  <button id="share-card-btn" class="flex flex-col items-center justify-center flex-1 py-1 text-xs" style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; padding: 0.25rem 0; font-size: 0.75rem; background: none; border: none; cursor: pointer; color: inherit;">
+                    <i class="bi bi-share text-lg mb-1" style="font-size: 1.125rem; margin-bottom: 0.25rem;"></i>
+                    <span>分享</span>
                   </button>
                 </div>
 

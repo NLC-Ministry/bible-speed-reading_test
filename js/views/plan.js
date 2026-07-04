@@ -1326,6 +1326,7 @@ function renderHorizontalDateStrip() {
 
       // Click handler with race condition cancellation
       dayCell.addEventListener("click", (e) => {
+        e.preventDefault();
         e.stopPropagation();
 
         const clickedDate = `${cell.year}/${String(cell.month).padStart(2, '0')}/${String(cell.dayOfMonth).padStart(2, '0')}`;
@@ -1339,8 +1340,14 @@ function renderHorizontalDateStrip() {
 
         state.selectedPlanDay = day.dayNum;
 
-        // Redraw to refresh active highlights
-        renderHorizontalDateStrip();
+        // 1. Pure front-end high-speed active class switching
+        const prevSelected = container.querySelector('.calendar-day.active');
+        if (prevSelected) {
+          prevSelected.classList.remove('active');
+        }
+        dayCell.classList.add('active');
+
+        // 2. Refresh bottom task list without redrawing the calendar strip
         renderPlanScheduleTracker(true, signal);
       });
 

@@ -1110,7 +1110,7 @@ async function shareAsImage(e) {
   
   if (shareBtn) {
     shareBtn.disabled = true;
-    shareBtn.innerHTML = `<i class="bi bi-arrow-repeat animate-spin text-white text-lg"></i>`;
+    shareBtn.innerHTML = `<i class="bi bi-arrow-repeat animate-spin text-lg mb-1"></i><span>分享中</span>`;
   }
   
   try {
@@ -1160,7 +1160,7 @@ async function shareAsImage(e) {
     if (shareBtn) {
       setTimeout(() => {
         shareBtn.disabled = false;
-        shareBtn.innerHTML = `<i class="bi bi-share text-white text-lg"></i>`;
+        shareBtn.innerHTML = `<i class="bi bi-share text-lg mb-1"></i><span>分享</span>`;
       }, 1000);
     }
   }
@@ -1305,10 +1305,7 @@ async function toggleVerseLike(e) {
 
 function renderDailyVerse() {
   const card = document.getElementById("verse-card");
-  if (card && !card._hasFlipListener) {
-    card.addEventListener("click", fetchRandomVerse);
-    card._hasFlipListener = true;
-  }
+  // Clicking the card backdrop/overlay is disabled; drawing a new card is only allowed via draw-card-btn.
 
   const shareBtn = document.getElementById("share-card-btn");
   if (shareBtn && !shareBtn._hasShareListener) {
