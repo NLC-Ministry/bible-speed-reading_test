@@ -3372,24 +3372,30 @@ function renderPersonalTrendChart() {
 
   // Render Chart.js
   const isDark = document.body.classList.contains('dark-theme');
-  const fontColor = isDark ? '#cbd5e1' : '#475569';
-  const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)';
+  const fontColor = isDark ? 'rgba(255, 255, 255, 0.4)' : 'rgba(71, 85, 105, 0.5)';
 
   if (window._personalTrendChart) window._personalTrendChart.destroy();
 
-  window._personalTrendChart = new Chart(canvas.getContext('2d'), {
+  const ctx = canvas.getContext('2d');
+  const gradient = ctx.createLinearGradient(0, 0, 0, 160);
+  gradient.addColorStop(0, 'rgba(139, 92, 246, 0.22)');
+  gradient.addColorStop(1, 'rgba(139, 92, 246, 0)');
+
+  window._personalTrendChart = new Chart(ctx, {
     type: 'line',
     data: {
       labels: labels,
       datasets: [{
         label: '每日讀經章數',
         data: chartData,
-        borderColor: 'rgba(99, 102, 241, 1)',
-        backgroundColor: 'rgba(99, 102, 241, 0.1)',
+        borderColor: '#8b5cf6',
+        backgroundColor: gradient,
         fill: true,
         tension: 0.35,
-        borderWidth: 2.5,
-        pointBackgroundColor: 'rgba(99, 102, 241, 1)',
+        borderWidth: 2,
+        pointBackgroundColor: '#8b5cf6',
+        pointBorderColor: '#ffffff',
+        pointBorderWidth: 1,
         pointHoverRadius: 6
       }]
     },
@@ -3408,12 +3414,12 @@ function renderPersonalTrendChart() {
       },
       scales: {
         x: {
-          ticks: { color: fontColor, font: { size: 9 } },
+          ticks: { color: fontColor, font: { size: 9, weight: '300' } },
           grid: { display: false }
         },
         y: {
-          ticks: { color: fontColor, stepSize: range === "year" ? 20 : 5 },
-          grid: { color: gridColor },
+          ticks: { color: fontColor, stepSize: range === "year" ? 20 : 5, font: { size: 9, weight: '300' } },
+          grid: { display: false },
           min: 0
         }
       }

@@ -6298,3 +6298,63 @@ body.dark-theme .calendar-day .micro-progress-bar {
 .animate-spin-slow {
   animation: spin-slow 8s linear infinite;
 }
+
+/* Micro Heatmap Layout Overrides */
+#bible-heatmap-container .calendar-heatmap {
+  display: flex;
+  overflow-x: auto;
+  gap: 0.75rem;
+  width: 100%;
+  scrollbar-width: none;
+  justify-content: flex-start;
+  align-items: stretch;
+}
+#bible-heatmap-container .calendar-heatmap::-webkit-scrollbar {
+  display: none;
+}
+#bible-heatmap-container .calendar-month {
+  flex: 1 0 160px;
+  max-width: 220px;
+  background: transparent;
+  border: none;
+  padding: 0;
+  box-shadow: none;
+}
+#bible-heatmap-container .calendar-month-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+}
+#bible-heatmap-container .calendar-month-grid {
+  grid-template-columns: repeat(7, minmax(18px, 1fr));
+  grid-auto-rows: 18px;
+  gap: 3px;
+}
+#bible-heatmap-container .calendar-day {
+  height: 18px;
+  max-width: 18px;
+  border-radius: 9999px;
+  font-size: 0.6rem;
+  border: none;
+  justify-self: center;
+}
+#bible-heatmap-container .calendar-day[data-level="0"] {
+  background: rgba(148, 163, 184, 0.12);
+}
+#bible-heatmap-container .calendar-day[data-level="1"] {
+  background: rgba(139, 92, 246, 0.25);
+}
+#bible-heatmap-container .calendar-day[data-level="2"] {
+  background: rgba(139, 92, 246, 0.5);
+}
+#bible-heatmap-container .calendar-day[data-level="3"] {
+  background: rgba(139, 92, 246, 0.75);
+}
+#bible-heatmap-container .calendar-day[data-level="4"] {
+  background: rgba(139, 92, 246, 1);
+  color: white;
+}
+#bible-heatmap-container .calendar-weekday {
+  font-size: 0.6rem;
+  height: 14px;
+}
