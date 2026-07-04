@@ -57,15 +57,27 @@ Neutral shadows only — no brand-tinted glows on buttons, tabs, or cards.
 
 ## Typography
 
+Member Hub uses **medium (500)** for emphasis (titles, labels, buttons, nav) and **normal (400)** for body text. Avoid 600–900 weights on UI chrome.
+
+| Token | Value |
+|-------|-------|
+| `--type-weight-strong` | `500` |
+| `--type-weight-regular` | `400` |
+
 | Class | Size / weight |
 |-------|----------------|
 | `.type-page-title` | 1.75rem / 500 |
 | `.type-section-title` | 1.25rem / 500 |
 | `.type-card-title` | 1.125rem / 500 |
+| `.type-subsection-title` | 1rem / 500 |
+| `.type-label` | 0.875rem / 500 |
+| `.type-nav` | 0.875rem / 500 |
+| `.type-brand-title` | 0.875rem / 500 (header brand) |
+| `.type-lead` | 1rem / 400, muted |
 | `.type-body` | 1rem / 400, line-height 1.625 |
-| `.type-caption` | 0.875rem / muted |
+| `.type-caption` | 0.875rem / 400, muted |
 
-Body font: Inter + Noto Sans TC. Display titles: Outfit.
+Body font: Inter + Noto Sans TC.
 
 ## Components
 

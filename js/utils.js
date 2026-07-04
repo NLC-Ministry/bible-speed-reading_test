@@ -23,7 +23,7 @@ function showToast(message, duration = 2500) {
       padding: 0.7rem 1.4rem;
       border-radius: 24px;
       font-size: 0.88rem;
-      font-weight: 600;
+      font-weight: 500;
       box-shadow: ${(window.NLC_SHADOW && window.NLC_SHADOW.lg) || "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)"};
       z-index: 9999;
       opacity: 0;
@@ -481,7 +481,7 @@ window.openBadgeDetailPage = function(badge, isUnlocked, isDark) {
       align-items: center;
       justify-content: center;
       font-size: 0.8rem;
-      font-weight: 700;
+      font-weight: 500;
       flex-shrink: 0;
     `;
     circle.textContent = lvl;
@@ -497,7 +497,7 @@ window.openBadgeDetailPage = function(badge, isUnlocked, isDark) {
         localStorage.setItem(`date_unlocked_${badge.id}_lvl_${lvl}`, dateStr);
       }
       contentBox.innerHTML = `
-        <div style="font-size: 0.875rem; font-weight: 600; color: ${isDark ? "#ffffff" : "#1e293b"};">完成於 ${dateStr}</div>
+        <div style="font-size: 0.875rem; font-weight: 500; color: ${isDark ? "#ffffff" : "#1e293b"};">完成於 ${dateStr}</div>
       `;
     } else {
       const diff = lvl - currentVal;

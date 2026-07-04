@@ -54,6 +54,10 @@
   --radius-lg: 16px;
   --backdrop-blur: blur(8px);
   --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Typography weights — Member Hub: medium (500) emphasis, normal (400) body */
+  --type-weight-strong: 500;
+  --type-weight-regular: 400;
 }
 
 /* Dark Theme overrides */
@@ -87,12 +91,19 @@ body.dark-theme {
 }
 
 
-/* Typography scale (Member Hub aligned) */
-.type-page-title { font-size: 1.75rem; font-weight: 500; line-height: 1.25; color: var(--text-primary); }
-.type-section-title { font-size: 1.25rem; font-weight: 500; line-height: 1.35; color: var(--text-primary); }
-.type-card-title { font-size: 1.125rem; font-weight: 500; line-height: 1.4; color: var(--text-primary); }
-.type-body { font-size: 1rem; font-weight: 400; line-height: 1.625; color: var(--text-primary); }
-.type-caption { font-size: 0.875rem; font-weight: 400; line-height: 1.5; color: var(--text-muted); }
+/* Typography scale (Member Hub aligned — font-medium emphasis, font-normal body) */
+.type-page-title { font-size: 1.75rem; font-weight: var(--type-weight-strong); line-height: 1.25; letter-spacing: normal; color: var(--text-primary); }
+.type-section-title { font-size: 1.25rem; font-weight: var(--type-weight-strong); line-height: 1.35; letter-spacing: normal; color: var(--text-primary); }
+.type-card-title { font-size: 1.125rem; font-weight: var(--type-weight-strong); line-height: 1.4; letter-spacing: normal; color: var(--text-primary); }
+.type-subsection-title { font-size: 1rem; font-weight: var(--type-weight-strong); line-height: 1.35; letter-spacing: normal; color: var(--text-primary); }
+.type-label { font-size: 0.875rem; font-weight: var(--type-weight-strong); line-height: 1.375; color: color-mix(in srgb, var(--text-primary) 85%, transparent); }
+.type-nav { font-size: 0.875rem; font-weight: var(--type-weight-strong); line-height: 1.25; letter-spacing: normal; }
+.type-lead { font-size: 1rem; font-weight: var(--type-weight-regular); line-height: 1.625; color: var(--text-secondary); }
+.type-body { font-size: 1rem; font-weight: var(--type-weight-regular); line-height: 1.625; color: color-mix(in srgb, var(--text-primary) 90%, transparent); }
+.type-body-muted { font-size: 1rem; font-weight: var(--type-weight-regular); line-height: 1.625; color: var(--text-muted); }
+.type-caption { font-size: 0.875rem; font-weight: var(--type-weight-regular); line-height: 1.5; color: var(--text-muted); }
+.type-emphasis { font-size: 1rem; font-weight: var(--type-weight-strong); line-height: 1.625; color: color-mix(in srgb, var(--text-primary) 90%, transparent); }
+.type-brand-title { font-size: 0.875rem; font-weight: var(--type-weight-strong); line-height: 1; letter-spacing: normal; color: color-mix(in srgb, var(--text-primary) 85%, transparent); }
 
 /* Stat bento cards */
 .stat-card { border-radius: 1rem; padding: 1rem; border: 1px solid var(--border-default); display: flex; flex-direction: column; justify-content: space-between; min-height: 80px; text-align: left; }
@@ -103,6 +114,7 @@ body.dark-theme {
 body {
   background-color: var(--bg-app);
   color: var(--text-primary);
+  font-weight: var(--type-weight-regular);
   min-height: 100vh;
   transition: var(--transition-smooth);
 }
@@ -144,9 +156,9 @@ body {
   gap: 0.5rem;
   text-decoration: none;
   color: var(--text-primary);
-  font-weight: 700;
-  font-size: 1.25rem;
-  font-family: 'Outfit', sans-serif;
+  font-weight: var(--type-weight-strong);
+  font-size: 0.875rem;
+  font-family: 'Inter', 'Noto Sans TC', sans-serif;
   transition: var(--transition-smooth);
 }
 
@@ -182,7 +194,7 @@ body {
   background: var(--bg-input);
   color: var(--text-primary);
   font-size: 0.88rem;
-  font-weight: 800;
+  font-weight: var(--type-weight-strong);
   cursor: pointer;
   box-shadow: var(--shadow-card);
   transition: var(--transition-smooth);
@@ -214,7 +226,7 @@ body {
   border: none;
   padding: 0.6rem 1.2rem;
   font-size: 0.95rem;
-  font-weight: 600;
+  font-weight: var(--type-weight-strong);
   color: var(--text-secondary);
   border-radius: var(--radius-sm);
   cursor: pointer;
@@ -246,7 +258,7 @@ body {
   padding: 0.35rem 0.75rem;
   border-radius: 50px;
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
@@ -375,7 +387,7 @@ vercel-live-feedback,
 
 .card-title {
   font-size: 1.25rem;
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
   margin-bottom: 1.5rem;
   color: var(--text-primary);
   display: flex;
@@ -424,7 +436,7 @@ vercel-live-feedback,
 
 .welcome-title {
   font-size: 2.25rem;
-  font-weight: 800;
+  font-weight: var(--type-weight-strong);
   letter-spacing: -0.02em;
   margin-bottom: 0.5rem;
   font-family: 'Outfit', sans-serif;
@@ -466,7 +478,7 @@ vercel-live-feedback,
 
 .streak-count {
   font-size: 2rem;
-  font-weight: 800;
+  font-weight: var(--type-weight-strong);
   color: var(--text-primary);
   line-height: 1.1;
   margin: 0.25rem 0;
@@ -475,14 +487,14 @@ vercel-live-feedback,
 
 .streak-count .unit {
   font-size: 1rem;
-  font-weight: 600;
+  font-weight: var(--type-weight-strong);
   color: var(--text-secondary);
 }
 
 .streak-label {
   font-size: 0.8rem;
   color: var(--text-muted);
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
   text-transform: uppercase;
 }
 
@@ -517,7 +529,7 @@ vercel-live-feedback,
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 800;
+  font-weight: var(--type-weight-strong);
   font-size: 0.9rem;
   color: #ffffff;
   background: var(--text-muted);
@@ -532,12 +544,12 @@ vercel-live-feedback,
 }
 
 .rank-name {
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
   font-size: 0.95rem;
 }
 
 .rank-value {
-  font-weight: 800;
+  font-weight: var(--type-weight-strong);
   color: var(--primary-color);
   font-size: 1.1rem;
   font-family: 'Outfit', sans-serif;
@@ -551,7 +563,7 @@ vercel-live-feedback,
 .form-group label {
   display: block;
   font-size: 0.88rem;
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
   margin-bottom: 0.5rem;
   color: var(--text-secondary);
 }
@@ -580,7 +592,7 @@ vercel-live-feedback,
   border: none;
   padding: 0.75rem 1.5rem;
   font-size: 0.95rem;
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
   border-radius: var(--radius-sm);
   cursor: pointer;
   display: inline-flex;
@@ -601,7 +613,7 @@ vercel-live-feedback,
   border: 1px solid var(--border-card);
   padding: 0.75rem 1.5rem;
   font-size: 0.95rem;
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
   border-radius: var(--radius-sm);
   cursor: pointer;
   display: inline-flex;
@@ -623,7 +635,7 @@ vercel-live-feedback,
   border: none;
   padding: 0.75rem 1.5rem;
   font-size: 0.95rem;
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
   border-radius: var(--radius-sm);
   cursor: pointer;
   display: inline-flex;
@@ -661,7 +673,7 @@ vercel-live-feedback,
   background: transparent;
   border: none;
   color: var(--primary-color);
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
   font-size: 0.9rem;
   cursor: pointer;
   transition: var(--transition-smooth);
@@ -685,7 +697,7 @@ vercel-live-feedback,
   border-radius: var(--radius-sm);
   color: var(--text-secondary);
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: var(--type-weight-strong);
   cursor: pointer;
   transition: var(--transition-smooth);
 }
@@ -764,7 +776,7 @@ vercel-live-feedback,
   border-radius: 20px;
   padding: 0.3rem 0.75rem;
   font-size: 0.82rem;
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
   color: var(--text-primary);
   cursor: pointer;
   transition: background 0.2s, border-color 0.2s, transform 0.15s;
@@ -797,7 +809,7 @@ vercel-live-feedback,
   align-items: baseline;
   gap: 0.45rem;
   color: var(--text-primary);
-  font-weight: 900;
+  font-weight: var(--type-weight-strong);
   overflow: hidden;
 }
 .reader-current-reference #reader-pill-book-label {
@@ -811,7 +823,7 @@ vercel-live-feedback,
   flex-shrink: 0;
   color: var(--text-muted);
   font-size: 0.82rem;
-  font-weight: 800;
+  font-weight: var(--type-weight-strong);
 }
 .reader-pill-sep {
   color: var(--text-muted);
@@ -825,7 +837,7 @@ vercel-live-feedback,
   border-radius: 8px;
   padding: 0.2rem 0.5rem;
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
   color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.2s;
@@ -839,7 +851,7 @@ vercel-live-feedback,
 
 .reader-pill-fontsize {
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: var(--type-weight-strong);
   color: var(--text-muted);
   min-width: 30px;
   text-align: center;
@@ -972,7 +984,7 @@ vercel-live-feedback,
 
 .settings-subtitle {
   font-size: 0.85rem;
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
   text-transform: uppercase;
   color: var(--text-muted);
   margin-bottom: 0.75rem;
@@ -986,7 +998,7 @@ vercel-live-feedback,
 }
 
 .font-size-indicator {
-  font-weight: 600;
+  font-weight: var(--type-weight-strong);
   font-size: 0.95rem;
 }
 
@@ -1008,7 +1020,7 @@ vercel-live-feedback,
 
 .bible-heading {
   font-size: 1.8rem;
-  font-weight: 800;
+  font-weight: var(--type-weight-strong);
   font-family: 'Outfit', sans-serif;
   color: var(--text-primary);
 }
@@ -1023,7 +1035,7 @@ vercel-live-feedback,
   gap: 0.5rem;
   cursor: pointer;
   color: var(--text-secondary);
-  font-weight: 600;
+  font-weight: var(--type-weight-strong);
   font-size: 0.9rem;
   transition: var(--transition-smooth);
 }
@@ -1060,7 +1072,7 @@ vercel-live-feedback,
   content: "✓";
   color: white;
   font-size: 0.75rem;
-  font-weight: bold;
+  font-weight: var(--type-weight-strong);
 }
 
 /* Bible text formatting */
@@ -1085,7 +1097,7 @@ vercel-live-feedback,
 }
 
 .verse-num {
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
   color: var(--primary-color);
   margin-right: 0.5rem;
   font-family: 'Outfit', sans-serif;
@@ -1205,7 +1217,7 @@ vercel-live-feedback,
 }
 
 .day-title {
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
   font-size: 1.05rem;
 }
 
@@ -1214,7 +1226,7 @@ vercel-live-feedback,
   padding: 0.25rem 0.6rem;
   background-color: var(--border-card);
   border-radius: 50px;
-  font-weight: 600;
+  font-weight: var(--type-weight-strong);
   color: var(--text-secondary);
 }
 
@@ -1269,7 +1281,7 @@ vercel-live-feedback,
 
 .stats-mini-card .label {
   font-size: 0.85rem;
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
   color: var(--text-muted);
   text-transform: uppercase;
   margin-bottom: 0.4rem;
@@ -1277,7 +1289,7 @@ vercel-live-feedback,
 
 .stats-mini-card .value {
   font-size: 1.8rem;
-  font-weight: 800;
+  font-weight: var(--type-weight-strong);
   color: var(--text-primary);
   font-family: 'Outfit', sans-serif;
 }
@@ -1315,7 +1327,7 @@ vercel-live-feedback,
 .data-table th {
   padding: 0.75rem 1rem;
   font-size: 0.85rem;
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
   color: var(--text-muted);
   border-bottom: 2px solid var(--border-card);
   text-transform: uppercase;
@@ -1360,7 +1372,7 @@ vercel-live-feedback,
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
   font-size: 0.75rem;
-  font-weight: bold;
+  font-weight: var(--type-weight-strong);
 }
 
 .badge.success {
@@ -1399,7 +1411,7 @@ vercel-live-feedback,
 
 .loader-text {
   font-size: 1.1rem;
-  font-weight: 600;
+  font-weight: var(--type-weight-strong);
   letter-spacing: 0.05em;
 }
 
@@ -1506,7 +1518,7 @@ vercel-live-feedback,
     gap: 0.2rem;
     color: var(--text-muted);
     font-size: 0.75rem;
-    font-weight: 600;
+    font-weight: var(--type-weight-strong);
     cursor: pointer;
     transition: var(--transition-smooth);
     width: 20%;
@@ -1575,7 +1587,7 @@ vercel-live-feedback,
   transform: translateY(-1px);
 }
 .demo-role-card select {
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
 }
 
 /* PWA and Auth UI animations */
@@ -1639,9 +1651,9 @@ vercel-live-feedback,
 }
 
 .login-title {
-  font-family: 'Outfit', 'Noto Sans TC', sans-serif;
-  font-size: 1.6rem;
-  font-weight: 800;
+  font-family: 'Inter', 'Noto Sans TC', sans-serif;
+  font-size: 1.75rem;
+  font-weight: var(--type-weight-strong);
   color: var(--text-primary);
   margin-bottom: 0.5rem;
 }
@@ -1710,7 +1722,7 @@ vercel-live-feedback,
 
 .member-progress-item .member-name {
   font-size: 0.88rem;
-  font-weight: 600;
+  font-weight: var(--type-weight-strong);
   color: var(--text-primary);
 }
 
@@ -1721,7 +1733,7 @@ vercel-live-feedback,
 
 .progress-badge {
   font-size: 0.72rem;
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
   padding: 0.25rem 0.6rem;
   border-radius: 20px;
   display: inline-flex;
@@ -1763,7 +1775,7 @@ vercel-live-feedback,
 .monthly-fame-month {
   font-family: 'Outfit', sans-serif;
   font-size: 1.15rem;
-  font-weight: 800;
+  font-weight: var(--type-weight-strong);
   color: var(--primary-color);
   margin-bottom: 1rem;
   padding-bottom: 0.5rem;
@@ -1788,7 +1800,7 @@ vercel-live-feedback,
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 800;
+  font-weight: var(--type-weight-strong);
   font-size: 0.75rem;
 }
 .fame-rank.gold {
@@ -1808,13 +1820,13 @@ vercel-live-feedback,
 }
 
 .fame-name {
-  font-weight: 600;
+  font-weight: var(--type-weight-strong);
   color: var(--text-primary);
   flex: 1;
 }
 
 .fame-value {
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
   color: var(--text-secondary);
   font-size: 0.82rem;
 }
@@ -1892,7 +1904,7 @@ vercel-live-feedback,
 .profile-page-title {
   margin: 0;
   font-size: 1.55rem;
-  font-weight: 900;
+  font-weight: var(--type-weight-strong);
   color: var(--text-primary);
   letter-spacing: 0;
 }
@@ -1901,7 +1913,7 @@ vercel-live-feedback,
   margin: 0.25rem 0 0 0;
   color: var(--text-secondary);
   font-size: 0.9rem;
-  font-weight: 600;
+  font-weight: var(--type-weight-strong);
 }
 
 .profile-section-card {
@@ -1931,7 +1943,7 @@ vercel-live-feedback,
   color: var(--primary-color);
   border: 1px solid var(--color-brand-border);
   font-size: 0.75rem;
-  font-weight: 800;
+  font-weight: var(--type-weight-strong);
   white-space: nowrap;
 }
 
@@ -2010,7 +2022,7 @@ vercel-live-feedback,
   border: 2px solid rgba(255, 255, 255, 0.25);
   color: #fff;
   font-size: 0.95rem;
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -2062,7 +2074,7 @@ vercel-live-feedback,
 
 .dropdown-user-name {
   font-size: 0.95rem;
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
   color: var(--text-primary);
   margin-bottom: 0.2rem;
   white-space: nowrap;
@@ -2108,7 +2120,7 @@ vercel-live-feedback,
   padding: 0.15rem 0.55rem;
   border-radius: 99px;
   font-size: 0.72rem;
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
   background: var(--color-brand-subtle);
   color: var(--primary-color);
   border: 1px solid var(--color-brand-border);
@@ -2118,7 +2130,7 @@ vercel-live-feedback,
 button.logout-btn {
   cursor: pointer;
   color: #f87171;
-  font-weight: 600;
+  font-weight: var(--type-weight-strong);
   transition: background 0.15s ease, color 0.15s ease;
   border-top: 1px solid var(--border-card, rgba(255,255,255,0.08));
 }
@@ -2240,7 +2252,7 @@ button.logout-btn:hover {
   padding: 0.45rem 1.1rem;
   border-radius: 20px;
   font-size: 0.82rem;
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
   border: 1px solid var(--border-card);
   background: var(--bg-card);
   color: var(--text-secondary);
@@ -2274,7 +2286,7 @@ button.logout-btn:hover {
   background: none;
   color: var(--text-muted);
   font-size: 0.78rem;
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
   cursor: pointer;
   transition: all 0.22s ease;
   white-space: nowrap;
@@ -2318,7 +2330,7 @@ button.logout-btn:hover {
 }
 .stats-admin-scope-bar label {
   font-size: 0.82rem;
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
   color: #d97706;
   white-space: nowrap;
 }
@@ -2377,14 +2389,14 @@ button.logout-btn:hover {
 }
 .plan-cover-card .cover-title {
   font-size: 1.4rem;
-  font-weight: 800;
+  font-weight: var(--type-weight-strong);
   z-index: 2;
   line-height: 1.3;
   text-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 .plan-cover-card .cover-subtitle {
   font-size: 0.82rem;
-  font-weight: 600;
+  font-weight: var(--type-weight-strong);
   opacity: 0.9;
   z-index: 2;
   margin-top: 0.3rem;
@@ -2436,7 +2448,7 @@ button.logout-btn:hover {
   top: 4px;
   right: 6px;
   font-size: 0.7rem;
-  font-weight: 900;
+  font-weight: var(--type-weight-strong);
   color: #10b981;
 }
 .date-card.active {
@@ -2455,7 +2467,7 @@ button.logout-btn:hover {
 }
 .date-card.today .date-lbl {
   color: #f59e0b;
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
 }
 .date-card.today::before {
   content: "今";
@@ -2463,7 +2475,7 @@ button.logout-btn:hover {
   top: 4px;
   left: 6px;
   font-size: 0.6rem;
-  font-weight: 900;
+  font-weight: var(--type-weight-strong);
   color: #f59e0b;
   background: rgba(245, 158, 11, 0.15);
   border-radius: 3px;
@@ -2489,7 +2501,7 @@ button.logout-btn:hover {
 }
 .date-card .day-num {
   font-size: 1.2rem;
-  font-weight: 800;
+  font-weight: var(--type-weight-strong);
   color: var(--text-primary);
 }
 .date-card .date-lbl {
@@ -2563,7 +2575,7 @@ button.logout-btn:hover {
 }
 .plan-task-item .task-title {
   font-size: 1rem;
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
   color: var(--text-primary);
   flex-grow: 1;
 }
@@ -2577,7 +2589,7 @@ button.logout-btn:hover {
 /* 第n遍提示標籤 */
 .task-round-label {
   font-size: 0.68rem;
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
   padding: 0.18rem 0.55rem;
   border-radius: 20px;
   white-space: nowrap;
@@ -2617,7 +2629,7 @@ button.logout-btn:hover {
 .options-dropdown-item {
   padding: 0.75rem 1rem;
   font-size: 0.85rem;
-  font-weight: 600;
+  font-weight: var(--type-weight-strong);
   color: var(--text-primary);
   text-align: left;
   border: none;
@@ -2663,7 +2675,7 @@ button.logout-btn:hover {
 }
 .calendar-month-title {
   font-size: 0.78rem;
-  font-weight: 800;
+  font-weight: var(--type-weight-strong);
   color: var(--text-secondary);
   margin-bottom: 0.55rem;
 }
@@ -2680,7 +2692,7 @@ button.logout-btn:hover {
   align-items: center;
   justify-content: center;
   font-size: 0.66rem;
-  font-weight: 800;
+  font-weight: var(--type-weight-strong);
   color: var(--text-muted);
 }
 .calendar-day {
@@ -2694,7 +2706,7 @@ button.logout-btn:hover {
   align-items: center;
   justify-content: center;
   font-size: 0.68rem;
-  font-weight: 800;
+  font-weight: var(--type-weight-strong);
   color: var(--text-muted);
   background: rgba(148, 163, 184, 0.12);
   border: 1px solid rgba(148, 163, 184, 0.16);
@@ -2737,13 +2749,13 @@ button.logout-btn:hover {
 }
 .bar-race-title {
   font-size: 0.95rem;
-  font-weight: 900;
+  font-weight: var(--type-weight-strong);
   color: var(--text-primary);
 }
 .bar-race-subtitle {
   margin-top: 0.15rem;
   font-size: 0.72rem;
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
   color: var(--text-muted);
 }
 .bar-race-replay {
@@ -2753,7 +2765,7 @@ button.logout-btn:hover {
   border-radius: 8px;
   padding: 0.38rem 0.7rem;
   font-size: 0.76rem;
-  font-weight: 800;
+  font-weight: var(--type-weight-strong);
   cursor: pointer;
 }
 .bar-race-track {
@@ -2782,7 +2794,7 @@ button.logout-btn:hover {
   border-radius: 8px;
   background: var(--bg-input);
   color: var(--text-secondary);
-  font-weight: 900;
+  font-weight: var(--type-weight-strong);
 }
 .bar-race-main {
   min-width: 0;
@@ -2793,7 +2805,7 @@ button.logout-btn:hover {
   gap: 0.75rem;
   margin-bottom: 0.28rem;
   font-size: 0.82rem;
-  font-weight: 800;
+  font-weight: var(--type-weight-strong);
 }
 .bar-race-name {
   color: var(--text-primary);
@@ -2829,7 +2841,7 @@ button.logout-btn:hover {
   top: 50%;
   transform: translateY(-50%);
   font-size: 0.78rem;
-  font-weight: 900;
+  font-weight: var(--type-weight-strong);
   color: var(--text-primary);
 }
 
@@ -2845,7 +2857,7 @@ button.logout-btn:hover {
   gap: 1rem;
   color: var(--text-muted);
   font-size: 0.76rem;
-  font-weight: 800;
+  font-weight: var(--type-weight-strong);
 }
 .stacked-percent-bar {
   display: flex;
@@ -2866,7 +2878,7 @@ button.logout-btn:hover {
   justify-content: center;
   color: #fff;
   font-size: 0.78rem;
-  font-weight: 900;
+  font-weight: var(--type-weight-strong);
   white-space: nowrap;
 }
 .stacked-progress-legend {
@@ -2886,7 +2898,7 @@ button.logout-btn:hover {
   border: 1px solid var(--border-card);
   color: var(--text-secondary);
   font-size: 0.76rem;
-  font-weight: 800;
+  font-weight: var(--type-weight-strong);
 }
 .stacked-dot {
   width: 9px;
@@ -2940,13 +2952,13 @@ button.logout-btn:hover {
 }
 .distribution-metric-card span {
   font-size: 0.74rem;
-  font-weight: 800;
+  font-weight: var(--type-weight-strong);
   color: var(--text-muted);
 }
 .distribution-metric-card strong {
   font-size: 1.35rem;
   line-height: 1.15;
-  font-weight: 900;
+  font-weight: var(--type-weight-strong);
   color: var(--text-primary);
 }
 .distribution-metric-card.primary strong {
@@ -2954,7 +2966,7 @@ button.logout-btn:hover {
 }
 .distribution-metric-card small {
   font-size: 0.72rem;
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
   color: var(--text-muted);
 }
 .distribution-redesign .stacked-progress-summary {
@@ -2963,7 +2975,7 @@ button.logout-btn:hover {
   align-items: center;
   color: var(--text-muted);
   font-size: 0.74rem;
-  font-weight: 900;
+  font-weight: var(--type-weight-strong);
   margin-bottom: -0.35rem;
 }
 .distribution-redesign .stacked-progress-summary span:nth-child(1) {
@@ -3116,7 +3128,7 @@ button.logout-btn:hover {
   border-radius: 10px;
   padding: 1rem;
   line-height: 1.7;
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
 }
 
 /* Clear plan detail return action */
@@ -3132,7 +3144,7 @@ button.logout-btn:hover {
   background: var(--color-brand-subtle);
   color: var(--primary-color);
   font-size: 0.84rem;
-  font-weight: 900;
+  font-weight: var(--type-weight-strong);
   white-space: nowrap;
   cursor: pointer;
   transition: transform 0.15s ease, background 0.2s ease, border-color 0.2s ease;
@@ -3180,7 +3192,7 @@ button.logout-btn:hover {
   min-height: 36px;
   border-radius: 9px;
   font-size: 0.82rem;
-  font-weight: 900;
+  font-weight: var(--type-weight-strong);
 }
 .reader-picker-tab.active,
 .reader-book-choice.active,
@@ -3203,7 +3215,7 @@ button.logout-btn:hover {
 }
 .reader-picker-title {
   font-size: 0.78rem;
-  font-weight: 900;
+  font-weight: var(--type-weight-strong);
   color: var(--text-muted);
 }
 .reader-book-grid {
@@ -3219,7 +3231,7 @@ button.logout-btn:hover {
   border-radius: 10px;
   padding: 0.45rem 0.55rem;
   font-size: 0.82rem;
-  font-weight: 850;
+  font-weight: var(--type-weight-strong);
   text-align: center;
 }
 .reader-chapter-grid {
@@ -3235,7 +3247,7 @@ button.logout-btn:hover {
   min-height: 38px;
   border-radius: 10px;
   font-size: 0.86rem;
-  font-weight: 900;
+  font-weight: var(--type-weight-strong);
 }
 @media (max-width: 560px) {
   .plan-back-button span {
@@ -3315,7 +3327,7 @@ button.logout-btn:hover {
 }
 .plan-day-heading #plan-day-subtitle {
   font-size: 0.95rem !important;
-  font-weight: 700 !important;
+  font-weight: var(--type-weight-strong) !important;
   color: var(--text-primary) !important;
 }
 .plan-day-heading #plan-day-status-pill {
@@ -3432,7 +3444,7 @@ button.logout-btn:hover {
   border-radius: 12px;
   color: rgba(255, 255, 255, 0.92);
   font-size: 0.94rem;
-  font-weight: 800;
+  font-weight: var(--type-weight-strong);
   gap: 0.7rem;
 }
 #plan-options-dropdown .options-dropdown-item:hover {
@@ -3467,7 +3479,7 @@ button.logout-btn:hover {
 .plan-level-editor-header h3 {
   margin: 0;
   font-size: 1.05rem;
-  font-weight: 900;
+  font-weight: var(--type-weight-strong);
   color: var(--text-primary);
 }
 .plan-level-back-btn {
@@ -3481,7 +3493,7 @@ button.logout-btn:hover {
   min-height: 38px;
   padding: 0 0.85rem 0 0.65rem;
   font-size: 0.82rem;
-  font-weight: 800;
+  font-weight: var(--type-weight-strong);
   cursor: pointer;
 }
 .plan-level-back-btn:hover {
@@ -3508,7 +3520,7 @@ button.logout-btn:hover {
 }
 .plan-level-option strong {
   font-size: 1rem;
-  font-weight: 900;
+  font-weight: var(--type-weight-strong);
 }
 .plan-level-option span {
   color: var(--text-muted);
@@ -3578,7 +3590,7 @@ button.logout-btn:hover {
   color: var(--text-primary);
   padding: 0.4rem 0.9rem;
   font-size: 0.85rem;
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
   border-radius: 99px;
   cursor: pointer;
   transition: all 0.2s;
@@ -3642,7 +3654,7 @@ button.logout-btn:hover {
 
 .setting-title {
   font-size: 0.7rem;
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.03em;
@@ -3657,7 +3669,7 @@ button.logout-btn:hover {
   flex: 1;
   padding: 0.35rem 0.25rem;
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
   color: var(--text-primary);
   background: rgba(128, 128, 128, 0.08);
   border: 1px solid var(--border-card);
@@ -3867,9 +3879,9 @@ select,
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 1rem;
-  font-weight: 900;
-  letter-spacing: 0;
+  font-size: 0.875rem;
+  font-weight: var(--type-weight-strong);
+  letter-spacing: normal;
 }
 
 .app-back-btn {
@@ -3943,7 +3955,7 @@ select,
   justify-content: center;
   gap: 0.18rem;
   font-size: 0.68rem;
-  font-weight: 800;
+  font-weight: var(--type-weight-strong);
   line-height: 1.1;
   cursor: pointer;
   transition: transform 0.12s ease, color 0.15s ease, background 0.15s ease;
@@ -4084,7 +4096,7 @@ button:focus-visible,
   border: none;
   color: var(--text-primary);
   font-size: 0.95rem;
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
   cursor: pointer;
   padding: 0.5rem 0.2rem;
   min-height: 44px;
@@ -4096,7 +4108,7 @@ button:focus-visible,
 
 .overlay-title {
   font-size: 1.08rem;
-  font-weight: 900;
+  font-weight: var(--type-weight-strong);
   color: var(--text-primary);
   text-align: center;
   flex: 1;
@@ -4104,7 +4116,7 @@ button:focus-visible,
 
 .overlay-version {
   font-size: 0.78rem;
-  font-weight: 800;
+  font-weight: var(--type-weight-strong);
   color: var(--text-secondary);
   background: rgba(128, 128, 128, 0.08);
   padding: 0.25rem 0.55rem;
@@ -4129,7 +4141,7 @@ button:focus-visible,
   border-bottom: 3px solid transparent;
   color: var(--text-secondary);
   font-size: 0.92rem;
-  font-weight: 800;
+  font-weight: var(--type-weight-strong);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -4254,7 +4266,7 @@ input:checked + .slider:before {
   padding: 0.55rem 0.85rem;
   background: rgba(128, 128, 128, 0.04);
   font-size: 0.74rem;
-  font-weight: 800;
+  font-weight: var(--type-weight-strong);
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.02em;
@@ -4295,13 +4307,13 @@ input:checked + .slider:before {
 }
 .grid-item-book .abbrev-title {
   font-size: 1.15rem;
-  font-weight: 900;
+  font-weight: var(--type-weight-strong);
   color: var(--text-primary);
   margin-bottom: 0.05rem;
 }
 .grid-item-book .full-title {
   font-size: 0.62rem;
-  font-weight: 800;
+  font-weight: var(--type-weight-strong);
   color: var(--text-muted);
   text-align: center;
   white-space: nowrap;
@@ -4344,7 +4356,7 @@ input:checked + .slider:before {
   padding: 0.12rem 0.35rem;
   border-radius: 4px;
   color: var(--text-muted);
-  font-weight: 800;
+  font-weight: var(--type-weight-strong);
 }
 
 /* Chapter and Verse grids */
@@ -4364,7 +4376,7 @@ input:checked + .slider:before {
   align-items: center;
   justify-content: center;
   font-size: 1.15rem;
-  font-weight: 800;
+  font-weight: var(--type-weight-strong);
   color: var(--text-primary);
   cursor: pointer;
   user-select: none;
@@ -4405,7 +4417,7 @@ input:checked + .slider:before {
   padding-left: 32px;
   padding-right: 32px;
   font-size: 0.9rem;
-  font-weight: 600;
+  font-weight: var(--type-weight-strong);
   color: var(--text-primary);
   outline: none;
 }
@@ -4432,7 +4444,7 @@ input:checked + .slider:before {
   border: none;
   color: #ef4444;
   font-size: 0.92rem;
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
   cursor: pointer;
   white-space: nowrap;
   padding: 0.2rem 0;
@@ -4445,7 +4457,7 @@ input:checked + .slider:before {
 .search-results-info {
   padding: 0.5rem 0.85rem;
   font-size: 0.78rem;
-  font-weight: 800;
+  font-weight: var(--type-weight-strong);
   color: var(--text-muted);
   background: var(--bg-app);
   border-bottom: 1px solid var(--border-card);
@@ -4463,7 +4475,7 @@ input:checked + .slider:before {
 }
 .search-result-ref {
   font-size: 0.78rem;
-  font-weight: 900;
+  font-weight: var(--type-weight-strong);
   color: #ef4444;
   margin-bottom: 0.2rem;
 }
@@ -4546,7 +4558,7 @@ input:checked + .slider:before {
 .bottom-sheet-header h3 {
   margin: 0;
   font-size: 1.05rem;
-  font-weight: 900;
+  font-weight: var(--type-weight-strong);
   color: var(--text-primary);
 }
 .bottom-sheet-close-x {
@@ -4580,7 +4592,7 @@ input:checked + .slider:before {
 
 .sheet-section-title {
   font-size: 0.76rem;
-  font-weight: 800;
+  font-weight: var(--type-weight-strong);
   color: var(--text-muted);
   text-transform: uppercase;
 }
@@ -4597,7 +4609,7 @@ input:checked + .slider:before {
   background: rgba(128, 128, 128, 0.05);
   color: var(--text-primary);
   border-radius: 10px;
-  font-weight: 800;
+  font-weight: var(--type-weight-strong);
   font-size: 0.85rem;
   cursor: pointer;
   display: flex;
@@ -4618,7 +4630,7 @@ input:checked + .slider:before {
   font-size: 0.62rem;
   color: var(--text-muted);
   margin-top: 0.05rem;
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
 }
 .sheet-option-btn.active .size-num {
   color: #ef4444;
@@ -4688,7 +4700,7 @@ body.reader-modal-open .main-content {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 0.98rem;
-  font-weight: 900;
+  font-weight: var(--type-weight-strong);
   line-height: 1.15;
 }
 
@@ -4696,7 +4708,7 @@ body.reader-modal-open .main-content {
   margin-top: 0.15rem;
   color: var(--text-muted);
   font-size: 0.68rem;
-  font-weight: 800;
+  font-weight: var(--type-weight-strong);
   letter-spacing: 0;
 }
 
@@ -4775,7 +4787,7 @@ body.reader-modal-open .main-content {
 .overlay-title {
   color: #1f2937;
   font-size: 1.12rem;
-  font-weight: 900;
+  font-weight: var(--type-weight-strong);
 }
 
 .overlay-version {
@@ -5232,7 +5244,7 @@ body.reader-page .reader-ref-chip {
   #reader-view .bible-heading {
     font-size: 0.95rem !important;
     color: var(--text-muted) !important;
-    font-weight: 800 !important;
+    font-weight: var(--type-weight-strong) !important;
     letter-spacing: 0 !important;
   }
 
@@ -5273,7 +5285,7 @@ body.reader-page .reader-ref-chip {
     min-width: 2.2rem;
     color: var(--primary-color) !important;
     opacity: 0.9;
-    font-weight: 900;
+    font-weight: var(--type-weight-strong);
   }
 
   #reader-view .verse-text {
@@ -5497,7 +5509,7 @@ body.reader-nav-hidden #reader-view .floating-nav-btn {
 #bottom-sheet-title {
   margin: 0;
   font-size: 1.15rem;
-  font-weight: 800;
+  font-weight: var(--type-weight-strong);
   color: var(--text-primary);
   font-family: 'Outfit', sans-serif;
 }
@@ -5531,7 +5543,7 @@ body.reader-nav-hidden #reader-view .floating-nav-btn {
   color: var(--text-primary);
   text-align: left;
   font-size: 0.94rem;
-  font-weight: 600;
+  font-weight: var(--type-weight-strong);
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -5556,7 +5568,7 @@ body.reader-nav-hidden #reader-view .floating-nav-btn {
   border-radius: 9999px;
   color: #cbd5e1;
   font-size: 0.82rem;
-  font-weight: 600;
+  font-weight: var(--type-weight-strong);
   cursor: pointer;
   transition: all 0.2s ease;
   user-select: none;
@@ -5633,7 +5645,7 @@ body.reader-nav-hidden #reader-view .floating-nav-btn {
 }
 .member-name-text {
   font-size: 0.98rem;
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
   color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
@@ -5645,7 +5657,7 @@ body.reader-nav-hidden #reader-view .floating-nav-btn {
   padding: 0.18rem 0.55rem;
   border-radius: 9999px;
   font-size: 0.72rem;
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
   background: var(--color-brand-subtle);
   color: #a5b4fc;
   border: 1px solid var(--color-brand-border);
@@ -5691,7 +5703,7 @@ body.light-theme .segmented-control.bible-native-tabs {
   flex: 1;
   text-align: center;
   padding: 0.6rem 1rem;
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
   font-size: 0.94rem;
   cursor: pointer;
   z-index: 1;
@@ -5743,7 +5755,7 @@ body.light-theme .book-list-item-asym {
   border-radius: 8px;
   color: var(--text-primary);
   font-size: 1.02rem;
-  font-weight: 800;
+  font-weight: var(--type-weight-strong);
   flex-shrink: 0;
   transition: all 0.2s ease;
 }
@@ -5765,7 +5777,7 @@ body.light-theme .book-brand-box {
 }
 .book-full-title {
   font-size: 1.02rem;
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
   color: var(--text-primary);
 }
 .book-english-sub {
@@ -5788,7 +5800,7 @@ body.light-theme .book-brand-box {
   background: transparent !important;
   color: var(--text-primary);
   font-size: 1.15rem;
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
   width: 48px;
   height: 48px;
   display: flex;
@@ -5918,7 +5930,7 @@ body.reader-page .main-content,
 
 .reader-bottom-action-bar .progress-indicator {
   font-size: 0.78rem;
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
   color: var(--text-secondary);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
   pointer-events: auto;
@@ -5933,7 +5945,7 @@ body.reader-page .main-content,
   height: 52px;
   border-radius: 26px;
   font-size: 0.96rem;
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
   box-shadow: var(--shadow-sm);
   transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
@@ -5999,7 +6011,7 @@ body.dark-theme .reader-bottom-action-bar.scenario-a .capsule-action-btn {
 
 .calendar-month-title {
   font-size: 0.95rem;
-  font-weight: 800;
+  font-weight: var(--type-weight-strong);
   color: var(--text-primary);
   letter-spacing: 0.5px;
 }
@@ -6034,7 +6046,7 @@ body.dark-theme .reader-bottom-action-bar.scenario-a .capsule-action-btn {
   border: none;
   color: var(--primary-color);
   font-size: 0.78rem;
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
   padding: 4px 10px;
   border-radius: 12px;
   cursor: pointer;
@@ -6060,7 +6072,7 @@ body.dark-theme .reader-bottom-action-bar.scenario-a .capsule-action-btn {
 
 .calendar-weekdays div {
   font-size: 0.72rem;
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
   color: var(--text-muted);
   text-transform: uppercase;
 }
@@ -6093,7 +6105,7 @@ body.dark-theme .reader-bottom-action-bar.scenario-a .capsule-action-btn {
 
 .calendar-day .day-number {
   font-size: 0.92rem;
-  font-weight: 600;
+  font-weight: var(--type-weight-strong);
   line-height: 1.1;
   color: var(--text-primary);
 }
@@ -6137,7 +6149,7 @@ body.dark-theme .reader-bottom-action-bar.scenario-a .capsule-action-btn {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  font-weight: 800 !important;
+  font-weight: var(--type-weight-strong) !important;
   font-size: 0.95rem !important;
   box-shadow: var(--shadow-none) !important;
 }
@@ -6160,7 +6172,7 @@ body.dark-theme .reader-bottom-action-bar.scenario-a .capsule-action-btn {
   animation: pulseCompleted 0.4s ease-out;
 }
 .calendar-day.completed .day-number {
-  font-weight: 700 !important;
+  font-weight: var(--type-weight-strong) !important;
 }
 
 /* Combine Today + Completed visually */
@@ -6243,7 +6255,7 @@ body.dark-theme .calendar-day .micro-progress-bar {
   padding: 6px 14px;
   border-radius: 20px;
   font-size: 0.8rem;
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
   cursor: pointer;
   box-shadow: var(--shadow-sm) !important;
   display: flex;
@@ -6374,7 +6386,7 @@ body.dark-theme .calendar-day .micro-progress-bar {
 }
 #bible-heatmap-container .calendar-month-title {
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
   margin-bottom: 0.4rem;
 }
 #bible-heatmap-container .calendar-month-grid {
@@ -6434,7 +6446,7 @@ body.dark-theme .calendar-day .micro-progress-bar {
 }
 #grp-bible-heatmap-container .calendar-month-title {
   font-size: 0.75rem;
-  font-weight: 700;
+  font-weight: var(--type-weight-strong);
   margin-bottom: 0.4rem;
 }
 #grp-bible-heatmap-container .calendar-month-grid {

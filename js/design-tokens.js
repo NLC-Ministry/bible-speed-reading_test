@@ -17,6 +17,12 @@ const NLC_DESIGN = {
   black: "#0F0F0F",
 };
 
+/** Typography weights — matches Member Hub font-medium / font-normal */
+const NLC_TYPE = {
+  strong: 500,
+  regular: 400,
+};
+
 /** Neutral shadow scale — matches Member Hub Tailwind shadow-sm/md/lg */
 const NLC_SHADOW = {
   sm: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
@@ -59,6 +65,7 @@ const NLC_MEMBER_COLORS = [
 ];
 
 window.NLC_DESIGN = NLC_DESIGN;
+window.NLC_TYPE = NLC_TYPE;
 window.NLC_SHADOW = NLC_SHADOW;
 window.NLC_CHART = NLC_CHART;
 window.NLC_PLAN_COVERS = NLC_PLAN_COVERS;
