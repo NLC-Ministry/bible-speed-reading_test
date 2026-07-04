@@ -23,6 +23,8 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
   <!-- Chart.js for premium stats dashboard -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js" crossorigin="anonymous"></script>
+  <!-- html2canvas for exporting high-quality cards -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous"></script>
 </head>
 <body class="light-theme">
   <!-- App Container -->
@@ -173,6 +175,11 @@
               <!-- Middle/Top Layer: Absolute Text Overlay with glass backdrop filter -->
               <div class="absolute inset-0 p-6 flex flex-col justify-between text-white" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 10; padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between; background: rgba(0,0,0,0.3); backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px); color: white;">
                 
+                <!-- Share Button (z-index 30, intercepts clicks) -->
+                <button id="share-card-btn" class="absolute p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors" style="position: absolute; top: 1rem; right: 1rem; z-index: 30; border: none; outline: none; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer;" title="分享圖卡">
+                  <i class="bi bi-share text-white text-lg"></i>
+                </button>
+
                 <!-- Title Header -->
                 <div class="flex items-center gap-2 mb-4 text-xs font-bold uppercase tracking-wider text-purple-300">
                   <i class="bi bi-stars text-amber-200"></i> 每日金句

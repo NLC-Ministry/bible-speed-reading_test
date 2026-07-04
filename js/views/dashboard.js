@@ -1098,11 +1098,90 @@ async function fetchRandomVerse(event) {
   }
 }
 
+async function shareAsImage(e) {
+  if (e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+  
+  const shareBtn = document.getElementById("share-card-btn");
+  const card = document.getElementById("verse-card");
+  if (!shareBtn || !card) return;
+  
+  shareBtn.disabled = true;
+  shareBtn.innerHTML = `<i class="bi bi-arrow-repeat animate-spin text-white text-lg"></i>`;
+  
+  try {
+    const canvas = await html2canvas(card, {
+      useCORS: true,
+      scale: 2,
+      backgroundColor: null,
+      logging: false
+    });
+    
+    canvas.toBlob(async (blob) => {
+      if (!blob) {
+        throw new Error("Blob conversion failed");
+      }
+      
+      const file = new File([blob], 'daily-verse.png', { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: '每日金句分享',
+            text: '分享一句帶給我力量的話語。'
+          });
+          
+          localStorage.setItem("has_shared_verse", "true");
+          if (typeof checkAchievements === "function") {
+            checkAchievements();
+          }
+          if (typeof showToast === "function") {
+            showToast("分享成功！解鎖「傳遞愛光芒」成就！");
+          }
+        } catch (shareErr) {
+          console.warn("Share cancelled or failed:", shareErr);
+        }
+      } else {
+        const link = document.createElement('a');
+        link.download = 'daily-verse.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        
+        localStorage.setItem("has_shared_verse", "true");
+        if (typeof checkAchievements === "function") {
+          checkAchievements();
+        }
+        if (typeof showToast === "function") {
+          showToast("圖卡已成功下載，快發送給朋友吧！");
+        }
+      }
+    }, 'image/png');
+  } catch (err) {
+    console.error("Failed to generate image:", err);
+    if (typeof showToast === "function") {
+      showToast("產生圖卡失敗，請稍後再試。");
+    }
+  } finally {
+    setTimeout(() => {
+      shareBtn.disabled = false;
+      shareBtn.innerHTML = `<i class="bi bi-share text-white text-lg"></i>`;
+    }, 1000);
+  }
+}
+
 function renderDailyVerse() {
   const card = document.getElementById("verse-card");
   if (card && !card._hasFlipListener) {
     card.addEventListener("click", fetchRandomVerse);
     card._hasFlipListener = true;
+  }
+
+  const shareBtn = document.getElementById("share-card-btn");
+  if (shareBtn && !shareBtn._hasShareListener) {
+    shareBtn.addEventListener("click", shareAsImage);
+    shareBtn._hasShareListener = true;
   }
 
   if (!currentVerse) {
