@@ -1127,8 +1127,10 @@ const db = {
     }
   },
 
-  async fetchMergedUsersList(filterPresetKey = null) {
-    if (!filterPresetKey && state.activePlan) {
+  async fetchMergedUsersList(filterPresetKey = null, ignorePlanFilter = false) {
+    if (ignorePlanFilter) {
+      filterPresetKey = false;
+    } else if (!filterPresetKey && state.activePlan) {
       filterPresetKey = state.activePlan.globalPlanId || state.activePlan.presetKey || state.activePlan.name || state.activePlan.id;
     }
     const cacheKey = filterPresetKey || 'all';

@@ -638,7 +638,7 @@ async function renderAdminUserManagement() {
   ComponentSkeletonLoader.show('members', listContainer);
 
   try {
-    const users = await db.fetchMergedUsersList();
+    const users = await db.fetchMergedUsersList(null, true);
     
     // Sort users: current user first, then leaders, then members
     const roleOrder = { senior_pastor: 1, admin: 2, great_zone_leader: 3, zone_leader: 4, group_leader: 5, member: 6 };
