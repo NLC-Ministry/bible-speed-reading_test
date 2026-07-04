@@ -38,7 +38,7 @@ function updateDashboardView() {
     const isPlanAvailable = started || isAdmin;
     const statusText = started 
       ? `進度: ${progress}% (${state.activePlan.completedChapters} / ${state.activePlan.totalChapters} 章)`
-      : `<span style="color: #3b82f6; font-weight: 700;">等待開始</span> (將於 ${state.activePlan.startDate} 開始)`;
+      : `<span style="color: #3b82f6; font-weight: 500;">等待開始</span> (將於 ${state.activePlan.startDate} 開始)`;
       
     // Calculate core statistics for dashboard summary card
     const streakDays = state.currentUser.streak || 0;
@@ -73,10 +73,10 @@ function updateDashboardView() {
     planSummaryDiv.innerHTML = `
       <div class="plan-progress-header">
         <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;">
-          <h4 style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin: 0;">${state.activePlan.name}</h4>
+          <h4 style="font-size: 1.15rem; font-weight: 500; color: var(--text-primary); margin: 0;">${state.activePlan.name}</h4>
           ${started 
-            ? '<span style="font-size: 0.7rem; background: #10b981; color: white; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: 700; white-space: nowrap;">進行中</span>'
-            : '<span style="font-size: 0.7rem; background: #3b82f6; color: white; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: 700; white-space: nowrap;">等待開始</span>'
+            ? '<span style="font-size: 0.7rem; background: #10b981; color: white; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: 500; white-space: nowrap;">進行中</span>'
+            : '<span style="font-size: 0.7rem; background: #3b82f6; color: white; padding: 0.15rem 0.4rem; border-radius: 4px; font-weight: 500; white-space: nowrap;">等待開始</span>'
           }
         </div>
         <p style="font-size: 0.88rem; color: var(--text-secondary); margin-top: 0.2rem;">
@@ -85,29 +85,29 @@ function updateDashboardView() {
         <div class="plan-progress-wrapper" style="margin-top: 1rem;">
           <div class="plan-progress-bar" style="width: ${progress}%;"></div>
         </div>
-        <p style="font-size: 0.88rem; font-weight: 600; color: var(--text-secondary); margin-top: 0.5rem; text-align: right; margin-bottom: 1rem;">
+        <p style="font-size: 0.88rem; font-weight: 500; color: var(--text-secondary); margin-top: 0.5rem; text-align: right; margin-bottom: 1rem;">
           ${statusText}
         </p>
 
         <!-- 第一線首頁常駐卡片 (簡短核心，橫向 Flex 佈局) -->
         <div class="dashboard-stats-strip" 
              onclick="event.stopPropagation(); window.showPlanStatsModal ? window.showPlanStatsModal() : null;"
-             style="display: flex; justify-content: space-around; background: rgba(99, 102, 241, 0.06); border: 1px solid var(--border-card); border-radius: 12px; padding: 0.8rem 0.5rem; cursor: pointer; transition: transform 0.2s, background-color 0.2s;"
-             onmouseover="this.style.background='rgba(99, 102, 241, 0.1)'; this.style.transform='scale(1.01)';"
-             onmouseout="this.style.background='rgba(99, 102, 241, 0.06)'; this.style.transform='scale(1)';"
+             style="display: flex; justify-content: space-around; background: var(--color-brand-muted, rgba(4,169,210,0.08)); border: 1px solid var(--border-card); border-radius: 12px; padding: 0.8rem 0.5rem; cursor: pointer; transition: transform 0.2s, background-color 0.2s;"
+             onmouseover="this.style.background='var(--color-brand-subtle, rgba(4,169,210,0.12))'; this.style.transform='scale(1.01)';"
+             onmouseout="this.style.background='var(--color-brand-muted, rgba(4,169,210,0.08))'; this.style.transform='scale(1)';"
              title="點擊展開詳細統計">
           <div style="display: flex; flex-direction: column; align-items: center; text-align: center; flex: 1; min-width: 0;">
-            <span style="font-size: 1.15rem; font-weight: 800; color: #ef4444; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">🔥 ${streakDays} 天</span>
+            <span style="font-size: 1.15rem; font-weight: 500; color: #ef4444; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">🔥 ${streakDays} 天</span>
             <span style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">連續讀經</span>
           </div>
           <div style="width: 1px; background: var(--border-card); align-self: stretch;"></div>
           <div style="display: flex; flex-direction: column; align-items: center; text-align: center; flex: 1; min-width: 0;">
-            <span style="font-size: 1.15rem; font-weight: 800; color: var(--primary-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">📖 ${todayReadCount}/${todayTotalCount} 章</span>
+            <span style="font-size: 1.15rem; font-weight: 500; color: var(--primary-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">📖 ${todayReadCount}/${todayTotalCount} 章</span>
             <span style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">今日進度</span>
           </div>
           <div style="width: 1px; background: var(--border-card); align-self: stretch;"></div>
           <div style="display: flex; flex-direction: column; align-items: center; text-align: center; flex: 1; min-width: 0;">
-            <span style="font-size: 1.15rem; font-weight: 800; color: #10b981; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">📈 ${totalCompletionRate}%</span>
+            <span style="font-size: 1.15rem; font-weight: 500; color: #10b981; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">📈 ${totalCompletionRate}%</span>
             <span style="font-size: 0.7rem; color: var(--text-muted); margin-top: 0.2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">計畫進度</span>
           </div>
         </div>
@@ -516,22 +516,12 @@ function getTileCoords(index) {
 }
 
 function getMemberColor(name) {
-  if (name === state.currentUser.name) return "#6366f1"; // Indigo for Me
+  if (name === state.currentUser.name) return (window.NLC_DESIGN && NLC_DESIGN.brand) || "#04A9D2";
   let hash = 0;
   for (let i = 0; i < name.length; i++) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
-  const colors = [
-    "#10b981", // Emerald
-    "#f59e0b", // Amber
-    "#ef4444", // Red
-    "#3b82f6", // Blue
-    "#ec4899", // Pink
-    "#8b5cf6", // Purple
-    "#14b8a6", // Teal
-    "#f43f5e", // Rose
-    "#06b6d4"  // Cyan
-  ];
+  const colors = window.NLC_MEMBER_COLORS || ["#04A9D2", "#0396BA", "#66F78F", "#FE7615", "#5BB8D4", "#0284A3", "#8ED4EA", "#FC365A"];
   const index = Math.abs(hash) % colors.length;
   return colors[index];
 }
@@ -598,8 +588,8 @@ async function renderPilgrimageTrail() {
 
   // ── 4. Round-based color palette ──────────────────────────────────────
   const palette = {
-    1: { myPath: "#818cf8", grpPath: "#93c5fd", myFill: "#e0e7ff", grpFill: "#eff6ff", myStroke: "#6366f1", grpStroke: "#3b82f6", myText: "#4338ca", grpText: "#1d4ed8" },
-    2: { myPath: "#a855f7", grpPath: "#c4b5fd", myFill: "#f3e8ff", grpFill: "#faf5ff", myStroke: "#9333ea", grpStroke: "#7c3aed", myText: "#7e22ce", grpText: "#6d28d9" },
+    1: { myPath: "#04A9D2", grpPath: "#8ED4EA", myFill: "rgba(4,169,210,0.15)", grpFill: "rgba(4,169,210,0.08)", myStroke: "#04A9D2", grpStroke: "#0396BA", myText: "#0284A3", grpText: "#0396BA" },
+    2: { myPath: "#66F78F", grpPath: "#A8F5C0", myFill: "rgba(102,247,143,0.15)", grpFill: "rgba(102,247,143,0.08)", myStroke: "#66F78F", grpStroke: "#4ADE80", myText: "#16A34A", grpText: "#15803D" },
     3: { myPath: "#f59e0b", grpPath: "#fcd34d", myFill: "#fef3c7", grpFill: "#fffbeb", myStroke: "#d97706", grpStroke: "#ca8a04", myText: "#92400e", grpText: "#b45309" },
   };
   const pal = palette[Math.min(currentRound, 3)];
@@ -635,7 +625,7 @@ async function renderPilgrimageTrail() {
   drawPathLine(0, maxDrawIndex, "rgba(226, 232, 240, 0.8)", 7);
   // Round 1 footprint underlay (visible only on round 2+)
   if (currentRound >= 2 && myR1Count > 1) {
-    drawPathLine(0, Math.min(myR1Count - 1, maxDrawIndex), "rgba(99, 102, 241, 0.2)", 5);
+    drawPathLine(0, Math.min(myR1Count - 1, maxDrawIndex), "rgba(4, 169, 210, 0.2)", 5);
   }
   // Group path
   if (maxChaptersRead > 1) {
@@ -702,7 +692,7 @@ async function renderPilgrimageTrail() {
     if (currentRound >= 2 && ch.isReadR1 && !isMineRead) {
       ctx.beginPath();
       ctx.arc(pos.x, pos.y, r - 3, 0, Math.PI * 2);
-      ctx.strokeStyle = "rgba(99, 102, 241, 0.35)";
+      ctx.strokeStyle = "rgba(4, 169, 210, 0.35)";
       ctx.lineWidth   = 1.5;
       ctx.stroke();
     }
@@ -793,7 +783,7 @@ async function renderPilgrimageTrail() {
     } else {
       legendEl.innerHTML = `
         <span class="px-2 py-0.5 rounded-full bg-slate-100/80 dark:bg-zinc-900/50 flex items-center gap-1" style="display:inline-flex;align-items:center;white-space:nowrap;"><span style="display:inline-block;width:6px;height:6px;background:${pal.myStroke};border-radius:50%;"></span>R${currentRound}</span>
-        <span class="px-2 py-0.5 rounded-full bg-slate-100/80 dark:bg-zinc-900/50 flex items-center gap-1" style="display:inline-flex;align-items:center;white-space:nowrap;"><span style="display:inline-block;width:6px;height:6px;background:rgba(99,102,241,0.6);border-radius:50%;"></span>R1足跡</span>
+        <span class="px-2 py-0.5 rounded-full bg-slate-100/80 dark:bg-zinc-900/50 flex items-center gap-1" style="display:inline-flex;align-items:center;white-space:nowrap;"><span style="display:inline-block;width:6px;height:6px;background:rgba(4,169,210,0.6);border-radius:50%;"></span>R1足跡</span>
         <span class="px-2 py-0.5 rounded-full bg-slate-100/80 dark:bg-zinc-900/50 flex items-center gap-1" style="display:inline-flex;align-items:center;white-space:nowrap;"><span style="display:inline-block;width:6px;height:6px;background:#cbd5e1;border-radius:50%;"></span>後續</span>`;
     }
   }
@@ -945,7 +935,7 @@ async function updateAnnouncementsList() {
     
     item.innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.3rem;">
-        <h4 style="font-size: 0.95rem; font-weight: 800; color: var(--text-primary); margin: 0; line-height: 1.4;">${escapeHTML(ann.title)}</h4>
+        <h4 style="font-size: 0.95rem; font-weight: 500; color: var(--text-primary); margin: 0; line-height: 1.4;">${escapeHTML(ann.title)}</h4>
         <div style="display: flex; align-items: center; gap: 0.4rem;">
           <span style="font-size: 0.7rem; color: var(--text-muted); white-space: nowrap;">${formattedTime}</span>
           ${isAdmin ? `<button class="circular-action-btn" style="width: 22px; height: 22px; padding: 0; background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); display: flex; align-items: center; justify-content: center; font-size: 0.65rem;" onclick="window.deleteAnnouncement('${ann.id}')" title="刪除公告">🗑️</button>` : ''}

@@ -23,8 +23,8 @@ function showToast(message, duration = 2500) {
       padding: 0.7rem 1.4rem;
       border-radius: 24px;
       font-size: 0.88rem;
-      font-weight: 600;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+      font-weight: 500;
+      box-shadow: ${(window.NLC_SHADOW && window.NLC_SHADOW.lg) || "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)"};
       z-index: 9999;
       opacity: 0;
       transition: opacity 0.3s ease, transform 0.3s ease;
@@ -256,7 +256,7 @@ function renderBadgeWall(containerId) {
       cursor: pointer;
       position: relative;
       user-select: none;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      box-shadow: ${(window.NLC_SHADOW && window.NLC_SHADOW.md) || "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)"};
     `;
     
     let stateStyle = "";
@@ -267,11 +267,11 @@ function renderBadgeWall(containerId) {
     if (isUnlocked) {
       // Unlocked State Styling
       if (isDark) {
-        stateStyle = "background: linear-gradient(to tr, rgba(69, 26, 3, 0.4) 0%, rgba(124, 45, 18, 0.4) 100%); border: 1px solid rgba(245, 158, 11, 0.2);";
+        stateStyle = "background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.35);";
         iconColor = "color: #fbbf24;"; // dark:text-amber-400
         textColor = "color: #ffffff; font-weight: 500;"; // dark:text-white
       } else {
-        stateStyle = "background: linear-gradient(to tr, rgba(254, 243, 199, 0.8) 0%, rgba(255, 237, 213, 0.8) 100%); border: 1px solid rgba(251, 191, 36, 0.5);";
+        stateStyle = "background: rgba(254, 243, 199, 0.9); border: 1px solid rgba(251, 191, 36, 0.5);";
         iconColor = "color: #d97706;"; // text-amber-600
         textColor = "color: #1e293b; font-weight: 500;"; // text-slate-800 font-medium
       }
@@ -390,13 +390,13 @@ window.openBadgeDetailPage = function(badge, isUnlocked, isDark) {
   // Apply Shield styles based on unlock state & theme
   if (isUnlocked) {
     if (isDark) {
-      shield.style.background = "linear-gradient(to tr, rgba(69, 26, 3, 0.5) 0%, rgba(124, 45, 18, 0.5) 100%)";
+      shield.style.background = "rgba(69, 26, 3, 0.35)";
       shield.style.borderColor = "rgba(245, 158, 11, 0.25)";
       shield.style.borderStyle = "solid";
       shield.style.borderWidth = "1px";
       shield.style.color = "#fbbf24"; // golden icon
     } else {
-      shield.style.background = "linear-gradient(to tr, rgba(254, 243, 199, 0.9) 0%, rgba(255, 237, 213, 0.9) 100%)";
+      shield.style.background = "rgba(254, 243, 199, 0.95)";
       shield.style.borderColor = "rgba(251, 191, 36, 0.6)";
       shield.style.borderStyle = "solid";
       shield.style.borderWidth = "1px";
@@ -481,7 +481,7 @@ window.openBadgeDetailPage = function(badge, isUnlocked, isDark) {
       align-items: center;
       justify-content: center;
       font-size: 0.8rem;
-      font-weight: 700;
+      font-weight: 500;
       flex-shrink: 0;
     `;
     circle.textContent = lvl;
@@ -497,7 +497,7 @@ window.openBadgeDetailPage = function(badge, isUnlocked, isDark) {
         localStorage.setItem(`date_unlocked_${badge.id}_lvl_${lvl}`, dateStr);
       }
       contentBox.innerHTML = `
-        <div style="font-size: 0.875rem; font-weight: 600; color: ${isDark ? "#ffffff" : "#1e293b"};">完成於 ${dateStr}</div>
+        <div style="font-size: 0.875rem; font-weight: 500; color: ${isDark ? "#ffffff" : "#1e293b"};">完成於 ${dateStr}</div>
       `;
     } else {
       const diff = lvl - currentVal;

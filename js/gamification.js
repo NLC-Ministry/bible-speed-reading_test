@@ -6,7 +6,7 @@ const ACHIEVEMENTS = [
     title: "開啟新旅程",
     description: "開啟新旅程：解鎖條件為成功訂閱一個讀經計畫",
     iconClass: "bi bi-calendar-plus",
-    color: "linear-gradient(135deg, #f59e0b 0%, #f97316 100%)",
+    color: "#F59E0B",
     shadow: "rgba(245, 158, 11, 0.4)"
   },
   {
@@ -14,7 +14,7 @@ const ACHIEVEMENTS = [
     title: "持之以恆",
     description: "持之以恆：解鎖條件為連續打卡 30 天",
     iconClass: "bi bi-calendar-check",
-    color: "linear-gradient(135deg, #f59e0b 0%, #f97316 100%)",
+    color: "#F59E0B",
     shadow: "rgba(245, 158, 11, 0.4)"
   },
   {
@@ -22,7 +22,7 @@ const ACHIEVEMENTS = [
     title: "榮譽桂冠",
     description: "榮譽桂冠：解鎖條件為 100% 完成任意一個讀經計畫",
     iconClass: "bi bi-award",
-    color: "linear-gradient(135deg, #f59e0b 0%, #f97316 100%)",
+    color: "#F59E0B",
     shadow: "rgba(245, 158, 11, 0.4)"
   },
   {
@@ -30,7 +30,7 @@ const ACHIEVEMENTS = [
     title: "傳遞愛光芒",
     description: "傳遞愛光芒：解鎖條件為成功分享每日金句或讀經內容",
     iconClass: "bi bi-share",
-    color: "linear-gradient(135deg, #f59e0b 0%, #f97316 100%)",
+    color: "#F59E0B",
     shadow: "rgba(245, 158, 11, 0.4)"
   },
   {
@@ -38,7 +38,7 @@ const ACHIEVEMENTS = [
     title: "展開厚聖經",
     description: "展開厚聖經：解鎖條件為讀完全本聖經所有卷書與章節",
     iconClass: "bi bi-book-half",
-    color: "linear-gradient(135deg, #f59e0b 0%, #f97316 100%)",
+    color: "#F59E0B",
     shadow: "rgba(245, 158, 11, 0.4)"
   }
 ];
@@ -252,10 +252,10 @@ function triggerBadgeUnlockEffect(badgeId) {
     <div class="badge-popup-avatar" style="--glow: ${badge.shadow}; margin: 0 auto 1.5rem auto; display: flex; width: 110px; height: 110px; background: ${badge.color}; border-radius: 50%; justify-content: center; align-items: center;">
       <i class="${badge.iconClass}" style="color: white; font-size: 3.5rem;"></i>
     </div>
-    <h3 style="font-size: 1.6rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.5rem; letter-spacing: 2px;">🏆 榮譽成就解鎖 🏆</h3>
-    <h4 style="font-size: 1.35rem; font-weight: 800; background: ${badge.color}; -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 1.2rem;">${badge.title}</h4>
+    <h3 style="font-size: 1.6rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.5rem; letter-spacing: 2px;">🏆 榮譽成就解鎖 🏆</h3>
+    <h4 style="font-size: 1.35rem; font-weight: 500; background: ${badge.color}; -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 1.2rem;">${badge.title}</h4>
     <p style="font-size: 0.92rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 2.2rem; padding: 0 1rem;">${descParsed}</p>
-    <button class="primary-btn" style="width: 100%; padding: 0.8rem; font-weight: 700; font-size: 1rem; border-radius: var(--radius-sm);" onclick="closeBadgeModal('${badgeId}')">太棒了，繼續保持！</button>
+    <button class="primary-btn" style="width: 100%; padding: 0.8rem; font-weight: 500; font-size: 1rem; border-radius: var(--radius-sm);" onclick="closeBadgeModal('${badgeId}')">太棒了，繼續保持！</button>
   `;
 
   overlay.appendChild(card);

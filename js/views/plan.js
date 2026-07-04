@@ -240,7 +240,7 @@ function initPlanControls() {
         if (joinedList) {
           joinedList.innerHTML = `
             <div class="empty-state" style="text-align: center; padding: 3rem 0; width: 100%;">
-              <p style="color: var(--text-secondary); margin-bottom: 1rem; font-weight: 700;">目前沒有已完成的計畫</p>
+              <p style="color: var(--text-secondary); margin-bottom: 1rem; font-weight: 500;">目前沒有已完成的計畫</p>
               <p style="font-size: 0.82rem; color: var(--text-muted);">前往「尋找計畫」加入新挑戰吧！</p>
             </div>
           `;
@@ -780,23 +780,21 @@ async function renderPlanView() {
 
 
 
+function getPlanCoverColor(plan) {
+  const covers = window.NLC_PLAN_COVERS || ["#B8E8F5", "#C8F5D8", "#FFE4CC", "#D4E4F7", "#E8E0F5"];
+  const presetMap = { q1: 1, q2: 2, q3: 3, q4: 4 };
+  const idx = presetMap[plan.presetKey] ?? 0;
+  return covers[idx] || covers[0];
+}
+
 function getPlanCoverHtml(plan) {
-  let gradient = "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
+  const bg = getPlanCoverColor(plan);
   let text = "速讀";
-  if (plan.presetKey === "q1") {
-    gradient = "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)";
-    text = "第一季";
-  } else if (plan.presetKey === "q2") {
-    gradient = "linear-gradient(135deg, #5ee7df 0%, #b490ca 100%)";
-    text = "第二季";
-  } else if (plan.presetKey === "q3") {
-    gradient = "linear-gradient(135deg, #f6d365 0%, #fda085 100%)";
-    text = "第三季";
-  } else if (plan.presetKey === "q4") {
-    gradient = "linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%)";
-    text = "第四季";
-  }
-  return `<div class="plan-cover-thumbnail" style="width: 72px; height: 72px; border-radius: 12px; background: ${gradient}; display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 0.95rem; flex-shrink: 0; box-shadow: 0 4px 10px rgba(0,0,0,0.15);">${text}</div>`;
+  if (plan.presetKey === "q1") text = "第一季";
+  else if (plan.presetKey === "q2") text = "第二季";
+  else if (plan.presetKey === "q3") text = "第三季";
+  else if (plan.presetKey === "q4") text = "第四季";
+  return `<div class="plan-cover-thumbnail" style="width: 72px; height: 72px; border-radius: 12px; background: ${bg}; display: flex; align-items: center; justify-content: center; color: #0F0F0F; font-weight: 500; font-size: 0.95rem; flex-shrink: 0; box-shadow: var(--shadow-sm);">${text}</div>`;
 }
 
 function renderJoinedPlansList() {
@@ -813,7 +811,7 @@ function renderJoinedPlansList() {
   if (!state.activePlans || state.activePlans.length === 0) {
     container.innerHTML = `
       <div class="empty-state" style="text-align: center; padding: 3rem 0;">
-        <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-weight: 700;">您目前沒有加入任何讀經計畫。</p>
+        <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-weight: 500;">您目前沒有加入任何讀經計畫。</p>
         <p style="font-size: 0.88rem; color: var(--text-muted);">請點擊頂部「<strong>尋找計畫</strong>」瀏覽並加入！</p>
       </div>
     `;
@@ -846,14 +844,14 @@ function renderJoinedPlansList() {
     card.innerHTML = `
       ${getPlanCoverHtml(plan)}
       <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 0.25rem; min-width: 0;">
-        <h4 style="margin: 0; font-size: 1.05rem; font-weight: 800; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${plan.name}</h4>
+        <h4 style="margin: 0; font-size: 1.05rem; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${plan.name}</h4>
         <div style="font-size: 0.78rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.3rem;">
           <span>📅</span> <span>${plan.startDate} ~ ${plan.endDate}</span>
         </div>
         <div class="plan-progress-wrapper" style="margin-top: 0.4rem; height: 4px; background: rgba(255,255,255,0.06); border-radius: 2px; overflow: hidden; position: relative;">
           <div class="plan-progress-bar" style="width: ${progress}%; height: 100%; background: #ff4757 !important; border-radius: 2px;"></div>
         </div>
-        <div style="font-size: 0.76rem; font-weight: 600; color: var(--text-secondary); margin-top: 0.1rem;">
+        <div style="font-size: 0.76rem; font-weight: 500; color: var(--text-secondary); margin-top: 0.1rem;">
           已讀 ${progress}% (${plan.completedChapters} / ${plan.totalChapters} 章)
         </div>
       </div>
@@ -918,11 +916,11 @@ function renderPresetPlansList() {
     card.innerHTML = `
       ${getPlanCoverHtml({ presetKey: key })}
       <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 0.25rem; min-width: 0;">
-        <h4 style="margin: 0; font-size: 1.05rem; font-weight: 800; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${plan.name}</h4>
+        <h4 style="margin: 0; font-size: 1.05rem; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${plan.name}</h4>
         <div style="font-size: 0.78rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.3rem;">
           <span>📅</span> <span>${plan.startDate} ~ ${plan.endDate}</span>
         </div>
-        <div style="font-size: 0.76rem; font-weight: 700; color: ${isJoined ? '#10b981' : 'var(--primary-color)'}; margin-top: 0.2rem; display: flex; align-items: center; gap: 0.25rem;">
+        <div style="font-size: 0.76rem; font-weight: 500; color: ${isJoined ? '#10b981' : 'var(--primary-color)'}; margin-top: 0.2rem; display: flex; align-items: center; gap: 0.25rem;">
           ${isJoined ? '✓ 已加入挑戰' : '+ 點擊加入計畫挑戰'}
         </div>
       </div>
@@ -947,17 +945,7 @@ async function renderPlanDetailView() {
   if (coverDates) coverDates.textContent = `${state.activePlan.startDate} ~ ${state.activePlan.endDate}`;
 
   if (coverCard) {
-    let gradient = "linear-gradient(135deg, #667eea 0%, #764ba2 100%)";
-    if (state.activePlan.presetKey === "q1") {
-      gradient = "linear-gradient(135deg, #f093fb 0%, #f5576c 100%)";
-    } else if (state.activePlan.presetKey === "q2") {
-      gradient = "linear-gradient(135deg, #5ee7df 0%, #b490ca 100%)";
-    } else if (state.activePlan.presetKey === "q3") {
-      gradient = "linear-gradient(135deg, #f6d365 0%, #fda085 100%)";
-    } else if (state.activePlan.presetKey === "q4") {
-      gradient = "linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%)";
-    }
-    coverCard.style.background = gradient;
+    coverCard.style.background = getPlanCoverColor(state.activePlan);
   }
 
   // Render current selected tab content
@@ -1045,15 +1033,15 @@ function getExpectedPlanDayCount(plan = state.activePlan, now = new Date()) {
 
 function getPlanProgressStatus(plan = state.activePlan) {
   if (!plan || !plan.days || plan.days.length === 0) {
-    return { label: "進度一致", color: "var(--text-primary)", bg: "rgba(59, 130, 246, 0.15)", diff: 0 };
+    return { label: "進度一致", color: "var(--text-primary)", bg: "var(--color-brand-muted, rgba(4,169,210,0.08))", diff: 0 };
   }
 
   const currentRound = plan.currentRound || 1;
   if (currentRound > 1 || plan.isPlanCompleted) {
     return {
       label: "第" + currentRound + "遍",
-      color: currentRound === 2 ? "#6366f1" : "#f59e0b",
-      bg: currentRound === 2 ? "rgba(99, 102, 241, 0.15)" : "rgba(245, 158, 11, 0.15)",
+      color: currentRound === 2 ? "#04A9D2" : "#FE7615",
+      bg: currentRound === 2 ? "rgba(4, 169, 210, 0.15)" : "rgba(254, 118, 21, 0.15)",
       diff: 0
     };
   }
@@ -1070,7 +1058,7 @@ function getPlanProgressStatus(plan = state.activePlan) {
   if (diff < 0) {
     return { label: "落後 " + Math.abs(diff) + "天", color: "#ef4444", bg: "rgba(239, 68, 68, 0.15)", diff };
   }
-  return { label: "進度一致", color: "var(--text-primary)", bg: "rgba(59, 130, 246, 0.15)", diff: 0 };
+  return { label: "進度一致", color: "var(--text-primary)", bg: "var(--color-brand-muted, rgba(4,169,210,0.08))", diff: 0 };
 }
 
 function renderHorizontalDateStrip() {
@@ -1134,7 +1122,7 @@ function renderHorizontalDateStrip() {
   // 4. Create Global Static Weekday Header (outside the scroll container)
   const weekdaysDiv = document.createElement("div");
   weekdaysDiv.className = "calendar-weekdays";
-  weekdaysDiv.style.cssText = "display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; margin-bottom: 0.4rem; padding-bottom: 0.4rem; border-bottom: none !important; font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;";
+  weekdaysDiv.style.cssText = "display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; margin-bottom: 0.4rem; padding-bottom: 0.4rem; border-bottom: none !important; font-size: 0.72rem; font-weight: 500; color: var(--text-muted); text-transform: uppercase;";
   const weekdays = ["週日", "週一", "週二", "週三", "週四", "週五", "週六"];
   weekdays.forEach(w => {
     const wDiv = document.createElement("div");
@@ -1400,7 +1388,7 @@ async function renderPlanScheduleTracker(skipCarouselUpdate = false, signal = nu
   if (statusPill) {
     if (!selectedDay.chapters || selectedDay.chapters.length === 0) {
       statusPill.textContent = "🧘 補讀/休息日";
-      statusPill.style.background = "rgba(99, 102, 241, 0.1)";
+      statusPill.style.background = "var(--color-brand-subtle, rgba(4,169,210,0.12))";
       statusPill.style.color = "var(--primary-color)";
     } else {
       const allDone = selectedDay.chapters.every(ch => {
@@ -1474,7 +1462,7 @@ async function renderPlanScheduleTracker(skipCarouselUpdate = false, signal = nu
   // Render items
   if (!selectedDay.chapters || selectedDay.chapters.length === 0) {
     container.innerHTML = `
-      <div style="text-align: center; padding: 2rem; background: var(--bg-card); border: 1px dashed var(--border-card); border-radius: 14px; color: var(--text-secondary); font-weight: 700; width: 100%;">
+      <div style="text-align: center; padding: 2rem; background: var(--bg-card); border: 1px dashed var(--border-card); border-radius: 14px; color: var(--text-secondary); font-weight: 500; width: 100%;">
         🧘 今天是補讀或靈修休息日，好好親近神吧！
       </div>
     `;
@@ -1670,7 +1658,7 @@ function renderPlanLevelEditor() {
       option.style.pointerEvents = "none";
       let span = option.querySelector("span");
       if (span && !span.innerHTML.includes("downgrade-warning")) {
-        span.innerHTML += ` <span class="downgrade-warning" style="color: #ef4444; font-weight: bold;">(已讀至第 ${maxReadRound} 遍，不可調回此難度)</span>`;
+        span.innerHTML += ` <span class="downgrade-warning" style="color: #ef4444; font-weight: 500;">(已讀至第 ${maxReadRound} 遍，不可調回此難度)</span>`;
       }
     } else {
       option.disabled = false;
@@ -1683,7 +1671,7 @@ function renderPlanLevelEditor() {
         const warningSpan = span.querySelector(".downgrade-warning");
         if (warningSpan) warningSpan.remove();
         span.innerHTML = span.innerHTML.replace(/\s*<span class="downgrade-warning".*?<\/span>/g, "");
-        span.innerHTML = span.innerHTML.replace(/\s*<span style="color: #ef4444; font-weight: bold;">\(已晉升，不可調回低階難度\)<\/span>/g, "");
+        span.innerHTML = span.innerHTML.replace(/\s*<span style="color: #ef4444; font-weight: 500;">\(已晉升，不可調回低階難度\)<\/span>/g, "");
       }
     }
   });
@@ -2067,14 +2055,14 @@ async function renderAdminPlanManagement() {
 
       tr.innerHTML = `
         <td>
-          <strong style="display: block; margin-bottom: 0.15rem; font-size: 0.82rem; word-break: break-all;">${escapeHTML(plan.name)}${hidden ? ' <span style="color:#f59e0b; font-size:0.68rem; font-weight:800;">已隱藏</span>' : ''}</strong>
+          <strong style="display: block; margin-bottom: 0.15rem; font-size: 0.82rem; word-break: break-all;">${escapeHTML(plan.name)}${hidden ? ' <span style="color:#f59e0b; font-size:0.68rem; font-weight: 500;">已隱藏</span>' : ''}</strong>
           <span title="${escapeHTML(bookListText)}" style="font-size: 0.7rem; color: var(--text-muted); cursor: help; text-decoration: underline dashed; text-underline-offset: 2px;">
             共 ${bookCount} 卷書卷
           </span>
         </td>
         <td>
-          <span style="font-size: 0.72rem; font-weight: 600; display: block; white-space: nowrap;">📅 ${plan.startDate}</span>
-          <span style="font-size: 0.72rem; font-weight: 600; display: block; white-space: nowrap; margin-left: 0.6rem; color: var(--text-muted);">~ ${plan.endDate}</span>
+          <span style="font-size: 0.72rem; font-weight: 500; display: block; white-space: nowrap;">📅 ${plan.startDate}</span>
+          <span style="font-size: 0.72rem; font-weight: 500; display: block; white-space: nowrap; margin-left: 0.6rem; color: var(--text-muted);">~ ${plan.endDate}</span>
         </td>
         <td style="text-align: center; vertical-align: middle;">
           <div style="display: flex; flex-direction: column; gap: 0.25rem; align-items: center; justify-content: center;">
@@ -2265,7 +2253,7 @@ async function renderInlineScriptureText() {
           const verseDiv = document.createElement("div");
           verseDiv.className = "bible-verse";
           verseDiv.style.marginBottom = "0.8rem";
-          verseDiv.innerHTML = `<span class="verse-num" style="font-weight: 700; color: var(--primary-color); margin-right: 0.5rem; font-size: 0.85rem;">${v.verse}</span><span class="verse-text" style="font-size: 1.05rem; line-height: 1.8;">${v.text}</span>`;
+          verseDiv.innerHTML = `<span class="verse-num" style="font-weight: 500; color: var(--primary-color); margin-right: 0.5rem; font-size: 0.85rem;">${v.verse}</span><span class="verse-text" style="font-size: 1.05rem; line-height: 1.8;">${v.text}</span>`;
           container.appendChild(verseDiv);
         });
       } catch (err) {
@@ -3327,8 +3315,8 @@ function renderPersonalTrendChart() {
 
   const ctx = canvas.getContext('2d');
   const gradient = ctx.createLinearGradient(0, 0, 0, 160);
-  gradient.addColorStop(0, 'rgba(139, 92, 246, 0.22)');
-  gradient.addColorStop(1, 'rgba(139, 92, 246, 0)');
+  gradient.addColorStop(0, 'rgba(4, 169, 210, 0.22)');
+  gradient.addColorStop(1, 'rgba(4, 169, 210, 0)');
 
   window._personalTrendChart = new Chart(ctx, {
     type: 'line',
@@ -3337,12 +3325,12 @@ function renderPersonalTrendChart() {
       datasets: [{
         label: '每日讀經章數',
         data: chartData,
-        borderColor: '#8b5cf6',
+        borderColor: '#04A9D2',
         backgroundColor: gradient,
         fill: true,
         tension: 0.35,
         borderWidth: 2,
-        pointBackgroundColor: '#8b5cf6',
+        pointBackgroundColor: '#04A9D2',
         pointBorderColor: '#ffffff',
         pointBorderWidth: 1,
         pointHoverRadius: 6
@@ -3812,11 +3800,11 @@ window.displayParticipantsList = function (limit = 100) {
       padding: 0.6rem 0.2rem;
       border-bottom: 1px solid var(--border-card);
       font-size: 0.88rem;
-      font-weight: 700;
+      font-weight: 500;
       text-align: center;
     `;
     if (m.isMe) {
-      itemRow.style.background = "rgba(99, 102, 241, 0.08)";
+      itemRow.style.background = "var(--color-brand-muted, rgba(4,169,210,0.08))";
       itemRow.style.borderRadius = "8px";
     }
 
@@ -3846,7 +3834,7 @@ window.displayParticipantsList = function (limit = 100) {
     loadMoreBtn.style.cssText = `
       padding: 0.4rem 1.2rem;
       font-size: 0.8rem;
-      font-weight: 800;
+      font-weight: 500;
       border-radius: 20px;
       background: var(--bg-input);
       border: 1px solid var(--border-card);
@@ -4113,7 +4101,7 @@ window.showPlanStatsModal = function () {
     padding-bottom: 0.8rem;
   `;
   headerDiv.innerHTML = `
-    <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary); margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+    <h3 style="font-size: 1.15rem; font-weight: 500; color: var(--text-primary); margin: 0; display: flex; align-items: center; gap: 0.5rem;">
       <span>📊</span> 詳細數據統計
     </h3>
     <button class="circular-action-btn" style="width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border-card); background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; color: var(--text-secondary);" onclick="this.closest('.modal-overlay').remove()">✕</button>
@@ -4135,11 +4123,11 @@ window.showPlanStatsModal = function () {
   // Helper to generate a styled card
   const makeCardHtml = (title, dataText, desc, iconColor, bgGlow = '') => {
     return `
-      <div class="stat-grid-card" style="background: var(--bg-card); border: 1px solid var(--border-card); border-radius: var(--radius-sm); padding: 0.9rem; display: flex; flex-direction: column; justify-content: space-between; height: 120px; box-shadow: 0 4px 10px rgba(0,0,0,0.02); transition: all 0.2s; ${bgGlow}">
-        <div style="font-size: 0.82rem; font-weight: 800; color: var(--text-secondary); display: flex; align-items: center; gap: 0.3rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">
+      <div class="stat-grid-card" style="background: var(--bg-card); border: 1px solid var(--border-card); border-radius: var(--radius-sm); padding: 0.9rem; display: flex; flex-direction: column; justify-content: space-between; height: 120px; box-shadow: var(--shadow-sm); transition: all 0.2s; ${bgGlow}">
+        <div style="font-size: 0.82rem; font-weight: 500; color: var(--text-secondary); display: flex; align-items: center; gap: 0.3rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">
           ${title}
         </div>
-        <div style="font-size: 1.45rem; font-weight: 800; color: ${iconColor}; margin: 0.3rem 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">
+        <div style="font-size: 1.45rem; font-weight: 500; color: ${iconColor}; margin: 0.3rem 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;">
           ${dataText}
         </div>
         <div style="font-size: 0.65rem; color: var(--text-muted); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; font-weight: 500;">
@@ -4155,7 +4143,7 @@ window.showPlanStatsModal = function () {
     `${catchUpDays} 天`,
     `過去落後但已成功補讀完畢的天數。`,
     `#ea580c`,
-    `background: linear-gradient(135deg, rgba(249, 115, 22, 0.04) 0%, rgba(249, 115, 22, 0.01) 100%);`
+    `background: rgba(254, 118, 21, 0.06);`
   );
 
   // Card B: 累計閱讀
@@ -4176,7 +4164,7 @@ window.showPlanStatsModal = function () {
 
   // Card D: 計畫狀態 (Badge text with specific colors)
   const badgeHtml = `
-    <span style="font-size: 0.75rem; font-weight: 800; background: ${statusBg}; color: ${statusColor}; padding: 0.25rem 0.6rem; border-radius: 20px; display: inline-block; border: 1px solid rgba(${statusColor === '#10b981' ? '16,185,129' : (statusColor === '#ef4444' ? '239,68,68' : (statusColor === '#f59e0b' ? '245,158,11' : '59,130,246'))}, 0.25);">
+    <span style="font-size: 0.75rem; font-weight: 500; background: ${statusBg}; color: ${statusColor}; padding: 0.25rem 0.6rem; border-radius: 20px; display: inline-block; border: 1px solid rgba(${statusColor === '#10b981' ? '16,185,129' : (statusColor === '#ef4444' ? '239,68,68' : (statusColor === '#f59e0b' ? '245,158,11' : '59,130,246'))}, 0.25);">
       ${statusLabel}
     </span>
   `;
@@ -4201,7 +4189,7 @@ window.showPlanStatsModal = function () {
   closeBtn.style.cssText = `
     padding: 0.5rem 1.5rem;
     font-size: 0.85rem;
-    font-weight: 800;
+    font-weight: 500;
     border-radius: 20px;
     width: 100%;
   `;
@@ -4292,11 +4280,11 @@ function renderPlanScheduleView() {
     console.log('🎨 [按鈕視覺更新] 當前高亮亮起的按鈕為：', viewMode === 'calendar' ? '查看日曆' : (isTodayActive ? '今天進度' : '我的進度'));
 
     // Tailwind CSS dynamic flat theme style rules (No borders, rounded-xl 12px, transition & active scale)
-    const activeStyleStr = "flex: 1; font-weight: 700; font-size: 0.82rem; padding: 0.65rem; display: flex; align-items: center; justify-content: center; gap: 0.3rem; border-radius: 12px; border: 1px solid #9061f9 !important; background: #7c3aed !important; color: white !important; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);";
-    const inactiveStyleStr = "flex: 1; font-weight: 500; font-size: 0.82rem; padding: 0.65rem; display: flex; align-items: center; justify-content: center; gap: 0.3rem; border-radius: 12px; border: 1px solid rgba(148, 163, 184, 0.12) !important; background: rgba(15, 23, 42, 0.6) !important; color: #94a3b8 !important; cursor: pointer; transition: all 0.2s ease; box-shadow: none;";
+    const activeStyleStr = "flex: 1; font-weight: 500; font-size: 0.82rem; padding: 0.65rem; display: flex; align-items: center; justify-content: center; gap: 0.3rem; border-radius: 12px; border: 1px solid var(--color-brand) !important; background: var(--color-brand) !important; color: white !important; cursor: pointer; transition: all 0.2s ease; box-shadow: none;";
+    const inactiveStyleStr = "flex: 1; font-weight: 500; font-size: 0.82rem; padding: 0.65rem; display: flex; align-items: center; justify-content: center; gap: 0.3rem; border-radius: 12px; border: 1px solid var(--border-card) !important; background: var(--bg-input) !important; color: var(--text-secondary) !important; cursor: pointer; transition: all 0.2s ease; box-shadow: none;";
 
-    const calActiveStyleStr = "flex: 1.2; font-weight: 700; font-size: 0.82rem; padding: 0.65rem; display: flex; align-items: center; justify-content: center; gap: 0.3rem; border-radius: 12px; border: 1px solid #9061f9 !important; background: #7c3aed !important; color: white !important; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);";
-    const calInactiveStyleStr = "flex: 1.2; font-weight: 500; font-size: 0.82rem; padding: 0.65rem; display: flex; align-items: center; justify-content: center; gap: 0.3rem; border-radius: 12px; border: 1px solid rgba(148, 163, 184, 0.12) !important; background: rgba(15, 23, 42, 0.6) !important; color: #94a3b8 !important; cursor: pointer; transition: all 0.2s ease; box-shadow: none;";
+    const calActiveStyleStr = "flex: 1.2; font-weight: 500; font-size: 0.82rem; padding: 0.65rem; display: flex; align-items: center; justify-content: center; gap: 0.3rem; border-radius: 12px; border: 1px solid var(--color-brand) !important; background: var(--color-brand) !important; color: white !important; cursor: pointer; transition: all 0.2s ease; box-shadow: none;";
+    const calInactiveStyleStr = "flex: 1.2; font-weight: 500; font-size: 0.82rem; padding: 0.65rem; display: flex; align-items: center; justify-content: center; gap: 0.3rem; border-radius: 12px; border: 1px solid var(--border-card) !important; background: var(--bg-input) !important; color: var(--text-secondary) !important; cursor: pointer; transition: all 0.2s ease; box-shadow: none;";
 
     // 2. Action Buttons Row (我的進度, 今天進度, 查看日曆)
     const actionsBar = document.createElement("div");
