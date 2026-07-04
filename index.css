@@ -6251,3 +6251,28 @@ body.dark-theme .calendar-day .micro-progress-bar {
 .calendar-scroll-container::-webkit-scrollbar {
   display: none !important;
 }
+
+/* Daily Verse Skeleton & Flip Animations */
+.animate-pulse {
+  animation: pulse-skeleton 1.8s ease-in-out infinite;
+}
+
+@keyframes pulse-skeleton {
+  0%, 100% { opacity: 1; filter: drop-shadow(0 0 4px rgba(167, 139, 250, 0.1)); }
+  50% { opacity: 0.6; filter: drop-shadow(0 0 12px rgba(167, 139, 250, 0.35)); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn-verse 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeIn-verse {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
