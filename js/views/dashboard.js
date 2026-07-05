@@ -24,7 +24,7 @@ function updateDashboardView() {
   if (streakEl) {
     streakEl.textContent = state.currentUser.streak || "0";
   }
-  
+
   // Render Daily Verse and Church Announcements
   renderDailyVerse();
   updateAnnouncementsList();
@@ -40,10 +40,10 @@ function updateDashboardView() {
     const started = isPlanStarted(state.activePlan);
     const isAdmin = state.currentUser && state.currentUser.role === 'admin';
     const isPlanAvailable = started || isAdmin;
-    const statusText = started 
+    const statusText = started
       ? `進度: ${progress}% (${state.activePlan.completedChapters} / ${state.activePlan.totalChapters} 章)`
       : `<span class="text-brand" style="font-weight: 500;">等待開始</span> (將於 ${state.activePlan.startDate} 開始)`;
-      
+
     // Calculate core statistics for dashboard summary card
     const streakDays = state.currentUser.streak || 0;
     const totalCompletionRate = progress;
@@ -78,10 +78,10 @@ function updateDashboardView() {
       <div class="plan-progress-header">
         <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;">
           <h4 style="font-size: 1.15rem; font-weight: 500; color: var(--text-primary); margin: 0;">${state.activePlan.name}</h4>
-          ${started 
-            ? '<span class="stat-badge stat-badge--success">進行中</span>'
-            : '<span class="stat-badge stat-badge--brand">等待開始</span>'
-          }
+          ${started
+        ? '<span class="stat-badge stat-badge--success">進行中</span>'
+        : '<span class="stat-badge stat-badge--brand">等待開始</span>'
+      }
         </div>
         <p style="font-size: 0.88rem; color: var(--text-secondary); margin-top: 0.2rem;">
           計畫週期: ${state.activePlan.startDate} ~ ${state.activePlan.endDate} (${state.activePlan.totalDays} 天)
@@ -288,12 +288,12 @@ async function loadTodayDevotional() {
   const textarea = document.getElementById("devotional-content");
   const countEl = document.getElementById("devotional-word-count");
   if (!textarea) return;
-  
+
   textarea.value = "";
   if (countEl) countEl.textContent = "字數: 0 字";
-  
+
   const todayStr = new Date().toLocaleDateString('zh-TW', { timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-');
-  
+
   try {
     const content = await db.getDevotionalNote(todayStr);
     if (content) {
@@ -311,19 +311,19 @@ function initDevotionalControls() {
   const textarea = document.getElementById("devotional-content");
   const saveBtn = document.getElementById("btn-save-devotional");
   const countEl = document.getElementById("devotional-word-count");
-  
+
   if (!textarea) return;
-  
+
   textarea.addEventListener("input", () => {
     const text = textarea.value;
     if (countEl) countEl.textContent = `字數: ${text.length} 字`;
-    
+
     clearTimeout(devotionalDebounceTimer);
     devotionalDebounceTimer = setTimeout(() => {
       saveDevotionalNote(true);
     }, 1000);
   });
-  
+
   if (saveBtn) {
     saveBtn.addEventListener("click", () => {
       clearTimeout(devotionalDebounceTimer);
@@ -355,15 +355,15 @@ async function saveDevotionalNote(isAuto) {
   const textarea = document.getElementById("devotional-content");
   const statusEl = document.getElementById("devotional-save-status");
   if (!textarea) return;
-  
+
   const content = textarea.value.trim();
   const todayStr = new Date().toLocaleDateString('zh-TW', { timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-');
-  
+
   if (statusEl && isAuto) {
     statusEl.innerHTML = `<span class="devotional-save-status__dot" aria-hidden="true"></span>自動儲存中...`;
     statusEl.style.opacity = "1";
   }
-  
+
   try {
     await db.saveDevotionalNote(todayStr, content);
     showSaveSuccess(isAuto);
@@ -391,9 +391,9 @@ async function saveDevotionalNote(isAuto) {
   }
 }
 
-window.checkAndPromptTodayCompletion = async function() {
+window.checkAndPromptTodayCompletion = async function () {
   if (!state.activePlan) return;
-  
+
   const now = new Date();
   const todayYear = now.getFullYear();
   const todayMonth = now.getMonth() + 1;
@@ -403,9 +403,9 @@ window.checkAndPromptTodayCompletion = async function() {
     const parts = d.date.split('/');
     return parts.length === 2 && Number(parts[1]) === todayDay;
   });
-  
+
   if (!todayDayObj || !todayDayObj.chapters || todayDayObj.chapters.length === 0) return;
-  
+
   const currentRound = state.activePlan.currentRound || 1;
   const isTodayComplete = todayDayObj.chapters.every(ch => {
     const r = ch.round || currentRound;
@@ -414,13 +414,13 @@ window.checkAndPromptTodayCompletion = async function() {
     if (r >= 3) return Boolean(ch.isReadR3);
     return Boolean(ch.isRead);
   });
-  
+
   if (!isTodayComplete) return;
-  
+
   const todayStr = todayYear + '-' + String(todayMonth).padStart(2, '0') + '-' + String(todayDay).padStart(2, '0');
   const existingNote = await db.getDevotionalNote(todayStr);
   if (existingNote && existingNote.trim().length > 0) return;
-  
+
   setTimeout(() => {
     if (typeof showToast === "function") {
       showToast("🎉 恭喜完成今日速讀！寫下今天最深刻的金句，分享給小組吧！", 5000);
@@ -473,7 +473,7 @@ function showSaveSuccess(isAuto) {
   statusEl.classList.add("text-success-fg");
   statusEl.classList.remove("text-danger");
   statusEl.style.opacity = "1";
-  
+
   setTimeout(() => {
     statusEl.style.opacity = "0";
   }, 2000);
@@ -483,23 +483,23 @@ function showSaveSuccess(isAuto) {
 async function renderTodayGroupProgress() {
   const listEl = document.getElementById("member-today-list");
   if (!listEl) return;
-  
+
   const hasPlan = state.activePlans && state.activePlans.length > 0;
   if (!hasPlan) {
     listEl.innerHTML = `<div style="font-size: 0.88rem; color: var(--text-muted); text-align: center; padding: 2rem 0;">${(window.APP_COPY && window.APP_COPY.plan.joinProgressHint) || "請先至「計畫」加入計畫，以查看今日進度"}</div>`;
     return;
   }
-  
+
   listEl.innerHTML = typeof ComponentSkeletonLoader !== "undefined"
     ? ComponentSkeletonLoader.getHtml("member-progress", { count: 4 })
     : "";
-  
+
   // Adapt header and search box visibility based on role
   const cardEl = listEl.closest('.glass-card');
   if (cardEl) {
     const cardTitleEl = cardEl.querySelector('.card-title');
     const searchBoxEl = cardEl.querySelector('.search-box-wrapper');
-    
+
     if (state.currentUser && state.currentUser.role === 'member') {
       if (cardTitleEl) {
         cardTitleEl.innerHTML = `
@@ -524,7 +524,7 @@ async function renderTodayGroupProgress() {
   }
 
   let allUsers = await db.fetchMergedUsersList();
-  
+
   const mockUser = {
     name: state.currentUser.name,
     great_region: state.currentUser.great_region || "東區",
@@ -532,39 +532,39 @@ async function renderTodayGroupProgress() {
     small_group: state.currentUser.small_group || "馬鈴",
     role: state.currentUser.role || "member"
   };
-  
-  let groupMembers = allUsers.filter(u => 
-    u.pastoral_zone === mockUser.pastoral_zone && 
+
+  let groupMembers = allUsers.filter(u =>
+    u.pastoral_zone === mockUser.pastoral_zone &&
     u.small_group === mockUser.small_group
   );
-  
+
   if (groupMembers.length === 0) {
     groupMembers = allUsers.slice(0, 10);
   }
-  
+
   state.todayGroupMembers = groupMembers;
-  
+
   renderProgressListFiltered("");
 }
 
 function renderProgressListFiltered(searchText) {
   const listEl = document.getElementById("member-today-list");
   if (!listEl || !state.todayGroupMembers) return;
-  
+
   listEl.innerHTML = "";
-  
+
   const todayStr = new Date().toLocaleDateString('zh-TW', { timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-');
-  
+
   const query = searchText.trim().toLowerCase();
-  const filtered = state.todayGroupMembers.filter(m => 
+  const filtered = state.todayGroupMembers.filter(m =>
     m.name.toLowerCase().includes(query)
   );
-  
+
   if (filtered.length === 0) {
     listEl.innerHTML = '<div style="font-size: 0.8rem; color: var(--text-muted); text-align: center; padding: 1rem;">無相符成員</div>';
     return;
   }
-  
+
   filtered.forEach(m => {
     const isRecentRead = m.last_read && (
       m.last_read === todayStr ||
@@ -574,20 +574,20 @@ function renderProgressListFiltered(searchText) {
 
     const item = document.createElement("div");
     item.className = "member-progress-item";
-    
+
     const nameInfo = document.createElement("div");
     nameInfo.className = "member-name-info";
-    
+
     const nameSpan = document.createElement("span");
     nameSpan.className = "member-name";
     nameSpan.textContent = m.name;
     nameInfo.appendChild(nameSpan);
-    
+
     const metaSpan = document.createElement("span");
     metaSpan.className = "member-meta";
     metaSpan.textContent = `連續讀經: ${m.streak || 0}天 | 總章數: ${m.chapters_read || 0}章`;
     nameInfo.appendChild(metaSpan);
-    
+
     if (m.today_devotional) {
       const quoteDiv = document.createElement("div");
       quoteDiv.className = "member-quote";
@@ -595,9 +595,9 @@ function renderProgressListFiltered(searchText) {
       quoteDiv.textContent = `「${m.today_devotional}」`;
       nameInfo.appendChild(quoteDiv);
     }
-    
+
     item.appendChild(nameInfo);
-    
+
     const badge = document.createElement("span");
     if (isRecentRead) {
       badge.className = "progress-badge completed";
@@ -610,7 +610,7 @@ function renderProgressListFiltered(searchText) {
       badge.textContent = "未打卡";
     }
     item.appendChild(badge);
-    
+
     listEl.appendChild(item);
   });
 }
@@ -628,12 +628,12 @@ function getTileCoords(index) {
   const spacingY = 72;
   const startX = 40;
   const startY = 40;
-  
+
   const row = Math.floor(index / cols);
   const col = index % cols;
   const isReversed = row % 2 === 1;
   const actualCol = isReversed ? (cols - 1 - col) : col;
-  
+
   return {
     x: startX + actualCol * spacingX,
     y: startY + row * spacingY
@@ -731,7 +731,7 @@ async function renderPilgrimageTrail() {
   const spacingX = 72;
   const spacingY = 72;
   const rowsCount = Math.ceil((maxDrawIndex + 1) / cols);
-  canvas.width  = cols * spacingX + 15;
+  canvas.width = cols * spacingX + 15;
   canvas.height = rowsCount * spacingY + 15;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -778,26 +778,26 @@ async function renderPilgrimageTrail() {
     const isBookStart = ch.isBookStart;
     const r = isBookStart ? 22 : 13;
 
-    let fillStyle  = NLC_DESIGN.white;
+    let fillStyle = NLC_DESIGN.white;
     let strokeStyle = NLC_DESIGN.muted;
-    let textColor  = NLC_DESIGN.muted;
+    let textColor = NLC_DESIGN.muted;
     let isBold = false;
     let strokeW = isBookStart ? 2.5 : 1.5;
 
     const isMineRead = i < myChaptersRead;
-    const isGrpRead  = !isMineRead && i < maxChaptersRead;
+    const isGrpRead = !isMineRead && i < maxChaptersRead;
 
     if (isMineRead) {
-      fillStyle   = pal.myFill;
+      fillStyle = pal.myFill;
       strokeStyle = pal.myStroke;
-      textColor   = pal.myText;
+      textColor = pal.myText;
       isBold = true;
       strokeW = isBookStart ? 3.5 : 2.5;
       // Glow for round 2+
       if (currentRound >= 2) {
         ctx.save();
         ctx.shadowColor = pal.myStroke;
-        ctx.shadowBlur  = isBookStart ? 15 : 8;
+        ctx.shadowBlur = isBookStart ? 15 : 8;
         ctx.beginPath();
         ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
         ctx.fillStyle = fillStyle;
@@ -805,9 +805,9 @@ async function renderPilgrimageTrail() {
         ctx.restore();
       }
     } else if (isGrpRead) {
-      fillStyle   = pal.grpFill;
+      fillStyle = pal.grpFill;
       strokeStyle = pal.grpStroke;
-      textColor   = pal.grpText;
+      textColor = pal.grpText;
       strokeW = isBookStart ? 2.5 : 1.5;
     }
 
@@ -816,7 +816,7 @@ async function renderPilgrimageTrail() {
     ctx.arc(pos.x, pos.y, r, 0, Math.PI * 2);
     ctx.fillStyle = fillStyle;
     ctx.fill();
-    ctx.lineWidth   = strokeW;
+    ctx.lineWidth = strokeW;
     ctx.strokeStyle = strokeStyle;
     ctx.stroke();
 
@@ -825,7 +825,7 @@ async function renderPilgrimageTrail() {
       ctx.beginPath();
       ctx.arc(pos.x, pos.y, r - 3, 0, Math.PI * 2);
       ctx.strokeStyle = "rgba(4, 169, 210, 0.35)";
-      ctx.lineWidth   = 1.5;
+      ctx.lineWidth = 1.5;
       ctx.stroke();
     }
 
@@ -834,14 +834,14 @@ async function renderPilgrimageTrail() {
       ctx.beginPath();
       ctx.arc(pos.x, pos.y, r + 3, 0, Math.PI * 2);
       ctx.strokeStyle = strokeStyle + "55";
-      ctx.lineWidth   = 2;
+      ctx.lineWidth = 2;
       ctx.stroke();
     }
 
     // Label text
-    ctx.fillStyle     = textColor;
-    ctx.textAlign     = "center";
-    ctx.textBaseline  = "middle";
+    ctx.fillStyle = textColor;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
 
     const bookData = BIBLE_BOOKS ? BIBLE_BOOKS.find(b => b.name === ch.bookName) : null;
     if (isBookStart) {
@@ -868,7 +868,7 @@ async function renderPilgrimageTrail() {
     const tilePos = getTileCoords(posIndex);
     const count = list.length;
     list.forEach((m, idx) => {
-      const angle  = count > 1 ? (idx * 2 * Math.PI) / count : 0;
+      const angle = count > 1 ? (idx * 2 * Math.PI) / count : 0;
       const offset = count > 1 ? 15 : 0;
       const x = tilePos.x + Math.cos(angle) * offset;
       const y = tilePos.y + Math.sin(angle) * offset;
@@ -884,21 +884,21 @@ async function renderPilgrimageTrail() {
       ctx.restore();
 
       ctx.save();
-      ctx.shadowColor   = "rgba(0, 0, 0, 0.15)";
-      ctx.shadowBlur    = 4;
+      ctx.shadowColor = "rgba(0, 0, 0, 0.15)";
+      ctx.shadowBlur = 4;
       ctx.shadowOffsetY = 1;
       ctx.beginPath();
       ctx.arc(x, y, 12, 0, Math.PI * 2);
       ctx.fillStyle = getMemberColor(m.name);
       ctx.fill();
-      ctx.lineWidth   = isMe ? 2 : 1;
+      ctx.lineWidth = isMe ? 2 : 1;
       ctx.strokeStyle = "#ffffff";
       ctx.stroke();
       ctx.restore();
 
-      ctx.fillStyle    = "#ffffff";
-      ctx.font         = "bold 8px sans-serif";
-      ctx.textAlign    = "center";
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "bold 8px sans-serif";
+      ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       ctx.fillText(m.name.substring(0, 2), x, y);
     });
@@ -926,8 +926,8 @@ async function renderPilgrimageTrail() {
     const myTilePos = getTileCoords(Math.max(0, myChaptersRead - 1));
     setTimeout(() => {
       wrapper.scrollTo({
-        top:  Math.max(0, myTilePos.y - wrapper.clientHeight / 2),
-        left: Math.max(0, myTilePos.x - wrapper.clientWidth  / 2),
+        top: Math.max(0, myTilePos.y - wrapper.clientHeight / 2),
+        left: Math.max(0, myTilePos.x - wrapper.clientWidth / 2),
         behavior: "smooth"
       });
     }, 120);
@@ -939,13 +939,13 @@ function initPilgrimageControls() {
   const zoomIn = document.getElementById("increase-trail-zoom");
   const zoomOut = document.getElementById("decrease-trail-zoom");
   const zoomReset = document.getElementById("reset-trail-zoom");
-  
+
   if (!board) return;
-  
+
   const updateZoom = () => {
     board.style.transform = `scale(${state.pilgrimageZoom})`;
   };
-  
+
   if (zoomIn) {
     zoomIn.onclick = () => {
       if (state.pilgrimageZoom < 2.0) {
@@ -954,7 +954,7 @@ function initPilgrimageControls() {
       }
     };
   }
-  
+
   if (zoomOut) {
     zoomOut.onclick = () => {
       if (state.pilgrimageZoom > 0.6) {
@@ -963,7 +963,7 @@ function initPilgrimageControls() {
       }
     };
   }
-  
+
   if (zoomReset) {
     zoomReset.onclick = () => {
       state.pilgrimageZoom = 1.0;
@@ -974,35 +974,35 @@ function initPilgrimageControls() {
 
 
 
-window.openAnnouncementForm = function() {
+window.openAnnouncementForm = function () {
   const form = document.getElementById("admin-announcement-form-container");
   if (form) form.classList.remove("hidden");
 };
 
-window.closeAnnouncementForm = function() {
+window.closeAnnouncementForm = function () {
   const form = document.getElementById("admin-announcement-form-container");
   if (form) form.classList.add("hidden");
-  
+
   const titleInput = document.getElementById("announcement-title-input");
   const contentInput = document.getElementById("announcement-content-input");
   if (titleInput) titleInput.value = "";
   if (contentInput) contentInput.value = "";
 };
 
-window.saveAnnouncement = async function() {
+window.saveAnnouncement = async function () {
   const titleInput = document.getElementById("announcement-title-input");
   const contentInput = document.getElementById("announcement-content-input");
   if (!titleInput || !contentInput) return;
-  
+
   const title = titleInput.value.trim();
   const content = contentInput.value.trim();
   if (!title || !content) {
     alert("請輸入公告標題與內容！");
     return;
   }
-  
+
   const success = await db.saveAnnouncement(title, content);
-  
+
   if (success) {
     if (typeof showToast === "function") {
       showToast("公告已發布成功！");
@@ -1012,11 +1012,11 @@ window.saveAnnouncement = async function() {
   }
 };
 
-window.deleteAnnouncement = async function(id) {
+window.deleteAnnouncement = async function (id) {
   if (!confirm("確定要刪除此公告嗎？此動作將無法復原。")) return;
-  
+
   const success = await db.deleteAnnouncement(id);
-  
+
   if (success) {
     if (typeof showToast === "function") {
       showToast("公告已成功刪除。");
@@ -1032,17 +1032,17 @@ async function updateAnnouncementsList() {
   if (typeof ComponentSkeletonLoader !== "undefined") {
     ComponentSkeletonLoader.fill("announcement", listContainer, { count: 2 });
   }
-  
+
   const isAdmin = state.currentUser && (state.currentUser.role === 'admin' || state.currentUser.role === 'senior_pastor');
   const publishBtn = document.getElementById("btn-show-announcement-form");
   if (publishBtn) {
     if (isAdmin) publishBtn.classList.remove("hidden");
     else publishBtn.classList.add("hidden");
   }
-  
+
   const announcements = await db.fetchAnnouncements();
   listContainer.innerHTML = "";
-  
+
   if (announcements.length === 0) {
     listContainer.innerHTML = `
       <div class="announcements-empty">
@@ -1052,18 +1052,18 @@ async function updateAnnouncementsList() {
     if (typeof hydrateIcons === "function") hydrateIcons(listContainer);
     return;
   }
-  
+
   announcements.forEach(ann => {
     const item = document.createElement("div");
     item.className = "announcement-item";
-    
-    const formattedTime = new Date(ann.created_at).toLocaleDateString('zh-TW', { 
-      month: '2-digit', 
-      day: '2-digit', 
-      hour: '2-digit', 
-      minute: '2-digit' 
+
+    const formattedTime = new Date(ann.created_at).toLocaleDateString('zh-TW', {
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
     });
-    
+
     item.innerHTML = `
       <div class="announcement-item__header">
         <h4 class="announcement-item__title">${escapeHTML(ann.title)}</h4>
@@ -1191,29 +1191,29 @@ async function fetchRandomVerse(event) {
     event.preventDefault();
     event.stopPropagation();
   }
-  
+
   if (isVerseLoading || isImgLoading) return;
-  
+
   const card = document.getElementById("verse-card");
   if (!card) return;
-  
+
   isVerseLoading = true;
   isImgLoading = true;
-  
+
   // Set flag for sharing badge check
   localStorage.setItem("has_shared_verse", "true");
   if (typeof checkAchievements === "function") {
     checkAchievements();
   }
-  
+
   setVerseCardLoading(true);
-  
+
   const randomLocal = DAILY_VERSES[Math.floor(Math.random() * DAILY_VERSES.length)];
   const verseText = randomLocal.text;
   const verseSource = randomLocal.source;
   const randomImgUrl = CURATED_IMAGE_POOL[Math.floor(Math.random() * CURATED_IMAGE_POOL.length)];
   const imgPromise = preloadVerseCardImage(randomImgUrl);
-  
+
   const fetchPromise = (async () => {
     try {
       const match = randomLocal.source.match(/^([\u4e00-\u9fa5]+)\s*(\d+):(\d+)(?:-(\d+))?$/);
@@ -1224,14 +1224,14 @@ async function fetchRandomVerse(event) {
         const verseEnd = match[4];
         const englishBook = CHINESE_TO_ENGLISH_BOOKS[chineseBook] || "john";
         const passage = `${englishBook} ${chapter}:${verseStart}` + (verseEnd ? `-${verseEnd}` : "");
-        
+
         const url = `https://bible-api.com/${encodeURIComponent(passage)}?translation=cuv`;
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 3500); // 3.5s timeout fallback
-        
+
         const res = await fetch(url, { signal: controller.signal });
         clearTimeout(timeoutId);
-        
+
         if (res.ok) {
           const data = await res.json();
           if (data && data.text) {
@@ -1247,7 +1247,7 @@ async function fetchRandomVerse(event) {
     }
     return { text: verseText, source: verseSource };
   })();
-  
+
   const [result, loadedUrl] = await Promise.all([fetchPromise, imgPromise]);
   applyVerseCardContent(result, loadedUrl);
 }
@@ -1257,17 +1257,17 @@ async function shareAsImage(e) {
     e.preventDefault();
     e.stopPropagation();
   }
-  
+
   const shareBtn = document.getElementById("share-card-btn");
   const card = document.getElementById("verse-card");
   if (!card) return;
-  
+
   if (shareBtn) {
     shareBtn.disabled = true;
     shareBtn.innerHTML = `<span class="nlc-icon nlc-icon--md" data-icon="refresh" aria-hidden="true"></span><span>分享中</span>`;
     if (typeof hydrateIcons === "function") hydrateIcons(shareBtn);
   }
-  
+
   // 🛡️ 截圖前：將 toolbar 提升到 try 外層，保證 finally 能恢復
   const toolbar = document.getElementById("verse-card-toolbar");
 
@@ -1288,9 +1288,9 @@ async function shareAsImage(e) {
 
     canvas.toBlob(async (blob) => {
       if (!blob) return alert('圖片產生失敗');
-      
+
       const file = new File([blob], 'daily-verse.png', { type: 'image/png' });
-      
+
       // 2. 【核心防禦】：檢查瀏覽器是否支援 Web Share API 且支援分享檔案
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         try {
@@ -1299,7 +1299,7 @@ async function shareAsImage(e) {
             title: (window.APP_COPY && window.APP_COPY.verse.shareTitle) || "今日經文",
             text: (window.APP_COPY && window.APP_COPY.verse.shareText) || "分享今日經文給你"
           });
-          
+
           localStorage.setItem("has_shared_verse", "true");
           localStorage.setItem("badge_share_verse_unlocked", "true");
           if (typeof window.triggerBadgeUnlockNotification === "function") {
@@ -1341,7 +1341,7 @@ function fallbackDownload(canvas) {
   link.download = 'daily-verse.png';
   link.href = canvas.toDataURL('image/png');
   link.click();
-  
+
   localStorage.setItem("has_shared_verse", "true");
   localStorage.setItem("badge_share_verse_unlocked", "true");
   if (typeof window.triggerBadgeUnlockNotification === "function") {
@@ -1360,7 +1360,7 @@ async function syncVerseLikes(verseSource) {
   // 1. Initial optimistic local UI state
   let count = parseInt(localStorage.getItem(`verse_like_count_${verseSource}`) || "0");
   let liked = localStorage.getItem(`verse_liked_${verseSource}`) === "true";
-  
+
   const updateUI = () => {
     const iconEl = likeBtn.querySelector(".nlc-icon");
     if (iconEl) {
@@ -1373,7 +1373,7 @@ async function syncVerseLikes(verseSource) {
       label.textContent = count >= 10000 ? `${(count / 10000).toFixed(1)}萬` : count;
     }
   };
-  
+
   updateUI();
 
   // 2. Fetch fresh like_count from Supabase
@@ -1405,10 +1405,10 @@ async function toggleVerseLike(e) {
     e.preventDefault();
     e.stopPropagation();
   }
-  
+
   if (!currentVerse || !currentVerse.source) return;
   const verseSource = currentVerse.source;
-  
+
   const likeBtn = document.getElementById("like-btn");
   const label = document.getElementById("like-count-text");
   if (!likeBtn || !label) return;
@@ -1453,7 +1453,7 @@ async function toggleVerseLike(e) {
           const latestDbCount = data.like_count || 0;
           const newDbCount = latestDbCount + (liked ? 1 : -1);
           await state.supabase.from("verse_likes").update({ like_count: newDbCount }).eq("source", verseSource).execute();
-          
+
           localStorage.setItem(`verse_like_count_${verseSource}`, newDbCount.toString());
           if (label) {
             label.textContent = newDbCount >= 10000 ? `${(newDbCount / 10000).toFixed(1)}萬` : newDbCount;
@@ -1508,7 +1508,7 @@ function renderDailyVerse() {
 }
 
 
-window.openActivePlanFromDashboard = function(event) {
+window.openActivePlanFromDashboard = function (event) {
   console.log('📅 [Debug] 已點選讀經計畫，正在跳轉至計畫頁');
   if (!state.activePlan) return;
   state.planDetailOpen = true;
@@ -1520,7 +1520,7 @@ window.openActivePlanFromDashboard = function(event) {
 /**
  * Switch directly to the Bible Reader and navigate to the user's first unread chapter.
  */
-window.startReadingCurrentChapter = function() {
+window.startReadingCurrentChapter = function () {
   console.log('📖 [Debug] 已點選章節，進入全滿版沉浸閱讀模式');
   if (!state.activePlan) {
     appRouter.switchTab('reader-view');
@@ -1589,7 +1589,7 @@ async function fetchPastoralVerseWall() {
         profilesQuery = profilesQuery.eq("pastoral_zone", pastoralZone);
       }
       const { data: profiles, error: pError } = await profilesQuery;
-        
+
       if (pError) throw pError;
       if (!profiles || profiles.length === 0) {
         container.innerHTML = `<div class="text-xs text-slate-400 dark:text-zinc-500 text-center py-6">尚無同工在該牧區</div>`;
@@ -1606,7 +1606,7 @@ async function fetchPastoralVerseWall() {
         .order("created_at", { ascending: false });
 
       if (nError) throw nError;
-      
+
       const activeNotes = (notes || []).filter(n => n.content && n.content.trim().length > 0);
 
       if (activeNotes.length === 0) {
@@ -1648,7 +1648,7 @@ async function fetchPastoralVerseWall() {
     try {
       localNotes = JSON.parse(localNotesStr);
       if (!Array.isArray(localNotes)) localNotes = [];
-    } catch(e) {}
+    } catch (e) { }
 
     const mockNotes = [...localNotes, ...defaultMock];
 
@@ -1685,7 +1685,7 @@ function renderVerseWallCards(notes, profileMap, likes, comments) {
   notes.forEach(note => {
     const profile = profileMap[note.user_id] || { name: "未知成員", small_group: "小組" };
     const initial = profile.name ? profile.name.charAt(0) : "神";
-    
+
     // Hash name to gradient background color class for avatar only
     const colors = [
       "from-pink-500/20 to-rose-500/20 text-rose-500 dark:text-rose-300",
@@ -1711,7 +1711,7 @@ function renderVerseWallCards(notes, profileMap, likes, comments) {
           const d = new Date(note.created_at);
           timeStr = d.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
         }
-      } catch (e) {}
+      } catch (e) { }
     }
 
     const noteLikes = likes.filter(l => l.note_id === note.id);
@@ -1742,7 +1742,7 @@ function renderVerseWallCards(notes, profileMap, likes, comments) {
     card.style.padding = "1rem";
     card.style.marginBottom = "1rem";
     card.style.boxShadow = "var(--shadow-sm)";
-    
+
     card.innerHTML = `
       <!-- User profile header -->
       <div class="flex items-center justify-between mb-3">
@@ -1782,7 +1782,7 @@ function renderVerseWallCards(notes, profileMap, likes, comments) {
         <!-- Direct toggle comment input -->
         <button type="button" class="flex items-center space-x-1.5 hover:opacity-80 transition-opacity bg-transparent border-0 cursor-pointer p-0 text-xs" style="color: var(--text-secondary); font-weight: var(--type-weight-strong);" onclick="window.toggleCommentInput('${note.id}')">
           <span class="nlc-icon nlc-icon--sm" data-icon="plus" style="width: 15px; height: 15px; color: var(--color-icon-default);"></span>
-          <span>+留言</span>
+          <span>留言</span>
         </button>
       </div>
 
@@ -1808,7 +1808,7 @@ function renderVerseWallCards(notes, profileMap, likes, comments) {
   }
 }
 
-window.toggleDevotionalLike = async function(noteId) {
+window.toggleDevotionalLike = async function (noteId) {
   try {
     await db.toggleDevotionalLike(noteId);
     await fetchPastoralVerseWall();
@@ -1817,7 +1817,7 @@ window.toggleDevotionalLike = async function(noteId) {
   }
 };
 
-window.toggleCommentsSection = function(noteId) {
+window.toggleCommentsSection = function (noteId) {
   const el = document.getElementById(`comments-section-${noteId}`);
   if (el) {
     el.classList.toggle("hidden");
@@ -1830,7 +1830,7 @@ window.toggleCommentsSection = function(noteId) {
   }
 };
 
-window.toggleCommentInput = function(noteId) {
+window.toggleCommentInput = function (noteId) {
   const sec = document.getElementById(`comments-section-${noteId}`);
   if (sec && sec.classList.contains("hidden")) {
     sec.classList.remove("hidden");
@@ -1847,26 +1847,26 @@ window.toggleCommentInput = function(noteId) {
   }
 };
 
-window.submitDevotionalComment = async function(noteId) {
+window.submitDevotionalComment = async function (noteId) {
   const input = document.getElementById(`comment-input-${noteId}`);
   if (!input) return;
   const content = input.value.trim();
   if (!content) return;
-  
+
   try {
     await db.addDevotionalComment(noteId, content);
     input.value = "";
-    
+
     // Auto-hide comment input container after successful send
     const inputCont = document.getElementById(`comment-input-container-${noteId}`);
     if (inputCont) {
       inputCont.classList.add("hidden");
     }
-    
+
     // Ensure it stays expanded
     window.expandedNoteIds = window.expandedNoteIds || new Set();
     window.expandedNoteIds.add(noteId);
-    
+
     await fetchPastoralVerseWall();
   } catch (err) {
     console.error("Failed to add comment:", err);
