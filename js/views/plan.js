@@ -3590,7 +3590,9 @@ window.changePersonalTrendRange = function (range) {
 };
 
 function renderPersonalUnlockedBadges() {
-  renderBadgeWall("stats-badge-wall-container");
+  if (typeof renderBadgeStrip === "function") {
+    renderBadgeStrip("plan-badge-strip");
+  }
 }
 
 async function renderMyPersonalRankings() {
