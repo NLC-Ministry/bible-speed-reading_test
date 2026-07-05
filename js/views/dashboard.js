@@ -1619,13 +1619,24 @@ async function fetchPastoralVerseWall() {
     }
   } else {
     // Offline / local fallback demo data
-    const mockNotes = [
-      { id: "demo_note1", user_id: "demo1", content: "主是我的力量，我的盾牌；我心裡倚靠他就得幫助。 (詩 28:7)", created_at: new Date().toISOString() },
-      { id: "demo_note2", user_id: "demo2", content: "你要保守你心，勝過保守一切，因為一生的果效是由心發出。 (箴 4:23)", created_at: new Date().toISOString() }
+    const defaultMock = [
+      { id: "demo_note1", user_id: "demo1", content: "主是我的力量，我的盾牌；我心裡倚靠他就得幫助。 (詩 28:7)", created_at: new Date(Date.now() - 3600000).toISOString() },
+      { id: "demo_note2", user_id: "demo2", content: "你要保守你心，勝過保守一切，因為一生的果效是由心發出。 (箴 4:23)", created_at: new Date(Date.now() - 7200000).toISOString() }
     ];
+
+    const localNotesStr = localStorage.getItem("devotional_notes") || "[]";
+    let localNotes = [];
+    try {
+      localNotes = JSON.parse(localNotesStr);
+      if (!Array.isArray(localNotes)) localNotes = [];
+    } catch(e) {}
+
+    const mockNotes = [...localNotes, ...defaultMock];
+
     const mockProfileMap = {
       "demo1": { name: "張弟兄", small_group: "馬鈴薯組" },
-      "demo2": { name: "李姊妹", small_group: "喜樂組" }
+      "demo2": { name: "李姊妹", small_group: "喜樂組" },
+      "me": { name: (state.currentUser && state.currentUser.name) || "我", small_group: (state.currentUser && state.currentUser.small_group) || "小組" }
     };
 
     const likesList = [];
