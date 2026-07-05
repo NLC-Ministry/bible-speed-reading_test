@@ -35,7 +35,7 @@ describe("resolveLocalAssets", () => {
     expect(resolveLocalAssets(`<script src="js/a.js"></script>`).stylesheet).toBeNull();
   });
 
-  it("resolves the real index.html to the exact 17-file order", () => {
+  it("resolves the real index.html to the exact 19-file order", () => {
     const html = readFileSync(join(root, "index.html"), "utf8");
     const { scripts } = resolveLocalAssets(html);
     expect(scripts).toEqual([
