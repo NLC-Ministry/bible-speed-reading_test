@@ -99,17 +99,32 @@ function mergeOrgSources(platformOrg: any, placementOrg: any, contextOrganizatio
   };
 }
 
+// Roles that must never be granted or inherited via a WEAK (email-only) account link.
+const PRIVILEGED_ROLES = new Set([
+  "admin", "senior_pastor", "great_zone_leader", "zone_leader", "group_leader"
+]);
+
 /**
- * Phase 1 role policy: Hub primaryRole admin → app admin; else preserve existing Supabase role.
+ * Role policy — SECURITY: privilege is only granted/inherited on a STRONG identity
+ * link (Logto sub or NLC member id). NLC identity can be phone-primary, so a token's
+ * email is not proof of ownership; an email-only profile match must never escalate a
+ * login into an admin/leader role. Keep in sync with the unit-tested
+ * scripts/lib/nlc-account-link.mjs.
  *
  * TODO(Phase 2): Map org-placement leaderships[].roleName → scoped app roles.
- * See https://nlc-b1ffeeba.mintlify.site/api-reference/member-org-placement
- * and https://nlc-b1ffeeba.mintlify.site/api-reference/authorization-model
+ * See https://nlc-b1ffeeba.mintlify.site/api-reference/authorization-model
  */
-function resolveSyncedRole(primaryRole: string | null | undefined, existingRole: string | null | undefined) {
-  if (primaryRole === "admin" && allowedRoles.has("admin")) return "admin";
-  if (existingRole !== null && existingRole !== undefined && String(existingRole).trim() !== "") {
-    return String(existingRole).trim();
+function resolveSyncedRole(
+  primaryRole: string | null | undefined,
+  existingRole: string | null | undefined,
+  linkedBy: "identity" | "member_id" | "email" | "none"
+) {
+  const strong = linkedBy === "identity" || linkedBy === "member_id" || linkedBy === "none";
+  if (primaryRole === "admin" && strong && allowedRoles.has("admin")) return "admin";
+  const existing = existingRole == null ? "" : String(existingRole).trim();
+  if (existing !== "") {
+    if (strong) return existing;
+    return PRIVILEGED_ROLES.has(existing) ? "member" : existing;
   }
   return "member";
 }
@@ -202,7 +217,7 @@ Deno.serve(async (req) => {
 
     if (memberId) {
       const platformResponse = await fetchJsonOptional(
-        `${platformApiUrl}/members/${memberId}/organization`,
+        `${platformApiUrl}/members/${encodeURIComponent(memberId)}/organization`,
         { headers: bearerHeaders }
       );
       platformOrganization = platformResponse?.organization || null;
@@ -243,9 +258,28 @@ Deno.serve(async (req) => {
 
     let profileId = existingIdentity?.profile_id || null;
     let existingProfile: any = null;
+    // How the existing profile was matched — governs privilege in resolveSyncedRole.
+    let linkSource: "identity" | "member_id" | "email" | "none" = profileId ? "identity" : "none";
 
     const lookupEmail = userinfo.email || memberIdentity.email || null;
 
+    // Strong link: match an existing profile by the authenticated NLC member id.
+    if (!profileId && memberId) {
+      const { data: profileByMember, error: memberLookupError } = await supabaseAdmin
+        .from("profiles")
+        .select("*")
+        .eq("nlc_member_id", memberId)
+        .maybeSingle();
+      if (memberLookupError) throw memberLookupError;
+      if (profileByMember) {
+        existingProfile = profileByMember;
+        profileId = profileByMember.id;
+        linkSource = "member_id";
+      }
+    }
+
+    // Weak link: match by email only. NLC identity can be phone-primary, so the token
+    // email may not be caller-owned; resolveSyncedRole refuses to escalate privilege here.
     if (!profileId && lookupEmail) {
       const { data: profileByEmail, error: profileLookupError } = await supabaseAdmin
         .from("profiles")
@@ -255,8 +289,11 @@ Deno.serve(async (req) => {
         .limit(1)
         .maybeSingle();
       if (profileLookupError) throw profileLookupError;
-      existingProfile = profileByEmail || null;
-      profileId = existingProfile?.id || null;
+      if (profileByEmail) {
+        existingProfile = profileByEmail;
+        profileId = profileByEmail.id;
+        linkSource = "email";
+      }
     }
 
     if (profileId && !existingProfile) {
@@ -271,7 +308,7 @@ Deno.serve(async (req) => {
 
     if (!profileId) profileId = crypto.randomUUID();
 
-    const syncedRole = resolveSyncedRole(memberContext?.primaryRole, existingProfile?.role);
+    const syncedRole = resolveSyncedRole(memberContext?.primaryRole, existingProfile?.role, linkSource);
 
     const sourceValues: Record<string, string | null> = {
       email: lookupEmail,
@@ -393,10 +430,9 @@ Deno.serve(async (req) => {
       membership_status: membershipStatus
     });
   } catch (err) {
+    // Log full detail server-side only; do NOT leak internal error text (upstream URLs,
+    // DB errors) to the client.
     console.error("nlc-session failed:", err);
-    return jsonResponse({
-      error: "nlc_session_failed",
-      message: err instanceof Error ? err.message : String(err)
-    }, 500);
+    return jsonResponse({ error: "nlc_session_failed" }, 500);
   }
 });
