@@ -1635,17 +1635,29 @@ const db = {
 
       const { error } = await state.supabase
         .from("devotional_notes")
-        .upsert({
+        .insert({
           user_id: user.id,
           note_date: date,
           content: content
-        }, { onConflict: 'user_id,note_date' });
+        });
 
       if (error) throw error;
     } else {
-      const notesStr = localStorage.getItem("devotional_notes") || "{}";
-      const notes = JSON.parse(notesStr);
-      notes[date] = content;
+      const notesStr = localStorage.getItem("devotional_notes") || "[]";
+      let notes = [];
+      try {
+        notes = JSON.parse(notesStr);
+        if (!Array.isArray(notes)) notes = [];
+      } catch (e) {
+        notes = [];
+      }
+      notes.unshift({
+        id: "mock_note_" + Date.now(),
+        user_id: "me",
+        note_date: date,
+        content: content,
+        created_at: new Date().toISOString()
+      });
       localStorage.setItem("devotional_notes", JSON.stringify(notes));
     }
   },
