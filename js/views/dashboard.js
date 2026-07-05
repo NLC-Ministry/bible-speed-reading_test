@@ -41,7 +41,7 @@ function updateDashboardView() {
     const isAdmin = state.currentUser && state.currentUser.role === 'admin';
     const isPlanAvailable = started || isAdmin;
     const statusText = started
-      ? `進度: ${progress}% (${state.activePlan.completedChapters} / ${state.activePlan.totalChapters} 章)`
+      ? `進度: ${progress}% (${state.activePlan.completedChapters} / ${state.activePlan.currentRoundTotalChapters || state.activePlan.totalChapters} 章)`
       : `<span class="text-brand" style="font-weight: 500;">等待開始</span> (將於 ${state.activePlan.startDate} 開始)`;
 
     // Calculate core statistics for dashboard summary card

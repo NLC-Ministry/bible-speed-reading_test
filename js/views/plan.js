@@ -762,9 +762,29 @@ function calculateAllPlansProgress() {
     plan.firstRoundCompletedChapters = firstRoundCompletedChapters;
     plan.firstRoundTotalChapters = firstRoundTotalChapters;
     plan.isPlanCompleted = firstRoundTotalChapters > 0 && firstRoundCompletedChapters >= firstRoundTotalChapters;
-    plan.progress = plan.isPlanCompleted
+
+    // Calculate current round progress dynamically
+    const currentRoundTotal = plan.days.reduce((sum, day) => {
+      return sum + ((day.chapters || []).filter(ch => (ch.round || 1) === plan.currentRound).length);
+    }, 0) || plan.totalChapters;
+    const currentRoundCompleted = plan.days.reduce((sum, day) => {
+      const isCompleted = (ch) => {
+        if (plan.currentRound === 1) return ch.isReadR1 || ch.isRead;
+        if (plan.currentRound === 2) return ch.isReadR2;
+        if (plan.currentRound === 3) return ch.isReadR3;
+        return ch.isRead;
+      };
+      return sum + ((day.chapters || []).filter(ch => (ch.round || 1) === plan.currentRound && isCompleted(ch)).length);
+    }, 0);
+
+    plan.currentRoundTotalChapters = currentRoundTotal;
+    plan.completedChapters = currentRoundCompleted;
+
+    const isCurrentRoundCompleted = currentRoundTotal > 0 && currentRoundCompleted >= currentRoundTotal;
+    plan.progress = isCurrentRoundCompleted
       ? 100
-      : (Math.round((firstRoundCompletedChapters / firstRoundTotalChapters) * 100) || 0);
+      : (Math.round((currentRoundCompleted / currentRoundTotal) * 100) || 0);
+
     if (!plan.isPlanCompleted) plan.upgradePromptHandled = false;
 
     // Track second-round completion for the round-2 → round-3 upgrade prompt
@@ -955,7 +975,7 @@ function renderJoinedPlansList() {
           <div class="plan-progress-bar" style="width: ${progress}%;"></div>
         </div>
         <div style="font-size: 0.76rem; font-weight: 500; color: var(--text-secondary); margin-top: 0.1rem;">
-          已讀 ${progress}% (${plan.completedChapters} / ${plan.totalChapters} 章)
+          已讀 ${progress}% (${plan.completedChapters} / ${plan.currentRoundTotalChapters || plan.totalChapters} 章)
         </div>
       </div>
     `;

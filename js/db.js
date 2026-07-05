@@ -584,7 +584,7 @@ const db = {
               || (globalPlanId ? globalPlanId : null)
               || getPresetKeyByName(dbPlan.name);
 
-            const planObj = generatePlanObject(dbPlan.name, dbPlan.start_date, dbPlan.end_date, dbPlan.target_books, key);
+            const planObj = generatePlanObject(dbPlan.name, dbPlan.start_date, dbPlan.end_date, dbPlan.target_books, key, dbPlan.level || 'normal');
             planObj.id = dbPlan.id;
             planObj.globalPlanId = globalPlanId;  // ?? UUID ??
             const linkedGlobalPlan = (state.globalPlans || []).find(p => p.id === globalPlanId || p.presetKey === key || p.name === dbPlan.name);
@@ -682,7 +682,7 @@ const db = {
             if ((hasShiftBug || isMissingProperties) && typeof generatePlanObject === 'function') {
               const preset = CHURCH_PLAN_PRESETS[plan.presetKey];
               if (preset) {
-                const freshPlan = generatePlanObject(plan.name, plan.startDate, plan.endDate, plan.target_books || preset.books, plan.presetKey);
+                const freshPlan = generatePlanObject(plan.name, plan.startDate, plan.endDate, plan.target_books || preset.books, plan.presetKey, plan.level || 'normal');
                 const readKeys = new Set();
                 plan.days.forEach(d => {
                   if (d.chapters) {
