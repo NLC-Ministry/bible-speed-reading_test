@@ -1771,17 +1771,17 @@ function renderVerseWallCards(notes, profileMap, likes, comments) {
       <div class="flex items-center justify-start space-x-6 mt-3 pt-2" style="border-top: 1px solid var(--border-card); color: var(--text-secondary);">
         <!-- Like Action -->
         <button type="button" class="flex items-center space-x-1.5 hover:opacity-80 transition-opacity bg-transparent border-0 cursor-pointer p-0 text-xs" style="color: ${hasLiked ? 'var(--color-danger)' : 'var(--text-secondary)'}; font-weight: var(--type-weight-strong);" onclick="window.toggleDevotionalLike('${note.id}')">
-          <span class="nlc-icon nlc-icon--sm" data-icon="${hasLiked ? 'heartFill' : 'heart'}" style="width: 15px; height: 15px; color: ${hasLiked ? 'var(--color-danger)' : 'var(--color-icon-default)'};"></span>
+          <span class="nlc-icon nlc-icon--sm" data-icon="${hasLiked ? 'heartFill' : 'heart'}" style="width: 15px; height: 15px;"></span>
           <span>${noteLikes.length > 0 ? noteLikes.length + ' ' : ''}讚</span>
         </button>
         <!-- Comments list toggle -->
         <button type="button" class="flex items-center space-x-1.5 hover:opacity-80 transition-opacity bg-transparent border-0 cursor-pointer p-0 text-xs" style="color: var(--text-secondary); font-weight: var(--type-weight-strong);" onclick="window.toggleCommentsSection('${note.id}')">
-          <span class="nlc-icon nlc-icon--sm" data-icon="inbox" style="width: 15px; height: 15px; color: var(--color-icon-default);"></span>
+          <span class="nlc-icon nlc-icon--sm" data-icon="inbox" style="width: 15px; height: 15px;"></span>
           <span>${noteComments.length > 0 ? noteComments.length + ' ' : ''}回覆</span>
         </button>
         <!-- Direct toggle comment input -->
         <button type="button" class="flex items-center space-x-1.5 hover:opacity-80 transition-opacity bg-transparent border-0 cursor-pointer p-0 text-xs" style="color: var(--text-secondary); font-weight: var(--type-weight-strong);" onclick="window.toggleCommentInput('${note.id}')">
-          <span class="nlc-icon nlc-icon--sm" data-icon="plus" style="width: 15px; height: 15px; color: var(--color-icon-default);"></span>
+          <span class="nlc-icon nlc-icon--sm" data-icon="plus" style="width: 15px; height: 15px;"></span>
           <span>留言</span>
         </button>
       </div>
