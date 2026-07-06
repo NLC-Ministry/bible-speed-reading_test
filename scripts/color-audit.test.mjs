@@ -82,9 +82,9 @@ describe("color audit", () => {
     expect(hits, hits.join("\n")).toEqual([]);
   });
 
-  it("blocks inline style color/background hex in js/views templates", () => {
+  it("blocks inline style color/background hex in js/modules templates", () => {
     const hits = [];
-    for (const abs of walk(join(root, "js/views"))) {
+    for (const abs of walk(join(root, "js/modules"))) {
       const rel = relative(root, abs).replace(/\\/g, "/");
       const content = readFileSync(abs, "utf8");
       if (INLINE_STYLE_COLOR_HEX.test(content)) hits.push(rel);
