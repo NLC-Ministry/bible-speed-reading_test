@@ -385,6 +385,11 @@ function getDowngradeLockedUntil(plan) {
 }
 
 function isPlanUpgradeLocked(plan) {
+  if (!plan) return false;
+  // If the user has completed the current round, they are allowed to upgrade regardless of any downgrade lock!
+  if (plan.currentRound === 1 && plan.isPlanCompleted) return false;
+  if (plan.currentRound === 2 && plan.isRound2Completed) return false;
+
   const lockedUntil = getDowngradeLockedUntil(plan);
   if (!lockedUntil) return false;
   return new Date(lockedUntil).getTime() > Date.now();
