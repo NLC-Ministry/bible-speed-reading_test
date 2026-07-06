@@ -76,6 +76,17 @@ const db = {
       });
     }
 
+    // ── Demo login button wiring ──
+    const btnDemoGate = document.getElementById("btn-gate-demo-login");
+    if (btnDemoGate) {
+      const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1" || window.location.hostname === "::1" || window.location.hostname.startsWith("192.168.");
+      btnDemoGate.style.display = isLocalhost ? "inline-flex" : "none";
+      btnDemoGate.addEventListener("click", (e) => {
+        e.preventDefault();
+        window.location.search = "?demo=true";
+      });
+    }
+
     if (sbUrl && sbKey) {
       try {
         // Initialize Supabase SDK
