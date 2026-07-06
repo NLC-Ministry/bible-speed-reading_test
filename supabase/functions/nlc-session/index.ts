@@ -163,8 +163,20 @@ async function fetchJsonOptional(url: string, init?: RequestInit) {
   }
 }
 
-Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+Deno.serve(async (req: Request) => {
+  const origin = req.headers.get("origin") || "*";
+  const localCorsHeaders = {
+    ...corsHeaders,
+    "Access-Control-Allow-Origin": origin
+  };
+
+  const jsonResponse = (body: unknown, status = 200) => {
+    return new Response(JSON.stringify(body), { status, headers: localCorsHeaders });
+  };
+
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { status: 200, headers: localCorsHeaders });
+  }
   if (req.method !== "POST") return jsonResponse({ error: "method_not_allowed" }, 405);
 
   try {

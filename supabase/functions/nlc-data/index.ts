@@ -1,4 +1,4 @@
-﻿import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("APP_ORIGIN") || "*",
@@ -117,8 +117,18 @@ function applyForcedScope(query: any, table: string, action: string, profile: an
   return query;
 }
 
-Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+Deno.serve(async (req: Request) => {
+  const origin = req.headers.get("origin") || "*";
+  const localCorsHeaders = {
+    ...corsHeaders,
+    "Access-Control-Allow-Origin": origin
+  };
+
+  const jsonResponse = (body: unknown, status = 200) => {
+    return new Response(JSON.stringify(body), { status, headers: localCorsHeaders });
+  };
+
+  if (req.method === "OPTIONS") return new Response("ok", { headers: localCorsHeaders });
   if (req.method !== "POST") return jsonResponse({ error: "method_not_allowed" }, 405);
 
   try {
@@ -154,17 +164,17 @@ Deno.serve(async (req) => {
       };
 
       const { data: savedProfile, error: saveError } = await supabaseAdmin
-        .from("profiles")
-        .update(updatePayload)
-        .eq("id", profile.id)
-        .select("*")
-        .single();
+         .from("profiles")
+         .update(updatePayload)
+         .eq("id", profile.id)
+         .select("*")
+         .single();
 
       if (saveError) return jsonResponse({ error: saveError.message, details: saveError }, 400);
       if (!savedProfile) return jsonResponse({ error: "profile_write_not_verified" }, 500);
 
       const expectedFields = ["name", "great_region", "pastoral_zone", "small_group"];
-      const mismatches = expectedFields.filter(field => String(savedProfile[field] || "") !== String(updatePayload[field] || ""));
+      const mismatches = expectedFields.filter(field => String((savedProfile as any)[field] || "") !== String((updatePayload as any)[field] || ""));
       if (mismatches.length > 0) {
         return jsonResponse({
           error: "profile_write_mismatch",
