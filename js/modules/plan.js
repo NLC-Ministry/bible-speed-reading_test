@@ -22,6 +22,42 @@ function getPlanDetailTabs() {
   return document.querySelector(".plan-detail-tabs");
 }
 
+function getPlanGroupNodes() {
+  return [
+    getPlanDetailTabs(),
+    document.getElementById("subview-plan-stats"),
+    document.getElementById("subview-plan-ranking"),
+    document.getElementById("subview-plan-members")
+  ].filter(Boolean);
+}
+
+function moveGroupNodesToDetail(shell = ensurePlanRouteShell()) {
+  if (!shell || !shell.legacyDetail) return;
+
+  const tabs = getPlanDetailTabs();
+  const schedule = document.getElementById("subview-plan-schedule");
+  if (tabs && schedule && tabs.parentElement !== shell.legacyDetail) {
+    shell.legacyDetail.insertBefore(tabs, schedule);
+  } else if (tabs && !schedule && tabs.parentElement !== shell.legacyDetail) {
+    shell.legacyDetail.appendChild(tabs);
+  }
+
+  [
+    document.getElementById("subview-plan-stats"),
+    document.getElementById("subview-plan-ranking"),
+    document.getElementById("subview-plan-members")
+  ].filter(Boolean).forEach(node => {
+    if (node.parentElement !== shell.legacyDetail) shell.legacyDetail.appendChild(node);
+  });
+}
+
+function moveGroupNodesToGroup(shell = ensurePlanRouteShell()) {
+  if (!shell || !shell.groupView) return;
+  getPlanGroupNodes().forEach(node => {
+    if (node.parentElement !== shell.groupView) shell.groupView.appendChild(node);
+  });
+}
+
 function forceHidden(el, hidden) {
   if (!el) return;
   el.classList.toggle("hidden", hidden);
@@ -61,17 +97,6 @@ function ensurePlanRouteShell() {
     groupView.className = "hidden";
     detailView.after(groupView);
   }
-
-  const groupNodes = [
-    getPlanDetailTabs(),
-    document.getElementById("subview-plan-stats"),
-    document.getElementById("subview-plan-ranking"),
-    document.getElementById("subview-plan-members")
-  ].filter(Boolean);
-
-  groupNodes.forEach(node => {
-    if (node.parentElement !== groupView) groupView.appendChild(node);
-  });
 
   return { listView, detailView, groupView, legacyList, legacyDetail };
 }
@@ -741,8 +766,8 @@ async function renderPlanDetailView() {
     if (tabRanking) tabRanking.classList.remove("active");
     if (tabMembers) tabMembers.classList.remove("active");
     
-    allSubviewsInit.forEach(s => s.classList.add("hidden"));
-    if (subviewSchedule) subviewSchedule.classList.remove("hidden");
+    allSubviewsInit.forEach(s => forceHidden(s, s !== subviewSchedule));
+    if (subviewSchedule) forceHidden(subviewSchedule, false);
 
     const planDetailTabs = getPlanDetailTabs();
     if (planDetailTabs) {
@@ -766,8 +791,8 @@ async function renderPlanDetailView() {
     if (tabRanking) tabRanking.classList.remove("active");
     if (tabMembers) tabMembers.classList.remove("active");
 
-    allSubviewsInit.forEach(s => s.classList.add("hidden"));
-    if (subviewPlanStats) subviewPlanStats.classList.remove("hidden");
+    allSubviewsInit.forEach(s => forceHidden(s, s !== subviewPlanStats));
+    if (subviewPlanStats) forceHidden(subviewPlanStats, false);
 
     await window.switchStatTab('personal');
   }
@@ -5346,7 +5371,8 @@ async function enterPlanListState() {
   window.currentPlanViewState = PLAN_ROUTE.LIST;
   state.planDetailOpen = false;
   state.planActiveSubTab = "today";
-  setOnlyPlanRouteVisible(PLAN_ROUTE.LIST);
+  const shell = setOnlyPlanRouteVisible(PLAN_ROUTE.LIST);
+  moveGroupNodesToDetail(shell);
   renderJoinedPlansList();
   renderPresetPlansList();
 }
@@ -5360,7 +5386,8 @@ async function enterPlanDetailState() {
   window.currentPlanViewState = PLAN_ROUTE.DETAIL;
   state.planDetailOpen = true;
   state.planActiveSubTab = "today";
-  setOnlyPlanRouteVisible(PLAN_ROUTE.DETAIL);
+  const shell = setOnlyPlanRouteVisible(PLAN_ROUTE.DETAIL);
+  moveGroupNodesToDetail(shell);
 
   forceHidden(document.getElementById("subview-plan-schedule"), false);
   forceHidden(document.getElementById("subview-plan-level"), true);
@@ -5394,6 +5421,8 @@ async function fetchGroupRankings(planId) {
   }
 
   if (!state.activePlan) return;
+
+  moveGroupNodesToGroup();
 
   window._currentStatsTab = "admin";
   window._statsTabScope = getDefaultGroupStatsScope();
@@ -5440,7 +5469,8 @@ async function enterGroupProgressState() {
   window.currentPlanViewState = PLAN_ROUTE.GROUP;
   state.planDetailOpen = true;
   state.planActiveSubTab = "group";
-  setOnlyPlanRouteVisible(PLAN_ROUTE.GROUP);
+  const shell = setOnlyPlanRouteVisible(PLAN_ROUTE.GROUP);
+  moveGroupNodesToGroup(shell);
 
   forceHidden(document.getElementById("subview-plan-schedule"), true);
   forceHidden(document.getElementById("subview-plan-level"), true);

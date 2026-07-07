@@ -280,8 +280,15 @@ const appRouter = {
       const levelSubview = document.getElementById("subview-plan-level");
       if (levelSubview && !levelSubview.classList.contains("hidden")) {
         const scheduleSubview = document.getElementById("subview-plan-schedule");
-        if (levelSubview) levelSubview.classList.add("hidden");
-        if (scheduleSubview) scheduleSubview.classList.remove("hidden");
+        if (levelSubview) {
+          levelSubview.classList.add("hidden");
+          levelSubview.hidden = true;
+        }
+        if (scheduleSubview) {
+          scheduleSubview.classList.remove("hidden");
+          scheduleSubview.hidden = false;
+          scheduleSubview.style.display = "";
+        }
         if (typeof renderPlanScheduleTracker === "function") renderPlanScheduleTracker();
         this.updateNavigationChrome();
         return;
