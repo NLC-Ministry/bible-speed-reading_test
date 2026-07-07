@@ -95,6 +95,10 @@ appRouter.switchTab = async function (tabId, options = {}) {
     }
 
     // ── 5. Load module + render (fully awaited) ──
+    if (typeof window.syncActivePlanContext === 'function') {
+      window.syncActivePlanContext();
+    }
+
     if (tabId === "dashboard-view") {
       const mod = await loadModule('home', './modules/home.js');
       if (mod && typeof mod.updateDashboardView === 'function') {
@@ -135,6 +139,9 @@ appRouter.switchTab = async function (tabId, options = {}) {
         } catch (err) {
           console.warn("Profile tab sync failed (non-fatal):", err);
         }
+      }
+      if (typeof window.syncActivePlanContext === 'function') {
+        window.syncActivePlanContext();
       }
       if (typeof window.renderProfileView === 'function') {
         await window.renderProfileView();
@@ -206,6 +213,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       db.loadOrgStructure(),
       db.loadUserData(true)
     ]);
+
+    if (typeof window.syncActivePlanContext === 'function') {
+      window.syncActivePlanContext();
+    }
 
     // Update role-dependent UI now that profile data is loaded
     if (typeof updateAdminNavVisibility === 'function') updateAdminNavVisibility();

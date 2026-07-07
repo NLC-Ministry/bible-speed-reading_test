@@ -23,7 +23,9 @@ function canUseAdvancedGroupStats() {
 }
 
 function getDefaultGroupStatsScope() {
+  const myGroup = (state.currentUser && state.currentUser.small_group) || "";
   const myZone = (state.currentUser && state.currentUser.pastoral_zone) || "";
+  if (myGroup) return `group:${myGroup.split(",")[0].trim()}`;
   return myZone ? `zone:${myZone.split(",")[0].trim()}` : "all";
 }
 
@@ -83,6 +85,7 @@ function initPlanControls() {
   if (backBtn) {
     backBtn.addEventListener("click", () => {
       state.activePlan = null;
+      if (typeof window.syncActivePlanContext === 'function') window.syncActivePlanContext(null);
       localStorage.removeItem("selected_plan_key");
       const listSubview = document.getElementById("plan-list-subview");
       const detailSubview = document.getElementById("plan-detail-subview");
@@ -484,6 +487,7 @@ function renderJoinedPlansList() {
       `;
       card.onclick = () => {
         state.activePlan = plan;
+        if (typeof window.syncActivePlanContext === 'function') window.syncActivePlanContext(plan);
         state.selectedPlanDay = null; // reset to first uncompleted day
         localStorage.setItem("selected_plan_key", plan.presetKey || "");
         if (typeof window.setPlanState === 'function') {
@@ -2480,6 +2484,7 @@ function populateMembersSelector() {
 }
 
 async function renderPlanStatsView() {
+  if (typeof window.syncActivePlanContext === 'function') window.syncActivePlanContext();
   if (!state.activePlan) return;
 
   // Make sure stats selector is populated
@@ -2717,13 +2722,14 @@ async function renderGroupMiniStats() {
       scopedUsers = allUsers;
     } else if (overrideFilter === "me") {
       scopedUsers = allUsers.filter(u => u.name === state.currentUser.name);
+    } else if (overrideFilter === "all_groups") {
+      scopedUsers = allUsers.filter(u => u.small_group === state.currentUser.small_group);
+    } else if (overrideFilter.startsWith("group:")) {
+      const group = overrideFilter.replace("group:", "");
+      scopedUsers = allUsers.filter(u => u.small_group === group);
     } else if (overrideFilter.startsWith("zone:")) {
       const zone = overrideFilter.replace("zone:", "");
-      if (zone === "未設定牧區") {
-        scopedUsers = allUsers.filter(u => !u.pastoral_zone || u.pastoral_zone.trim() === "");
-      } else {
-        scopedUsers = allUsers.filter(u => u.pastoral_zone === zone);
-      }
+      scopedUsers = allUsers.filter(u => u.pastoral_zone === zone);
     }
   } else if (scopedUsers === undefined) {
     scopedUsers = getScopedUsers(allUsers, state.currentUser);
@@ -5325,17 +5331,18 @@ window.setPlanState = async function setPlanState(newState) {
       const planDetailTabs = document.querySelector('#plan-detail-subview .plan-detail-tabs');
       if (planDetailTabs) planDetailTabs.style.display = 'flex';
 
-      // Reset inner tab selection to 'personal'
-      window._currentStatsTab = 'personal';
+      // Default group progress to team stats after personal stats moved to Profile.
+      window._currentStatsTab = 'admin';
+      window._statsTabScope = getDefaultGroupStatsScope();
       document.querySelectorAll('.stats-inner-tab').forEach(t => {
-        t.classList.toggle('active', t.getAttribute('data-tab') === 'personal');
+        t.classList.toggle('active', t.getAttribute('data-tab') === 'admin');
       });
       const adminScopeBar = document.getElementById('stats-admin-scope-bar');
-      if (adminScopeBar) adminScopeBar.classList.add('hidden');
+      if (adminScopeBar) adminScopeBar.classList.remove('hidden');
       const personalSec = document.getElementById('stats-personal-section');
       const groupSec    = document.getElementById('stats-group-section');
-      if (personalSec) personalSec.classList.remove('hidden');
-      if (groupSec)    groupSec.classList.add('hidden');
+      if (personalSec) personalSec.classList.add('hidden');
+      if (groupSec)    groupSec.classList.remove('hidden');
 
       // AWAIT the stats render to prevent chrome update from racing the data
       await renderPlanStatsView();
@@ -5374,6 +5381,7 @@ window.planGoBack = function planGoBack() {
  * Toggle between today/calendar (detail) and group/stats views.
  */
 window.planToggleGroupProgress = function planToggleGroupProgress() {
+  if (typeof window.syncActivePlanContext === 'function') window.syncActivePlanContext();
   const cur = state.planActiveSubTab === 'group' ? 'group' : 'detail';
   console.log(`[PlanSM] planToggleGroupProgress() from "${cur}"`);
   if (cur === 'group')  { window.setPlanState('detail'); return; }

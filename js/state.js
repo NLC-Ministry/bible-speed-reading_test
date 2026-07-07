@@ -93,6 +93,26 @@ const state = {
   }
 };
 
+function getActivePlanContextId(plan = state.activePlan) {
+  if (!plan) return null;
+  return plan.id || plan.globalPlanId || plan.presetKey || null;
+}
+
+function syncActivePlanContext(plan = state.activePlan) {
+  const planId = getActivePlanContextId(plan);
+  window.currentActivePlanId = planId;
+  window.currentActivePlanKey = planId ? (plan.presetKey || plan.globalPlanId || plan.id || null) : null;
+  return planId;
+}
+
+function findPlanByContextId(planId) {
+  if (!planId) return state.activePlan || null;
+  return (state.activePlans || []).find(plan =>
+    plan.id === planId ||
+    plan.globalPlanId === planId ||
+    plan.presetKey === planId
+  ) || null;
+}
 // Router for Switching Views
 const appRouter = {
   currentTab: "dashboard-view",
@@ -401,6 +421,11 @@ window.dataVersion = dataVersion;
 window.setDataVersion = setDataVersion;
 
 window.state = state;
+window.currentActivePlanId = getActivePlanContextId();
+window.currentActivePlanKey = null;
+window.getActivePlanContextId = getActivePlanContextId;
+window.syncActivePlanContext = syncActivePlanContext;
+window.findPlanByContextId = findPlanByContextId;
 window.CHURCH_PLAN_PRESETS = CHURCH_PLAN_PRESETS;
 window.appRouter = appRouter;
 window.initTheme = initTheme;

@@ -8620,3 +8620,60 @@ body.dark-theme .plan-calendar .plan-day-cell .day-status-dot.dot-grey {
   background: var(--color-warning-subtle) !important;
   border-color: color-mix(in srgb, var(--color-warning) 24%, transparent) !important;
 }
+
+.profile-personal-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.profile-personal-stats-grid .profile-stat-card--primary {
+  grid-column: 1 / -1;
+}
+
+.profile-stat-card__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.profile-stat-card__value {
+  font-size: 1.55rem;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--text-primary);
+}
+
+.profile-stat-card--primary .profile-stat-card__value {
+  font-size: 2.2rem;
+}
+
+.profile-stat-card__unit {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-left: 0.15rem;
+}
+
+.profile-stat-card__label {
+  display: block;
+  margin-top: 0.65rem;
+  font-size: 0.82rem;
+  font-weight: 650;
+  color: var(--text-secondary);
+}
+
+@media (max-width: 420px) {
+  .profile-personal-stats-grid {
+    gap: 0.6rem;
+  }
+
+  .profile-stat-card__value {
+    font-size: 1.25rem;
+  }
+
+  .profile-stat-card--primary .profile-stat-card__value {
+    font-size: 1.85rem;
+  }
+}
