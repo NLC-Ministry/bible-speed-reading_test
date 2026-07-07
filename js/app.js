@@ -35,115 +35,132 @@ async function loadModule(name, path) {
   }
 }
 
-// Override routing switchTab to support dynamic ESM lazy-loading
-const originalSwitchTab = appRouter.switchTab;
+// ─── Tab Switching: isSwitching guard prevents concurrent race conditions ───
+let isSwitching = false;
 
 appRouter.switchTab = async function (tabId, options = {}) {
-  // Scenario checks
-  if (tabId !== "reader-view" || !options.fromPlan) {
-    if (state.readerState) {
-      state.readerState.fromPlan = false;
+  // ── State Lock: block double-tap / rapid navigation ──
+  if (isSwitching) {
+    console.warn(`[Router] switchTab('${tabId}') blocked — previous transition still in progress.`);
+    return;
+  }
+  isSwitching = true;
+
+  try {
+    // ── Pre-flight: reader-state cleanup ──
+    if (tabId !== "reader-view" || !options.fromPlan) {
+      if (state.readerState) state.readerState.fromPlan = false;
     }
-  }
 
-  // Stop reading audio if switching away from reader-view
-  if (tabId !== "reader-view" && typeof window.speechSynthesis !== "undefined") {
-    window.speechSynthesis.cancel();
-    const audioBtn = document.getElementById("reader-audio-btn");
-    if (audioBtn) audioBtn.classList.remove("active");
-  }
+    // ── Pre-flight: stop TTS audio ──
+    if (tabId !== "reader-view" && typeof window.speechSynthesis !== "undefined") {
+      window.speechSynthesis.cancel();
+      const audioBtn = document.getElementById("reader-audio-btn");
+      if (audioBtn) audioBtn.classList.remove("active");
+    }
 
-  this.currentTab = tabId;
+    // ── 1. Update currentTab immediately (sync) ──
+    this.currentTab = tabId;
 
-  // Update Active Nav Buttons (both desktop and mobile)
-  document.querySelectorAll(".tab-btn, .mobile-nav-btn").forEach(btn => {
-    const target = btn.getAttribute("data-target");
-    if (!target) return;
-    const isActive = target === tabId;
-    btn.classList.toggle("active", isActive);
-    if (btn.classList.contains("mobile-nav-btn") || btn.closest(".nav-tabs")) {
-      btn.setAttribute("aria-selected", isActive ? "true" : "false");
-      if (isActive) {
-        btn.setAttribute("aria-current", "page");
-      } else {
-        btn.removeAttribute("aria-current");
+    // ── 2. Update nav button states (sync) ──
+    document.querySelectorAll(".tab-btn, .mobile-nav-btn").forEach(btn => {
+      const target = btn.getAttribute("data-target");
+      if (!target) return;
+      const isActive = target === tabId;
+      btn.classList.toggle("active", isActive);
+      if (btn.classList.contains("mobile-nav-btn") || btn.closest(".nav-tabs")) {
+        btn.setAttribute("aria-selected", isActive ? "true" : "false");
+        if (isActive) btn.setAttribute("aria-current", "page");
+        else btn.removeAttribute("aria-current");
       }
-    }
-  });
+    });
 
-  // Rule A compliance: Hide all view-panes by default using .hidden class
-  document.querySelectorAll(".view-pane").forEach(pane => {
-    if (pane.id === tabId) {
-      pane.classList.remove("hidden");
-      pane.classList.add("active");
-    } else {
-      pane.classList.add("hidden");
-      pane.classList.remove("active");
-    }
-  });
+    // ── 3. Show/hide view panes (sync) ──
+    document.querySelectorAll(".view-pane").forEach(pane => {
+      if (pane.id === tabId) {
+        pane.classList.remove("hidden");
+        pane.classList.add("active");
+      } else {
+        pane.classList.add("hidden");
+        pane.classList.remove("active");
+      }
+    });
 
-  this.updateNavigationChrome();
-
-  // Lazy-load module and render
-  if (tabId === "dashboard-view") {
-    const mod = await loadModule('home', './modules/home.js');
-    if (mod && typeof mod.updateDashboardView === 'function') {
-      mod.updateDashboardView();
-    } else if (typeof window.updateDashboardView === 'function') {
-      window.updateDashboardView();
-    }
-  } else if (tabId === "reader-view") {
-    const mod = await loadModule('bible', './modules/bible.js');
-    if (mod && typeof mod.renderReaderText === 'function') {
-      mod.renderReaderText();
-    } else if (typeof window.renderReaderText === 'function') {
-      window.renderReaderText();
-    }
-  } else if (tabId === "plan-view") {
-    if (!options.keepPlanDetail) {
-      // Only reset planDetailOpen if there is no active plan open.
-      // Preserves plan detail state when user taps the plan nav tab while already in a plan.
+    // ── 4. Pre-render state mutations (sync, before any await) ──
+    if (tabId === "plan-view" && !options.keepPlanDetail) {
+      // Only reset if no active plan: preserve plan detail when re-tapping the plan nav tab
       if (!state.activePlan) {
         state.planDetailOpen = false;
       }
     }
-    const mod = await loadModule('plan', './modules/plan.js');
-    if (mod && typeof mod.renderPlanView === 'function') {
-      await mod.renderPlanView();
-    } else if (typeof window.renderPlanView === 'function') {
-      await window.renderPlanView();
-    }
-    // Re-run chrome update AFTER async render so plan-specific header is correct.
-    this.updateNavigationChrome();
-    return;
-  } else if (tabId === "stats-view") {
-    const mod = await loadModule('plan', './modules/plan.js');
-    if (typeof window.updateStatsView === 'function') {
-      window.updateStatsView();
-    }
-  } else if (tabId === "profile-view") {
-    const mod = await loadModule('profile', './modules/profile.js');
-    if (typeof auth !== "undefined" && auth.isLoggedIn() && typeof db !== "undefined" && typeof db.syncNlcSessionWithSupabase === "function") {
-      db.syncNlcSessionWithSupabase(true).then(function () {
-        if (typeof window.renderProfileView === "function") window.renderProfileView();
-      }).catch(function (err) {
-        console.warn("Profile tab sync failed:", err);
-        if (typeof window.renderProfileView === "function") window.renderProfileView();
-      });
-    } else if (typeof window.renderProfileView === "function") {
-      window.renderProfileView();
-    }
-  } else if (tabId === "admin-view") {
-    const mod = await loadModule('admin', './modules/admin.js');
-    if (typeof window.renderAdminUserManagement === 'function') {
-      window.renderAdminUserManagement();
-    }
-    if (typeof window.renderAdminOrgManagement === 'function') {
-      window.renderAdminOrgManagement();
-    }
-  }
 
-  this.updateNavigationChrome();
+    // ── 5. Load module + render (fully awaited) ──
+    if (tabId === "dashboard-view") {
+      const mod = await loadModule('home', './modules/home.js');
+      if (mod && typeof mod.updateDashboardView === 'function') {
+        await mod.updateDashboardView();
+      } else if (typeof window.updateDashboardView === 'function') {
+        await window.updateDashboardView();
+      }
+
+    } else if (tabId === "reader-view") {
+      const mod = await loadModule('bible', './modules/bible.js');
+      if (mod && typeof mod.renderReaderText === 'function') {
+        await mod.renderReaderText();
+      } else if (typeof window.renderReaderText === 'function') {
+        await window.renderReaderText();
+      }
+
+    } else if (tabId === "plan-view") {
+      const mod = await loadModule('plan', './modules/plan.js');
+      if (mod && typeof mod.renderPlanView === 'function') {
+        await mod.renderPlanView();
+      } else if (typeof window.renderPlanView === 'function') {
+        await window.renderPlanView();
+      }
+
+    } else if (tabId === "stats-view") {
+      const mod = await loadModule('plan', './modules/plan.js');
+      if (typeof window.updateStatsView === 'function') {
+        await window.updateStatsView();
+      }
+
+    } else if (tabId === "profile-view") {
+      const mod = await loadModule('profile', './modules/profile.js');
+      // syncNlcSessionWithSupabase is optional; render profile regardless of outcome
+      if (typeof auth !== "undefined" && auth.isLoggedIn() &&
+          typeof db !== "undefined" && typeof db.syncNlcSessionWithSupabase === "function") {
+        try {
+          await db.syncNlcSessionWithSupabase(true);
+        } catch (err) {
+          console.warn("Profile tab sync failed (non-fatal):", err);
+        }
+      }
+      if (typeof window.renderProfileView === 'function') {
+        await window.renderProfileView();
+      }
+
+    } else if (tabId === "admin-view") {
+      const mod = await loadModule('admin', './modules/admin.js');
+      // Run both admin renders, await the async one
+      if (mod && typeof mod.renderAdminUserManagement === 'function') {
+        await mod.renderAdminUserManagement();
+      } else if (typeof window.renderAdminUserManagement === 'function') {
+        await window.renderAdminUserManagement();
+      }
+      if (typeof window.renderAdminOrgManagement === 'function') {
+        window.renderAdminOrgManagement(); // sync, no await needed
+      }
+    }
+
+    // ── 6. updateNavigationChrome — THE SINGLE, FINAL CALL ──
+    // All async rendering is complete. State is now fully settled.
+    this.updateNavigationChrome();
+
+  } finally {
+    // ── 7. Always release the lock, even on error ──
+    isSwitching = false;
+  }
 };
 
 // Bootstrap the application on DomContentLoaded

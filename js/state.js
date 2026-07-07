@@ -286,12 +286,14 @@ const appRouter = {
 
       if (state.activePlan && state.planDetailOpen) {
         state.planDetailOpen = false;
-        // Do not null state.activePlan so plan list still shows active plan highlighted.
-        // Call renderPlanView directly (avoid async switchTab race conditions).
+        // Directly await renderPlanView so chrome update happens AFTER render.
         if (typeof window.renderPlanView === "function") {
-          window.renderPlanView();
+          window.renderPlanView().then(() => {
+            this.updateNavigationChrome();
+          });
+        } else {
+          this.updateNavigationChrome();
         }
-        this.updateNavigationChrome();
         return;
       }
     }
@@ -306,82 +308,18 @@ const appRouter = {
   },
 
   switchTab(tabId, options = {}) {
-    if (tabId !== "reader-view" || !options.fromPlan) {
-      if (state.readerState) {
-        state.readerState.fromPlan = false;
-      }
+    // ── DELEGATE to the async switchTab override in app.js ──
+    // The async version in app.js handles: module loading, full render await,
+    // and the single authoritative updateNavigationChrome() call.
+    // This sync stub exists only for backwards-compatibility with any legacy
+    // code that calls appRouter.switchTab synchronously before app.js loads.
+    if (typeof appRouter.switchTab === 'function' && appRouter.switchTab !== this.switchTab) {
+      appRouter.switchTab(tabId, options);
+      return;
     }
 
-    // Stop reading audio if switching away from reader-view
-    if (tabId !== "reader-view" && typeof window.speechSynthesis !== "undefined") {
-      window.speechSynthesis.cancel();
-      const audioBtn = document.getElementById("reader-audio-btn");
-      if (audioBtn) audioBtn.classList.remove("active");
-    }
-
+    // Fallback (should never be reached in production):
     this.currentTab = tabId;
-    this.updateNavigationChrome();
-    
-    // Update Active Nav Buttons (both desktop and mobile)
-    document.querySelectorAll(".tab-btn, .mobile-nav-btn").forEach(btn => {
-      const target = btn.getAttribute("data-target");
-      if (!target) return;
-      const isActive = target === tabId;
-      btn.classList.toggle("active", isActive);
-      if (btn.classList.contains("mobile-nav-btn") || btn.closest(".nav-tabs")) {
-        btn.setAttribute("aria-selected", isActive ? "true" : "false");
-        if (isActive) {
-          btn.setAttribute("aria-current", "page");
-        } else {
-          btn.removeAttribute("aria-current");
-        }
-      }
-    });
-
-    // Update Views
-    document.querySelectorAll(".view-pane").forEach(pane => {
-      if (pane.id === tabId) {
-        pane.classList.add("active");
-      } else {
-        pane.classList.remove("active");
-      }
-    });
-
-    // Trigger tab-specific activation logic
-    if (tabId === "dashboard-view") {
-      if (typeof updateDashboardView === "function") updateDashboardView();
-    } else if (tabId === "reader-view") {
-      if (typeof renderReaderText === "function") renderReaderText();
-    } else if (tabId === "plan-view") {
-      if (!options.keepPlanDetail) {
-        // Only reset planDetailOpen if there is no active plan already open.
-        // This prevents the bottom-nav tap from resetting a user who is mid-plan.
-        if (!state.activePlan) {
-          state.planDetailOpen = false;
-        }
-      }
-      if (typeof window.renderPlanView === "function") window.renderPlanView();
-    } else if (tabId === "stats-view") {
-      if (typeof updateStatsView === "function") updateStatsView();
-    } else if (tabId === "profile-view") {
-      if (typeof auth !== "undefined" && auth.isLoggedIn() && typeof db !== "undefined" && typeof db.syncNlcSessionWithSupabase === "function") {
-        db.syncNlcSessionWithSupabase(true).then(function () {
-          if (typeof renderProfileView === "function") renderProfileView();
-        }).catch(function (err) {
-          console.warn("Profile tab sync failed:", err);
-          if (typeof renderProfileView === "function") renderProfileView();
-        });
-      } else if (typeof renderProfileView === "function") {
-        renderProfileView();
-      }
-    } else if (tabId === "admin-view") {
-      if (typeof renderAdminUserManagement === 'function') {
-        renderAdminUserManagement();
-      }
-      if (typeof renderAdminOrgManagement === 'function') {
-        renderAdminOrgManagement();
-      }
-    }
     this.updateNavigationChrome();
   }
 };

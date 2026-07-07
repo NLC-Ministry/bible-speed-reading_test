@@ -419,10 +419,9 @@ async function renderPlanView() {
       showToast("這個計畫目前已隱藏，一般使用者不會看到。");
     }
 
-    // Synchronize dynamic title and options menu in the Top App Bar
-    if (typeof appRouter !== 'undefined' && typeof appRouter.updateNavigationChrome === 'function') {
-      appRouter.updateNavigationChrome();
-    }
+    // NOTE: updateNavigationChrome() is intentionally NOT called here.
+    // It is the exclusive responsibility of app.js switchTab to call it
+    // once, after all async rendering is fully complete.
   } catch (err) {
     console.error("Critical error inside renderPlanView:", err);
   }
