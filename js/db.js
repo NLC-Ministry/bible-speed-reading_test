@@ -343,6 +343,7 @@ const db = {
     }
 
     const accessToken = await auth.getValidAccessToken();
+    const idToken = localStorage.getItem(auth.keys.idToken);
 
     const cfg = state.supabaseConfig || {};
     const functionUrl = cfg.url.replace(/\/+$/, "") + "/functions/v1/nlc-session";
@@ -352,7 +353,10 @@ const db = {
         apikey: cfg.anonKey,
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ access_token: accessToken })
+      body: JSON.stringify({
+        access_token: accessToken,
+        id_token: idToken
+      })
     });
 
     const payload = await response.json().catch(() => ({}));

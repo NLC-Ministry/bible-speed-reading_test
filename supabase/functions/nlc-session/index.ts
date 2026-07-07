@@ -16,6 +16,23 @@ const allowedRoles = new Set([
   "senior_pastor"
 ]);
 
+function parseJwt(token: string) {
+  try {
+    const base64Url = token.split(".")[1];
+    if (!base64Url) return null;
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map((char) => "%" + ("00" + char.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
+    );
+    return JSON.parse(jsonPayload);
+  } catch {
+    return null;
+  }
+}
+
 const LEVEL_DEPTH = {
   great_region: 0,
   pastoral_zone: 1,
@@ -192,7 +209,7 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ error: "server_not_configured" }, 500);
     }
 
-    const { access_token: accessToken } = await req.json().catch(() => ({}));
+    const { access_token: accessToken, id_token: idToken } = await req.json().catch(() => ({}));
     if (!accessToken || typeof accessToken !== "string") {
       return jsonResponse({ error: "missing_access_token" }, 400);
     }
@@ -202,11 +219,19 @@ Deno.serve(async (req: Request) => {
       Accept: "application/json"
     };
 
-    const discovery = await fetchJson(`${issuer}/.well-known/openid-configuration`);
-    const userinfoEndpoint = discovery.userinfo_endpoint;
-    if (!userinfoEndpoint) return jsonResponse({ error: "userinfo_endpoint_missing" }, 500);
+    let userinfo: any = null;
+    if (idToken && typeof idToken === "string") {
+      userinfo = parseJwt(idToken);
+    }
 
-    const userinfo = await fetchJson(userinfoEndpoint, { headers: bearerHeaders });
+    if (!userinfo || !userinfo.sub) {
+      console.log("Decoding id_token failed or was not provided; falling back to OIDC UserInfo endpoint.");
+      const discovery = await fetchJson(`${issuer}/.well-known/openid-configuration`);
+      const userinfoEndpoint = discovery.userinfo_endpoint;
+      if (!userinfoEndpoint) return jsonResponse({ error: "userinfo_endpoint_missing" }, 500);
+
+      userinfo = await fetchJson(userinfoEndpoint, { headers: bearerHeaders });
+    }
 
     if (!userinfo || !userinfo.sub) {
       return jsonResponse({ error: "invalid_userinfo" }, 401);
