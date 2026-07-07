@@ -8698,3 +8698,19 @@ body.dark-theme .plan-calendar .plan-day-cell .day-status-dot.dot-grey {
     font-size: 1.85rem;
   }
 }
+
+.plan-view-mode-toggle {
+  display: inline-flex;
+  align-self: center;
+  gap: 0.25rem;
+  margin: 0.25rem auto 0.75rem;
+  padding: 0.2rem;
+  border-radius: 999px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-card);
+}
+
+.plan-view-mode-toggle .segment-toggle-btn {
+  border-radius: 999px;
+  padding: 0.4rem 0.75rem;
+}

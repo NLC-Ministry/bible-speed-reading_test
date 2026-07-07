@@ -91,6 +91,41 @@ function getCurrentPlanRoute() {
   return window.currentPlanViewState || PLAN_ROUTE.LIST;
 }
 
+function ensurePlanViewModeToggle() {
+  const scheduleView = document.getElementById("subview-plan-schedule");
+  const scheduleContainer = document.getElementById("plan-schedule-view-container");
+  if (!scheduleView || !scheduleContainer) return;
+
+  let toggle = document.getElementById("plan-view-mode-toggle");
+  if (!toggle) {
+    toggle = document.createElement("div");
+    toggle.id = "plan-view-mode-toggle";
+    toggle.className = "plan-view-mode-toggle segment-track";
+    toggle.innerHTML = `
+      <button type="button" class="segment-toggle-btn" data-plan-view-mode="card">
+        <span class="btn-with-icon"><span class="nlc-icon" data-icon="unorderedList" aria-hidden="true"></span><span>清單</span></span>
+      </button>
+      <button type="button" class="segment-toggle-btn" data-plan-view-mode="calendar">
+        <span class="btn-with-icon"><span class="nlc-icon" data-icon="calendarThirty" aria-hidden="true"></span><span>日曆</span></span>
+      </button>
+    `;
+    scheduleView.insertBefore(toggle, scheduleContainer);
+    toggle.addEventListener("click", (event) => {
+      const btn = event.target.closest("[data-plan-view-mode]");
+      if (!btn) return;
+      event.preventDefault();
+      event.stopPropagation();
+      setViewMode(btn.getAttribute("data-plan-view-mode"));
+    });
+  }
+
+  toggle.querySelectorAll("[data-plan-view-mode]").forEach(btn => {
+    btn.classList.toggle("active", btn.getAttribute("data-plan-view-mode") === viewMode);
+  });
+
+  if (typeof hydrateIcons === "function") hydrateIcons(toggle);
+}
+
 // Reactive state propagation audit
 window.addEventListener("planDataChanged", (e) => {
   console.log('🏗️ [系統審計] 收到資料變更事件通知，強制重新渲染組件，資料版本:', e.detail.dataVersion);
@@ -4099,6 +4134,7 @@ function setViewMode(mode) {
   viewMode = (mode === 'calendar') ? 'calendar' : 'card';
   state.planViewMode = viewMode;
   console.log('🔄 [視圖切換] 當前模式變更為：', viewMode);
+  ensurePlanViewModeToggle();
   renderPlanScheduleView();
 }
 
@@ -5333,7 +5369,10 @@ async function enterPlanDetailState() {
   const inlineReader = document.getElementById("plan-inline-reader");
   if (inlineReader) inlineReader.classList.add("hidden");
 
+  ensurePlanViewModeToggle();
+
   const nextMode = state.planViewMode === "calendar" ? "calendar" : "card";
+
   if (typeof setViewMode === "function") setViewMode(nextMode);
   else if (typeof renderPlanScheduleTracker === "function") renderPlanScheduleTracker();
 }
