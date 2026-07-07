@@ -125,22 +125,7 @@ const appRouter = {
       });
     }
 
-    const topBarBackBtn = document.getElementById("top-bar-back-btn");
-    if (topBarBackBtn) {
-      topBarBackBtn.addEventListener("click", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (this.currentTab === "plan-view") {
-          state.planDetailOpen = false;
-          if (typeof window.renderPlanView === 'function') {
-            window.renderPlanView();
-          }
-          this.updateNavigationChrome();
-        }
-      });
-    }
-
-    // Handled via inline onclick in index.html to guarantee clickability regardless of loading order.
+    // top-bar-back-btn and top-bar-group-trigger handled via inline onclick in index.html.
 
     this.updateNavigationChrome();
   },

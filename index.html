@@ -57,9 +57,9 @@
           </button>
           
           <!-- 新增：計畫詳情專用的極簡返回鈕 -->
-          <button id="top-bar-back-btn" class="hidden" style="display: none; align-items: center; gap: 4px; background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.88rem; font-weight: 500; padding: 0;">
+          <button id="top-bar-back-btn" onclick="if (appRouter.currentTab === 'plan-view') { state.planDetailOpen = false; if (typeof window.renderPlanView === 'function') window.renderPlanView(); appRouter.updateNavigationChrome(); }" class="hidden" style="display: none; align-items: center; gap: 4px; background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 0.88rem; font-weight: 500; padding: 0;">
             <span class="nlc-icon nlc-icon--sm nav-back-chevron" data-icon="chevronLeft" aria-hidden="true"></span>
-            <span>讀經</span>
+            <span>計畫</span>
           </button>
         </div>
         
