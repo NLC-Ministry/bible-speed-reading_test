@@ -759,6 +759,10 @@ const ComponentSkeletonLoader = {
   clearBootInlineSkeletons() {
     this.restoreInlineSkeleton("#profile-summary-name");
     this.restoreInlineSkeleton("#dropdown-user-name");
+    // Clear the plan list skeleton so it doesn't persist if user hasn't visited the plan tab yet.
+    // renderJoinedPlansList() (called by renderPlanView) will repopulate it with real data.
+    const joinedList = document.getElementById("joined-plans-list");
+    if (joinedList) joinedList.innerHTML = "";
   },
 
   _memberRow() {

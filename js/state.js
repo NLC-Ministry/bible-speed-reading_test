@@ -140,16 +140,7 @@ const appRouter = {
       });
     }
 
-    const topBarGroupTrigger = document.getElementById("top-bar-group-trigger");
-    if (topBarGroupTrigger) {
-      topBarGroupTrigger.addEventListener("click", (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (typeof window.togglePlanDetailSubTab === "function") {
-          window.togglePlanDetailSubTab();
-        }
-      });
-    }
+    // Handled via inline onclick in index.html to guarantee clickability regardless of loading order.
 
     this.updateNavigationChrome();
   },

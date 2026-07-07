@@ -5224,8 +5224,13 @@ if (typeof snapCalendarToToday === 'function') {
 }
 
 window.togglePlanDetailSubTab = async function() {
-  if (!state.activePlan) return;
+  console.log("🔄 [togglePlanDetailSubTab] Called. activePlan:", state.activePlan, "old subTab:", state.planActiveSubTab);
+  if (!state.activePlan) {
+    console.warn("⚠️ [togglePlanDetailSubTab] No active plan!");
+    return;
+  }
   state.planActiveSubTab = (state.planActiveSubTab === "today") ? "group" : "today";
+  console.log("🔄 [togglePlanDetailSubTab] New subTab:", state.planActiveSubTab);
 
   // Synchronize Top Bar
   if (typeof appRouter !== 'undefined' && typeof appRouter.updateNavigationChrome === 'function') {
@@ -5233,5 +5238,10 @@ window.togglePlanDetailSubTab = async function() {
   }
 
   // Rerender plan detail
-  await renderPlanDetailView();
+  try {
+    await renderPlanDetailView();
+    console.log("🔄 [togglePlanDetailSubTab] renderPlanDetailView completed successfully");
+  } catch (err) {
+    console.error("❌ [togglePlanDetailSubTab] renderPlanDetailView failed:", err);
+  }
 };

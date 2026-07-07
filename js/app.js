@@ -220,6 +220,17 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
+  // ── Background pre-warm: silently load plan module & render plan list ──
+  // While the user sees the dashboard, we load plan.js and call renderPlanView()
+  // in the background. This guarantees the plan tab shows real data immediately
+  // when tapped — eliminating the skeleton-stuck-forever bug.
+  // We intentionally do NOT await this (fire-and-forget) to keep startup fast.
+  loadModule('plan', './modules/plan.js').then(mod => {
+    if (mod && typeof mod.renderPlanView === 'function') {
+      mod.renderPlanView().catch(() => {});
+    }
+  }).catch(() => {});
+
   // PWA Cache Buster
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.getRegistrations().then(registrations => {

@@ -5476,6 +5476,16 @@ select,
   display: none !important;
 }
 
+#top-bar-title-area {
+  grid-area: title;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  max-width: 100%;
+  justify-self: center;
+}
+
 .brand-text {
   grid-area: title;
   display: block;
