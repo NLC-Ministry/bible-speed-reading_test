@@ -286,12 +286,9 @@ const appRouter = {
 
       if (state.activePlan && state.planDetailOpen) {
         state.planDetailOpen = false;
-        // Keep state.activePlan so the plan list shows it as "active";
-        // do NOT null it here - that would break the next back press.
-        if (typeof appRouter !== 'undefined' && appRouter.switchTab !== appRouter.__originalSwitchTab) {
-          // Use the overridden async switchTab in app.js which ensures plan.js is loaded
-          appRouter.switchTab('plan-view');
-        } else if (typeof window.renderPlanView === "function") {
+        // Do not null state.activePlan so plan list still shows active plan highlighted.
+        // Call renderPlanView directly (avoid async switchTab race conditions).
+        if (typeof window.renderPlanView === "function") {
           window.renderPlanView();
         }
         this.updateNavigationChrome();
@@ -357,7 +354,11 @@ const appRouter = {
       if (typeof renderReaderText === "function") renderReaderText();
     } else if (tabId === "plan-view") {
       if (!options.keepPlanDetail) {
-        state.planDetailOpen = false;
+        // Only reset planDetailOpen if there is no active plan already open.
+        // This prevents the bottom-nav tap from resetting a user who is mid-plan.
+        if (!state.activePlan) {
+          state.planDetailOpen = false;
+        }
       }
       if (typeof window.renderPlanView === "function") window.renderPlanView();
     } else if (tabId === "stats-view") {

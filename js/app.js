@@ -101,14 +101,21 @@ appRouter.switchTab = async function (tabId, options = {}) {
     }
   } else if (tabId === "plan-view") {
     if (!options.keepPlanDetail) {
-      state.planDetailOpen = false;
+      // Only reset planDetailOpen if there is no active plan open.
+      // Preserves plan detail state when user taps the plan nav tab while already in a plan.
+      if (!state.activePlan) {
+        state.planDetailOpen = false;
+      }
     }
     const mod = await loadModule('plan', './modules/plan.js');
     if (mod && typeof mod.renderPlanView === 'function') {
-      mod.renderPlanView();
+      await mod.renderPlanView();
     } else if (typeof window.renderPlanView === 'function') {
-      window.renderPlanView();
+      await window.renderPlanView();
     }
+    // Re-run chrome update AFTER async render so plan-specific header is correct.
+    this.updateNavigationChrome();
+    return;
   } else if (tabId === "stats-view") {
     const mod = await loadModule('plan', './modules/plan.js');
     if (typeof window.updateStatsView === 'function') {
