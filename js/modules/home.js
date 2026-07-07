@@ -1854,14 +1854,49 @@ window.changeVerseCardBackground = function () {
     bgImgEl.style.opacity = "1";
   }
 
+  // ── Broadcast background change so any tab can react ──
+  window.dispatchEvent(new CustomEvent("app:bgChanged", { detail: { url: randomImgUrl } }));
+
   showToast("已成功更換背景");
 };
 
 export function init() {
   initDevotionalControls();
+
+  // ── Subscribe to unified theme change event ──
+  window.addEventListener("app:themeChanged", () => {
+    // Re-render badge strips when theme changes (they use CSS-dependent colors)
+    if (typeof renderBadgeStrip === "function") {
+      renderBadgeStrip("dashboard-badge-strip", { linkToProfile: true });
+      renderBadgeStrip("plan-badge-strip");
+    }
+  });
+
+  // ── Subscribe to background change event (from profile tab or any other source) ──
+  window.addEventListener("app:bgChanged", (e) => {
+    const url = e.detail && e.detail.url;
+    if (!url) return;
+    const bgImgEl = document.getElementById("card-bg");
+    if (bgImgEl) {
+      bgImgEl.src = url;
+      bgImgEl.style.opacity = "1";
+    }
+  });
+
+  // ── Subscribe to cross-tab data refresh ──
+  // When plan data changes, update the dashboard summary if it is currently visible.
+  window.addEventListener("app:dataRefresh", (e) => {
+    const scope = e.detail && e.detail.scope;
+    if (scope === "plan" || scope === "all") {
+      if (typeof updateDashboardView === "function") {
+        updateDashboardView();
+      }
+    }
+  });
 }
 
 window.updateDashboardView = updateDashboardView;
 window.fetchPastoralVerseWall = fetchPastoralVerseWall;
 window.initDevotionalControls = init;
 window.changeVerseCardBackground = changeVerseCardBackground;
+

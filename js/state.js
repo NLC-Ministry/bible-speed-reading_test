@@ -345,15 +345,13 @@ function initTheme() {
     state.theme = state.theme === "light" ? "dark" : "light";
     setBodyThemeClass(state.theme);
     localStorage.setItem("app_theme", state.theme);
-    
-    // Refresh badge UI for theme change
-    if (typeof renderBadgeWall === "function") {
-      renderBadgeWall("badges-grid");
-    }
-    if (typeof renderBadgeStrip === "function") {
-      renderBadgeStrip("dashboard-badge-strip", { linkToProfile: true });
-      renderBadgeStrip("plan-badge-strip");
-    }
+
+    // ── Unified theme-change broadcast ──
+    // All loaded modules subscribe to 'app:themeChanged' independently.
+    // Do NOT call render functions directly here — modules may not be loaded yet.
+    window.dispatchEvent(new CustomEvent("app:themeChanged", {
+      detail: { theme: state.theme }
+    }));
   });
 }
 

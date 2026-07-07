@@ -96,6 +96,32 @@
   --heatmap-level-2: color-mix(in srgb, var(--color-brand) 35%, transparent);
   --heatmap-level-3: color-mix(in srgb, var(--color-brand) 65%, transparent);
   --heatmap-level-4: var(--color-brand);
+
+  /* ═══ Z-INDEX STACKING LAYER MATRIX ══════════════════════════════════════
+   * Single source of truth for all stacking contexts.
+   * Rule: NEVER hardcode z-index values. Always use these tokens.
+   *
+   * Layer       Token                   Value   Components
+   * ──────────────────────────────────────────────────────────────────────
+   * Content     --z-content             1       Cards, plan progress bars
+   * Sticky      --z-sticky              10      Sticky date carousel
+   * Header      --z-header              300     .main-header, .mobile-nav-bar
+   * Dropdown    --z-dropdown            400     .options-dropdown menus
+   * Overlay     --z-overlay             500     Dimming backdrop (behind sheets)
+   * Sheet       --z-sheet               600     .bottom-sheet-backdrop container
+   * Modal       --z-modal               700     .full-page-overlay, modal dialogs
+   * Toast       --z-toast               800     .toast-notification (always visible)
+   * Critical    --z-critical            900     Irreversible confirm dialogs
+   * ═══════════════════════════════════════════════════════════════════════ */
+  --z-content:    1;
+  --z-sticky:     10;
+  --z-header:     300;
+  --z-dropdown:   400;
+  --z-overlay:    500;
+  --z-sheet:      600;
+  --z-modal:      700;
+  --z-toast:      800;
+  --z-critical:   900;
 }
 
 /* Dark Theme overrides */
@@ -5390,7 +5416,7 @@ select,
 .main-header {
   height: calc(var(--app-top-bar-height) + var(--app-safe-top));
   padding-top: var(--app-safe-top);
-  z-index: 300;
+  z-index: var(--z-header); /* token: --z-header = 300 */
 }
 
 .header-container {
@@ -5525,7 +5551,7 @@ select,
   border-top: 1px solid var(--border-card);
   box-shadow: var(--shadow-up-md);
   backdrop-filter: var(--backdrop-blur);
-  z-index: 300;
+  z-index: var(--z-header); /* token: --z-header = 300, same tier as top bar */
   justify-content: space-around;
   align-items: stretch;
   gap: 0.2rem;

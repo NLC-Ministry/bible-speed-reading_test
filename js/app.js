@@ -191,35 +191,26 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.error("Failed to load local settings:", err);
   }
 
-  // Initialize Database Connection & Auth (triggers loadUserData)
+  // Initialize Database Connection & Auth
+  // db.init() handles: OIDC callback, session sync, and returns early after auth is established.
+  // loadUserData() is called exactly once after init() to populate state.
   try {
     await db.init();
-    // 確保管理員 nav 在 init 完成後立即更新（OIDC 模式 return early 後 profile.js 還未載入）
-    if (typeof updateAdminNavVisibility === 'function') updateAdminNavVisibility();
   } catch (err) {
     console.error('Failed to initialize database connection & auth:', err);
   }
 
-  // Load Data in Parallel, Verify Session & Render initial Dashboard
+  // Load all user data in one shot. db.init() guarantees auth is resolved before we reach here.
   try {
     await Promise.all([
       db.loadOrgStructure(),
       db.loadUserData(true)
     ]);
 
-    // 確保管理員 UI 和角色相關 UI 在資料載入後即時更新
+    // Update role-dependent UI now that profile data is loaded
     if (typeof updateAdminNavVisibility === 'function') updateAdminNavVisibility();
 
-    if (state.isSupabaseMode && state.supabase && state.supabase.auth) {
-      const { data: { session } } = await state.supabase.auth.getSession();
-      if (session) {
-        db.updateAuthUI(session);
-        await db.loadUserData(true);
-        if (typeof updateAdminNavVisibility === 'function') updateAdminNavVisibility();
-      }
-    }
-
-    // Lazy load the homepage module and render the initial view
+    // Render the initial view only after ALL data is ready
     await appRouter.switchTab('dashboard-view');
   } catch (err) {
     console.error('Failed to load initial data & render dashboard:', err);

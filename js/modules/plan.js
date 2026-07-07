@@ -1257,9 +1257,9 @@ window.toggleYouVersionChapter = function (checkboxEl, book, chapter, taskRound 
 
   console.log('✅ [進度同步完成] 成功標記已讀，已強制驅動畫面更新');
 
-  if (typeof updateDashboardView === "function") {
-    updateDashboardView();
-  }
+  // ── Cross-tab data sync: notify all loaded modules via unified event bus ──
+  // Using an event prevents direct dependency on functions that may not be loaded yet.
+  window.dispatchEvent(new CustomEvent("app:dataRefresh", { detail: { scope: "plan" } }));
 
   // 2. 💡 在背景非同步向 Supabase 發送寫入請求，不要阻塞使用者操作
   db.logChapterRead(book, chapter, willBeChecked, currentRound)
@@ -1284,10 +1284,9 @@ window.toggleYouVersionChapter = function (checkboxEl, book, chapter, taskRound 
       applyLocalReadState(chapterObj, isCurrentlyRead);
       calculatePlanProgress();
       renderPlanScheduleTracker(true);
-      if (typeof updateDashboardView === "function") {
-        updateDashboardView();
-      }
       showToast((window.APP_COPY && window.APP_COPY.plan.syncFail) || "進度沒同步成功，等一下再試試");
+      // ── Re-sync dashboard after rollback via event bus ──
+      window.dispatchEvent(new CustomEvent("app:dataRefresh", { detail: { scope: "plan" } }));
     });
 };
 
