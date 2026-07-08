@@ -8,7 +8,7 @@ window._statsTabScope = null;
 // Asynchronous Request & Click Debounce state trackers
 let lastTrackerRequestId = 0;
 let dateClickDebounceTimer = null;
-let viewMode = 'card'; // 'card' or 'calendar'
+let viewMode = 'calendar'; // Today reading always shows calendar + chapter list
 
 const PLAN_ROUTE = Object.freeze({
   LIST: "LIST",
@@ -215,8 +215,7 @@ window.PlanPageController = {
       const inlineReader = document.getElementById("plan-inline-reader");
       if (inlineReader) inlineReader.classList.add("hidden");
       ensurePlanViewModeToggle();
-      const nextMode = state.planViewMode === "calendar" ? "calendar" : "card";
-      if (typeof setViewMode === "function") setViewMode(nextMode);
+      if (typeof setViewMode === "function") setViewMode("calendar");
       if (typeof renderPlanScheduleTracker === "function") await renderPlanScheduleTracker();
     } else {
       forceHidden(shell.stats, false);
@@ -280,38 +279,8 @@ window.PlanPageController = {
 };
 
 function ensurePlanViewModeToggle() {
-  const scheduleView = document.getElementById("subview-plan-schedule");
-  const scheduleContainer = document.getElementById("plan-schedule-view-container");
-  if (!scheduleView || !scheduleContainer) return;
-
-  let toggle = document.getElementById("plan-view-mode-toggle");
-  if (!toggle) {
-    toggle = document.createElement("div");
-    toggle.id = "plan-view-mode-toggle";
-    toggle.className = "plan-view-mode-toggle segment-track";
-    toggle.innerHTML = `
-      <button type="button" class="segment-toggle-btn" data-plan-view-mode="card">
-        <span class="btn-with-icon"><span class="nlc-icon" data-icon="unorderedList" aria-hidden="true"></span><span>清單</span></span>
-      </button>
-      <button type="button" class="segment-toggle-btn" data-plan-view-mode="calendar">
-        <span class="btn-with-icon"><span class="nlc-icon" data-icon="calendarThirty" aria-hidden="true"></span><span>日曆</span></span>
-      </button>
-    `;
-    scheduleView.insertBefore(toggle, scheduleContainer);
-    toggle.addEventListener("click", (event) => {
-      const btn = event.target.closest("[data-plan-view-mode]");
-      if (!btn) return;
-      event.preventDefault();
-      event.stopPropagation();
-      setViewMode(btn.getAttribute("data-plan-view-mode"));
-    });
-  }
-
-  toggle.querySelectorAll("[data-plan-view-mode]").forEach(btn => {
-    btn.classList.toggle("active", btn.getAttribute("data-plan-view-mode") === viewMode);
-  });
-
-  if (typeof hydrateIcons === "function") hydrateIcons(toggle);
+  const toggle = document.getElementById("plan-view-mode-toggle");
+  if (toggle) toggle.remove();
 }
 
 // Reactive state propagation audit
@@ -949,8 +918,7 @@ async function renderPlanDetailView() {
     }
 
     // Initialize plan view mode (default is 'card')
-    const initialViewMode = state.planViewMode === 'calendar' ? 'calendar' : 'card';
-    setViewMode(initialViewMode);
+    setViewMode("calendar");
     renderPlanScheduleTracker();
   } else {
     // Group Report statistics / ranking mode
@@ -4321,11 +4289,9 @@ window.showPlanStatsModal = function () {
   });
 };
 
-function setViewMode(mode) {
-  // 🛡️ Strict fallback: if mode is not exactly 'calendar', default to 'card'
-  viewMode = (mode === 'calendar') ? 'calendar' : 'card';
-  state.planViewMode = viewMode;
-  console.log('🔄 [視圖切換] 當前模式變更為：', viewMode);
+function setViewMode() {
+  viewMode = 'calendar';
+  state.planViewMode = 'calendar';
   ensurePlanViewModeToggle();
   renderPlanScheduleView();
 }
@@ -4336,45 +4302,18 @@ function renderPlanScheduleView() {
 
   container.innerHTML = "";
 
-  if (viewMode === 'calendar') {
-    // ─────────────────────────────────────────────
-    // Render State B: Full Calendar Mode
-    // ─────────────────────────────────────────────
-    const calContainer = document.createElement("div");
-    calContainer.id = "calendar-view-container";
-    calContainer.className = "w-full px-4 text-center mx-0";
+  const calContainer = document.createElement("div");
+  calContainer.id = "calendar-view-container";
+  calContainer.className = "w-full px-4 text-center mx-0";
 
-    // 1. Calendar Grid Component Container
-    const calendarCarousel = document.createElement("div");
-    calendarCarousel.className = "date-carousel";
-    calendarCarousel.id = "plan-date-carousel";
-    calendarCarousel.style.width = "100%";
+  const calendarCarousel = document.createElement("div");
+  calendarCarousel.className = "date-carousel";
+  calendarCarousel.id = "plan-date-carousel";
+  calendarCarousel.style.width = "100%";
 
-    calContainer.appendChild(calendarCarousel);
-    container.appendChild(calContainer);
-
-    // Render the actual calendar grid DOM
-    renderHorizontalDateStrip();
-
-  } else {
-    // ─────────────────────────────────────────────
-    // Render State A: Card Mode → 直接渲染橫向日曆
-    // 黑底封面日期卡 & 三大按鈕已由 HTML 靜態雙雷達狀態條永久取代，不再渲染
-    // ─────────────────────────────────────────────
-    const calContainer = document.createElement("div");
-    calContainer.id = "calendar-view-container";
-    calContainer.className = "w-full mx-0";
-
-    const calendarCarousel = document.createElement("div");
-    calendarCarousel.className = "date-carousel";
-    calendarCarousel.id = "plan-date-carousel";
-    calendarCarousel.style.width = "100%";
-
-    calContainer.appendChild(calendarCarousel);
-    container.appendChild(calContainer);
-
-    renderHorizontalDateStrip();
-  }
+  calContainer.appendChild(calendarCarousel);
+  container.appendChild(calContainer);
+  renderHorizontalDateStrip();
 }
 
 function snapCalendarToToday() {
@@ -4439,10 +4378,6 @@ function snapCalendarToMyProgress() {
   }
 }
 
-// Decoupled back navigation integration from top bar
-document.addEventListener("plan-view-back-to-card", () => {
-  setViewMode('card');
-});
 
 
 // --- Stats View Logic ---

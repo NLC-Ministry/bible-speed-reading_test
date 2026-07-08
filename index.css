@@ -8750,3 +8750,9 @@ body.dark-theme .plan-calendar .plan-day-cell.active .day-number, body.dark-them
 #subview-plan-level.is-full-page-settings .plan-level-editor-header {
   display: none;
 }
+
+
+/* Calendar-only today reading: no inner list/calendar switcher. */
+#plan-view-mode-toggle {
+  display: none !important;
+}
