@@ -1420,6 +1420,38 @@ function calculateAllPlansProgress() {
   }
 
   visibleActivePlans.forEach(plan => {
+    // 💡 數據一致性修正：直接從打卡日誌計算實際讀過的最大遍數
+    let maxReadRound = plan.currentRound || 1;
+    if (state.readingLogs) {
+      state.readingLogs.forEach(l => {
+        const logPlanId = l.plan_id || null;
+        const logPresetKey = l.presetKey || l.preset_key || null;
+        const isPlanMatch =
+          (plan.id && logPlanId && logPlanId === plan.id) ||
+          (plan.presetKey && logPresetKey && logPresetKey === plan.presetKey) ||
+          ((plan.id || plan.presetKey) && !logPlanId && !logPresetKey) ||
+          (!plan.id && !plan.presetKey && !logPlanId && !logPresetKey);
+        
+        if (isPlanMatch) {
+          maxReadRound = Math.max(maxReadRound, l.round || 1);
+        }
+      });
+    }
+
+    const currentLevelOrder = getPlanLevelOrder(plan.level || "normal");
+    if (maxReadRound > currentLevelOrder) {
+      const newLevel = maxReadRound === 2 ? "breakthrough" : (maxReadRound === 3 ? "super" : "normal");
+      console.log(`[進度校正] 偵測到使用者已讀到第 ${maxReadRound} 遍，但計畫等級為 ${plan.level || "normal"}。自動修正等級為 ${newLevel}。`);
+      plan.level = newLevel;
+      plan.currentRound = maxReadRound;
+      // 異步儲存到資料庫/localStorage，避免資料不一致
+      if (typeof persistPlanLevelState === "function") {
+        persistPlanLevelState(plan).catch(console.error);
+      } else {
+        if (!state.isSupabaseMode) localStorage.setItem("active_reading_plans", JSON.stringify(state.activePlans || []));
+      }
+    }
+
     const targetRounds = getPlanLevelRounds(plan.level || "normal");
     const hasMatchingRoundSchedule = plan.days && plan.days.some(day => day.chapters && day.chapters.some(ch => (ch.round || 1) === targetRounds));
     if (!hasMatchingRoundSchedule && targetRounds > 1) {

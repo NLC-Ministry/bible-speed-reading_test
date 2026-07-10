@@ -1570,15 +1570,20 @@ window.toggleYouVersionChapter = function (checkboxEl, book, chapter, taskRound 
 };
 
 function renderPlanLevelEditor() {
-  // 💡 關鍵修復：直接從計畫各章節的打卡狀態（R2, R3）計算實際已讀的最大遍數，並加上當前遍數防護
+  // 💡 關鍵修復：直接從打卡日誌計算實際讀過的最大遍數，並加上當前遍數防護
   let maxReadRound = state.activePlan ? (state.activePlan.currentRound || 1) : 1;
-  if (state.activePlan && state.activePlan.days) {
-    state.activePlan.days.forEach(day => {
-      if (day.chapters) {
-        day.chapters.forEach(ch => {
-          if (ch.isReadR3) maxReadRound = Math.max(maxReadRound, 3);
-          else if (ch.isReadR2) maxReadRound = Math.max(maxReadRound, 2);
-        });
+  if (state.activePlan && state.readingLogs) {
+    state.readingLogs.forEach(l => {
+      const logPlanId = l.plan_id || null;
+      const logPresetKey = l.presetKey || l.preset_key || null;
+      const isPlanMatch =
+        (state.activePlan.id && logPlanId && logPlanId === state.activePlan.id) ||
+        (state.activePlan.presetKey && logPresetKey && logPresetKey === state.activePlan.presetKey) ||
+        ((state.activePlan.id || state.activePlan.presetKey) && !logPlanId && !logPresetKey) ||
+        (!state.activePlan.id && !state.activePlan.presetKey && !logPlanId && !logPresetKey);
+      
+      if (isPlanMatch) {
+        maxReadRound = Math.max(maxReadRound, l.round || 1);
       }
     });
   }
@@ -1713,13 +1718,18 @@ async function checkPlanSchedule(plan) {
   let actualCompletedChapters = plan.completedChapters || 0;
 
   let maxReadRound = plan.currentRound || 1;
-  if (plan.days) {
-    plan.days.forEach(day => {
-      if (day.chapters) {
-        day.chapters.forEach(ch => {
-          if (ch.isReadR3) maxReadRound = Math.max(maxReadRound, 3);
-          else if (ch.isReadR2) maxReadRound = Math.max(maxReadRound, 2);
-        });
+  if (state.readingLogs) {
+    state.readingLogs.forEach(l => {
+      const logPlanId = l.plan_id || null;
+      const logPresetKey = l.presetKey || l.preset_key || null;
+      const isPlanMatch =
+        (plan.id && logPlanId && logPlanId === plan.id) ||
+        (plan.presetKey && logPresetKey && logPresetKey === plan.presetKey) ||
+        ((plan.id || plan.presetKey) && !logPlanId && !logPresetKey) ||
+        (!plan.id && !plan.presetKey && !logPlanId && !logPresetKey);
+      
+      if (isPlanMatch) {
+        maxReadRound = Math.max(maxReadRound, l.round || 1);
       }
     });
   }
@@ -1941,15 +1951,20 @@ window.changePlanLevel = async function (newLevel) {
 
   const currentLevel = state.activePlan.level || "normal";
 
-  // 💡 關鍵修復：直接從計畫各章節的打卡狀態（R2, R3）與當前遍數計算最大遍數
+  // 💡 關鍵修復：直接從打卡日誌計算實際讀過的最大遍數，並加上當前遍數防護
   let maxReadRound = state.activePlan ? (state.activePlan.currentRound || 1) : 1;
-  if (state.activePlan && state.activePlan.days) {
-    state.activePlan.days.forEach(day => {
-      if (day.chapters) {
-        day.chapters.forEach(ch => {
-          if (ch.isReadR3) maxReadRound = Math.max(maxReadRound, 3);
-          else if (ch.isReadR2) maxReadRound = Math.max(maxReadRound, 2);
-        });
+  if (state.activePlan && state.readingLogs) {
+    state.readingLogs.forEach(l => {
+      const logPlanId = l.plan_id || null;
+      const logPresetKey = l.presetKey || l.preset_key || null;
+      const isPlanMatch =
+        (state.activePlan.id && logPlanId && logPlanId === state.activePlan.id) ||
+        (state.activePlan.presetKey && logPresetKey && logPresetKey === state.activePlan.presetKey) ||
+        ((state.activePlan.id || state.activePlan.presetKey) && !logPlanId && !logPresetKey) ||
+        (!state.activePlan.id && !state.activePlan.presetKey && !logPlanId && !logPresetKey);
+      
+      if (isPlanMatch) {
+        maxReadRound = Math.max(maxReadRound, l.round || 1);
       }
     });
   }
