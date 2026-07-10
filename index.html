@@ -21,7 +21,7 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&family=Outfit:wght@300;400;500;600;700&display=swap"
     rel="stylesheet">
-  <link rel="stylesheet" href="index.css?v=20260708_calendar_only">
+  <link rel="stylesheet" href="index.css?v=20260709_badge_back">
   <!-- Supabase JS Client library -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
   <!-- Chart.js for premium stats dashboard -->
@@ -1864,9 +1864,10 @@
     <!-- 1. Header Navigation Bar -->
     <header
       style="display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 1rem; border-bottom: 1px solid rgba(128,128,128,0.1); width: 100%; box-sizing: border-box;">
-      <button id="badge-page-back-btn"
-        style="background: none; border: none; font-size: 1.25rem; cursor: pointer; padding: 0.5rem; display: flex; align-items: center; justify-content: center; color: inherit;">
+      <button id="badge-page-back-btn" type="button" aria-label="&#36820;&#22238;&#24494;&#31456;&#21015;&#34920;"
+        style="background: none; border: none; font-size: 1rem; cursor: pointer; padding: 0.5rem; display: flex; align-items: center; justify-content: center; gap: 0.25rem; color: inherit;">
         <span class="nlc-icon nlc-icon--md nav-back-chevron" data-icon="chevronLeft" aria-hidden="true"></span>
+        <span class="badge-detail-back-label">&#36820;&#22238;</span>
       </button>
       <span id="detail-header-title" style="font-weight: 500; font-size: 1rem;">勳章詳情</span>
       <button id="badge-page-share-btn"
@@ -1910,7 +1911,7 @@
     </div>
   </div>
 
-  <script type="module" src="js/app.js?v=20260708_calendar_only"></script>
+  <script type="module" src="js/app.js?v=20260709_badge_back"></script>
 </body>
 
 </html>

@@ -477,16 +477,7 @@ function renderBadgeWall(containerId) {
     hydrateIcons(container);
   }
 
-  const backBtn = document.getElementById("badge-page-back-btn");
-  if (backBtn && !backBtn._hasBackListener) {
-    backBtn.addEventListener("click", function (e) {
-      e.preventDefault();
-      e.stopPropagation();
-      const page = document.getElementById("badge-detail-page");
-      if (page) page.classList.add("hidden");
-    });
-    backBtn._hasBackListener = true;
-  }
+  bindBadgeDetailControls();
 }
 
 function renderBadgeStrip(containerId, options) {
@@ -548,6 +539,28 @@ window.getBadgeMilestoneConfig = getBadgeMilestoneConfig;
 window.getBadgeProgressValue = getBadgeProgressValue;
 
 // YouVersion high-grade full-screen detail subpage controller
+function closeBadgeDetailPage() {
+  const page = document.getElementById("badge-detail-page");
+  if (!page) return;
+  page.classList.add("hidden");
+  page.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("badge-detail-open");
+}
+
+function bindBadgeDetailControls() {
+  const backBtn = document.getElementById("badge-page-back-btn");
+  if (backBtn && !backBtn._hasBackListener) {
+    backBtn.addEventListener("click", function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      closeBadgeDetailPage();
+    });
+    backBtn._hasBackListener = true;
+  }
+}
+
+window.closeBadgeDetailPage = closeBadgeDetailPage;
+
 window.openBadgeDetailPage = function(badge, isUnlocked, isDark) {
   const page = document.getElementById("badge-detail-page");
   const hero = document.getElementById("badge-detail-hero");
@@ -560,6 +573,7 @@ window.openBadgeDetailPage = function(badge, isUnlocked, isDark) {
   const shareBtn = document.getElementById("badge-page-share-btn");
   
   if (!page) return;
+  bindBadgeDetailControls();
 
   page.style.background = "";
   page.style.color = "";
@@ -699,6 +713,8 @@ window.openBadgeDetailPage = function(badge, isUnlocked, isDark) {
 
   // Display page
   page.classList.remove("hidden");
+  page.setAttribute("aria-hidden", "false");
+  document.body.classList.add("badge-detail-open");
 };
 
 // Compatibility aliases
@@ -706,10 +722,7 @@ window.openBadgeModal = function(badge, isUnlocked, isDark) {
   window.openBadgeDetailPage(badge, isUnlocked, isDark);
 };
 
-window.closeBadgeModal = function() {
-  const page = document.getElementById("badge-detail-page");
-  if (page) page.classList.add("hidden");
-};
+window.closeBadgeModal = closeBadgeDetailPage;
 
 window.showBadgeDetail = function(title, description, isUnlocked) {
   const isDark = state.theme === "dark" || document.body.classList.contains("dark-theme");

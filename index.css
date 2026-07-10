@@ -5165,6 +5165,18 @@ button.logout-btn:hover {
   transition: all 0.3s ease;
   background: var(--bg-app);
   color: var(--text-primary);
+  z-index: var(--z-modal);
+}
+
+#badge-page-back-btn {
+  min-width: 4.5rem;
+  color: var(--text-primary) !important;
+  font-weight: 500;
+}
+
+.badge-detail-back-label {
+  font-size: 0.95rem;
+  line-height: 1;
 }
 
 #badge-detail-hero {

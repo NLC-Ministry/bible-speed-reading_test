@@ -12,7 +12,7 @@ import './design/icons.js';
 import './state.js';
 import './auth.js';
 import './db.js';
-import './utils.js';
+import './utils.js?v=20260709_badge_back';
 import './gamification.js';
 
 const moduleCache = {};
