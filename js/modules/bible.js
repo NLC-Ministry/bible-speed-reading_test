@@ -380,6 +380,13 @@ export function initReaderControls() {
       const bookObj = BIBLE_BOOKS.find(b => b.id === state.readerState.bookId);
       if (!bookObj) return;
 
+      // 💡 關鍵修復：唯讀歷史鎖定，防止從讀經頁面誤觸修改歷史遍數打卡紀錄
+      const planRound = state.readerState.planRound || (state.activePlan ? state.activePlan.currentRound || 1 : 1);
+      if (state.activePlan && planRound < (state.activePlan.currentRound || 1)) {
+        showToast("此遍進度已完成存檔，無法修改以前的打卡紀錄。");
+        return;
+      }
+
       markReadBtn.classList.toggle("checked", isChecked);
 
       let planDayChKey = null;

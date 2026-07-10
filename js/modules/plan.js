@@ -1473,10 +1473,19 @@ function getRoundBadge(ch, currentRound) {
 window.toggleYouVersionChapter = function (checkboxEl, book, chapter, taskRound = null) {
   console.log('🏗️ [系統審計] 進入資料讀寫，當前操作類型：切換章節已讀狀態', '資料版本:', state.dataVersion);
 
-  // Optimistic UI updates are instant, so we don't need to block click events via data-saving
   const isCurrentlyRead = checkboxEl.dataset.isCurrentRead === 'true';
   const willBeChecked = !isCurrentlyRead;
   const currentRound = taskRound || (state.activePlan ? (state.activePlan.currentRound || 1) : 1);
+
+  // 💡 關鍵修復：唯讀歷史鎖定，防止誤觸修改已完成遍數的打卡紀錄
+  if (state.activePlan && currentRound < (state.activePlan.currentRound || 1)) {
+    showToast("此遍進度已完成存檔，無法修改以前的打卡紀錄。");
+    if (checkboxEl) {
+      checkboxEl.checked = isCurrentlyRead;
+    }
+    return;
+  }
+
   const selectedDay = state.activePlan && state.activePlan.days
     ? state.activePlan.days.find(d => d.dayNum === state.selectedPlanDay)
     : null;
@@ -2476,6 +2485,12 @@ window.addEventListener("scroll", async () => {
     if (!currentCh) return;
 
     const readRound = currentCh.round || (state.activePlan ? (state.activePlan.currentRound || 1) : 1);
+    
+    // 💡 關鍵修復：如果是在唯讀歷史遍數中，不允許自動打卡
+    if (state.activePlan && readRound < (state.activePlan.currentRound || 1)) {
+      return;
+    }
+
     const isAlreadyRead = state.readingLogs.some(l =>
       l.book === currentCh.book &&
       Number(l.chapter) === Number(currentCh.chapter) &&
