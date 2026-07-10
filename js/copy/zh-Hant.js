@@ -22,7 +22,7 @@ window.APP_COPY = {
     emptyCta: "去找計畫",
     findPlans: "找計畫",
     findPlansHint: "點擊頂部「找計畫」即可瀏覽並選擇欲加入的挑戰計畫，與弟兄姊妹一起在神的話語中得勝！",
-    groupProgress: "小組進度",
+    groupProgress: "讀經統計",
     restDayPill: "休息日",
     restDayBanner: "今天是補讀與休息日，好好親近神吧",
     syncFail: "進度沒同步成功，等一下再試試",

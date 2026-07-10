@@ -137,7 +137,7 @@ function ensurePlanPageShell() {
     strip.className = "plan-detail-tab-strip hidden";
     strip.setAttribute("aria-label", "計畫分頁");
     strip.style.display = "none";
-    strip.innerHTML = `<div class="plan-detail-tab-strip__scroller" role="tablist"><button id="tab-btn-0" class="plan-detail-tab-btn active" type="button" role="tab" aria-selected="true" data-plan-page-index="0">今日讀經</button><button id="tab-btn-1" class="plan-detail-tab-btn" type="button" role="tab" aria-selected="false" data-plan-page-index="1">小組進度</button><div id="tab-indicator" aria-hidden="true"></div></div>`;
+    strip.innerHTML = `<div class="plan-detail-tab-strip__scroller" role="tablist"><button id="tab-btn-0" class="plan-detail-tab-btn active" type="button" role="tab" aria-selected="true" data-plan-page-index="0">今日讀經</button><button id="tab-btn-1" class="plan-detail-tab-btn" type="button" role="tab" aria-selected="false" data-plan-page-index="1">讀經統計</button><div id="tab-indicator" aria-hidden="true"></div></div>`;
     detail.insertBefore(strip, detail.querySelector(".px-4.py-2, .plan-detail-tabs, #subview-plan-schedule") || detail.firstChild);
   }
   if (!windowEl) {
@@ -430,7 +430,7 @@ function initPlanControls() {
     if (activeSubview) forceHidden(activeSubview, false);
   }
 
-  // Segmented Control (今日讀經 / 小組進度) switcher
+  // Segmented Control (今日讀經 / 讀經統計) switcher
   const tabTodayTask = document.getElementById("tab-today-task");
   const tabGroupReport = document.getElementById("tab-group-report");
   const planDetailTabs = getPlanDetailTabs();
@@ -443,7 +443,7 @@ function initPlanControls() {
       // Style tabTodayTask as active, tabGroupReport as inactive
       tabTodayTask.style.cssText = "flex: 1; padding: 0.5rem; font-size: 0.78rem; font-weight: 700; border-radius: 8px; text-align: center; background: var(--bg-card); color: var(--text-primary); border: none; box-shadow: var(--shadow-sm); cursor: pointer; transition: all 0.2s;";
       tabGroupReport.style.cssText = "flex: 1; padding: 0.5rem; font-size: 0.78rem; font-weight: 500; border-radius: 8px; text-align: center; background: transparent; color: var(--text-muted); border: none; cursor: pointer; transition: all 0.2s;";
-      
+
       // Hide sub tabs
       if (planDetailTabs) planDetailTabs.style.display = "none";
 
@@ -882,7 +882,7 @@ async function renderPlanDetailView() {
   const subviewPlanRanking = document.getElementById("subview-plan-ranking");
   const subviewPlanMembers = document.getElementById("subview-plan-members");
   const subviewPlanLevel = document.getElementById("subview-plan-level");
-  
+
   // Hide the 組員狀況 tab for regular members
   const _restoreRole = (state.currentUser && state.currentUser.role) || "member";
   const _restoreCanSeeMembers = ["admin", "senior_pastor", "great_zone_leader", "zone_leader", "group_leader"].includes(_restoreRole);
@@ -908,7 +908,7 @@ async function renderPlanDetailView() {
     if (tabStats) tabStats.classList.remove("active");
     if (tabRanking) tabRanking.classList.remove("active");
     if (tabMembers) tabMembers.classList.remove("active");
-    
+
     allSubviewsInit.forEach(s => forceHidden(s, s !== subviewSchedule));
     if (subviewSchedule) forceHidden(subviewSchedule, false);
 
@@ -1833,9 +1833,9 @@ async function handleRoundCompletion(plan) {
 
 let _plcmPendingCallback = null;
 
-window.openPlanLevelConfirmModal = function(newLevel, onConfirm) {
+window.openPlanLevelConfirmModal = function (newLevel, onConfirm) {
   const modal = document.getElementById('plan-level-confirm-modal');
-  const desc  = document.getElementById('plcm-desc');
+  const desc = document.getElementById('plcm-desc');
   const confirmBtn = document.getElementById('plcm-confirm-btn');
   if (!modal || !desc || !confirmBtn) { onConfirm && onConfirm(); return; }
 
@@ -1860,7 +1860,7 @@ window.openPlanLevelConfirmModal = function(newLevel, onConfirm) {
   document.addEventListener('keydown', _plcmEscListener);
 };
 
-window.closePlanLevelConfirmModal = function() {
+window.closePlanLevelConfirmModal = function () {
   const modal = document.getElementById('plan-level-confirm-modal');
   if (modal) modal.style.display = 'none';
   _plcmPendingCallback = null;
@@ -4420,7 +4420,7 @@ async function updateStatsView(filterPresetKey = null) {
       }
     });
   }
-  
+
   let pastoralStats = [];
   let rawAllUsers = [];
 
@@ -4560,12 +4560,12 @@ async function updateStatsView(filterPresetKey = null) {
     zoneSelectGroup.innerHTML = `<option value="${mockUser.pastoral_zone}">${mockUser.pastoral_zone}</option>`;
     zoneSelectGroup.value = mockUser.pastoral_zone;
     zoneSelectGroup.disabled = true;
-    
+
     renderCharts(pastoralStats);
     updateGroupChart(mockUser.pastoral_zone);
   } else {
     zoneSelectGroup.disabled = false;
-    
+
     populateStatsZoneSelector(pastoralStats);
     renderCharts(pastoralStats);
   }
@@ -4796,9 +4796,9 @@ async function updateGroupChart(zoneName) {
 function renderMonthlyHallOfFame() {
   const fameList = document.getElementById("monthly-fame-list");
   if (!fameList) return;
-  
+
   fameList.innerHTML = "";
-  
+
   const urlParams = new URLSearchParams(window.location.search);
   const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.startsWith('192.168.');
   const forceOfflineDemo = isLocalhost && (urlParams.get("demo") === "true" || urlParams.get("offline") === "true");
@@ -4810,7 +4810,7 @@ function renderMonthlyHallOfFame() {
     fameList.appendChild(placeholder);
     return;
   }
-  
+
   const winners = [
     {
       month: "2026年6月 (本月累計)",
@@ -4837,38 +4837,38 @@ function renderMonthlyHallOfFame() {
       ]
     }
   ];
-  
+
   winners.forEach(w => {
     const item = document.createElement("div");
     item.className = "monthly-fame-item";
-    
+
     const title = document.createElement("div");
     title.className = "monthly-fame-month";
     title.textContent = w.month;
     item.appendChild(title);
-    
+
     w.top3.forEach((t, i) => {
       const row = document.createElement("div");
       row.className = "fame-row";
-      
+
       const rankSpan = document.createElement("span");
       rankSpan.className = `fame-rank ${t.rank}`;
       rankSpan.textContent = i + 1;
       row.appendChild(rankSpan);
-      
+
       const nameSpan = document.createElement("span");
       nameSpan.className = "fame-name";
       nameSpan.textContent = `${t.name} (${t.zone})`;
       row.appendChild(nameSpan);
-      
+
       const valSpan = document.createElement("span");
       valSpan.className = "fame-value";
       valSpan.textContent = `${t.chapters} 章`;
       row.appendChild(valSpan);
-      
+
       item.appendChild(row);
     });
-    
+
     fameList.appendChild(item);
   });
 }
@@ -4898,7 +4898,7 @@ function getTeamLogs(teamUsers) {
   } else {
     // Generate mock logs for team users based on their chapters_read and last_read
     const logs = [];
-    
+
     // Include current user's real logs
     const currentUserRealLogs = state.readingLogs.filter(l => {
       if (filterPresetKey) {
@@ -4914,7 +4914,7 @@ function getTeamLogs(teamUsers) {
     const otherUsers = teamUsers.filter(u => u.name !== state.currentUser.name);
     otherUsers.forEach(u => {
       if (!u.chapters_read) return;
-      
+
       const lastReadDateStr = u.last_read || new Date().toISOString().substring(0, 10);
       const lastReadDate = new Date(lastReadDateStr);
       lastReadDate.setHours(12, 0, 0, 0);
@@ -4922,12 +4922,12 @@ function getTeamLogs(teamUsers) {
       let chaptersRemaining = u.chapters_read;
       // We will distribute the check-ins backwards from lastReadDate
       let currentDate = new Date(lastReadDate);
-      
+
       // Let's generate daily check-ins
       for (let i = 0; i < 365 && chaptersRemaining > 0; i++) {
         const seed = Math.sin(u.name.charCodeAt(0) + i) * 10000;
         const rand = seed - Math.floor(seed);
-        
+
         if (rand < 0.35) {
           const count = Math.min(chaptersRemaining, Math.floor(rand * 5) + 1);
           const dateStr = currentDate.toISOString().substring(0, 10);
@@ -4949,9 +4949,9 @@ function getTeamLogs(teamUsers) {
 function renderHeatmap(teamUsers = []) {
   const container = document.getElementById("bible-heatmap-container");
   if (!container) return;
-  
+
   container.innerHTML = "";
-  
+
   // Title update based on scope
   const titleEl = document.getElementById("heatmap-card-title");
   if (titleEl) {
@@ -4959,7 +4959,7 @@ function renderHeatmap(teamUsers = []) {
     if (role === "senior_pastor" || role === "admin") {
       const zoneSelectGroup = document.getElementById("stats-zone-selector");
       const selectedZone = zoneSelectGroup ? zoneSelectGroup.value : "";
-      titleEl.textContent = selectedZone 
+      titleEl.textContent = selectedZone
         ? `${selectedZone} 團隊讀經活躍度 (近4個月打卡活躍度)`
         : "全教會團隊讀經活躍度 (近4個月打卡活躍度)";
     } else if (role === "great_zone_leader") {
@@ -5021,7 +5021,7 @@ function renderTeamStatsAnalysisDashboard(unfilteredAllUsers, mockUser) {
   const todayStr = new Date().toISOString().substring(0, 10);
   const completedTodayCount = teamUsers.filter(u => u.last_read === todayStr).length;
   const todayCompletionRate = totalTeamCount > 0 ? Math.round((completedTodayCount / totalTeamCount) * 100) : 0;
-  
+
   document.getElementById("team-today-completion-rate").textContent = todayCompletionRate + "%";
 
   // 2. Expected progress percentage
@@ -5044,10 +5044,10 @@ function renderTeamStatsAnalysisDashboard(unfilteredAllUsers, mockUser) {
 
   teamUsers.forEach(u => {
     // Determine round proxy if round field is undefined (e.g. mock data)
-    const round = u.current_round !== undefined 
-      ? u.current_round 
+    const round = u.current_round !== undefined
+      ? u.current_round
       : (u.chapters_read > 500 ? (u.chapters_read > 850 ? 3 : 2) : 1);
-    
+
     if (round >= 2) {
       round2PlusCount++;
     }
@@ -5086,12 +5086,12 @@ function renderTeamStatsAnalysisDashboard(unfilteredAllUsers, mockUser) {
   const trendData = [];
   const trendLabels = [];
   const todayDateObj = new Date();
-  
+
   for (let i = 6; i >= 0; i--) {
     const d = new Date(todayDateObj);
     d.setDate(todayDateObj.getDate() - i);
     trendLabels.push(d.toISOString().substring(5, 10).replace('-', '/'));
-    
+
     const factor = 0.8 + (6 - i) * 0.033;
     trendData.push(Math.round(totalActiveMembers * factor));
   }
@@ -5163,12 +5163,12 @@ function calculateProfileStats(plan) {
   // 1. Calculate actual completed chapters across all relevant rounds
   let actualCompletedChapters = 0;
   for (let r = 1; r <= targetRounds; r++) {
-    const roundLogs = state.readingLogs.filter(l => 
+    const roundLogs = state.readingLogs.filter(l =>
       (l.plan_id === plan.id || l.presetKey === plan.presetKey) &&
       (l.round || 1) === r
     );
     const uniqueChapters = new Set(roundLogs.map(l => `${l.book}_${l.chapter}`));
-    
+
     let planChaptersCount = 0;
     plan.days.forEach(day => {
       day.chapters.forEach(ch => {
@@ -5218,19 +5218,19 @@ function calculateProfileStats(plan) {
   for (let r = 1; r <= targetRounds; r++) {
     plan.days.forEach((day, index) => {
       const d = index + 1;
-      
+
       const scheduledDate = new Date(start);
       scheduledDate.setDate(start.getDate() + (d - 1));
       const scheduledDateStr = scheduledDate.toISOString().substring(0, 10);
-      
-      const roundLogs = state.readingLogs.filter(l => 
+
+      const roundLogs = state.readingLogs.filter(l =>
         (l.plan_id === plan.id || l.presetKey === plan.presetKey) &&
         (l.round || 1) === r
       );
-      
+
       let allChaptersCompleted = true;
       let maxReadDateStr = "";
-      
+
       for (const ch of day.chapters) {
         const log = roundLogs.find(l => l.book === ch.book && l.chapter === ch.chapter);
         if (!log) {
@@ -5242,7 +5242,7 @@ function calculateProfileStats(plan) {
           maxReadDateStr = logDateStr;
         }
       }
-      
+
       if (allChaptersCompleted && maxReadDateStr) {
         if (maxReadDateStr > scheduledDateStr) {
           makeupDays++;
@@ -5309,9 +5309,9 @@ function renderProfileReadingStats() {
   const start = new Date(stats.startDateStr);
   const end = new Date(stats.endDateStr);
   const today = new Date();
-  today.setHours(0,0,0,0);
-  start.setHours(0,0,0,0);
-  end.setHours(0,0,0,0);
+  today.setHours(0, 0, 0, 0);
+  start.setHours(0, 0, 0, 0);
+  end.setHours(0, 0, 0, 0);
 
   if (today < start) {
     todayProgressText = `<span style="font-size: 0.8rem; font-weight: 500; color: var(--text-muted);">尚未開始 (開始於 ${stats.startDateStr})</span>`;
@@ -5321,7 +5321,7 @@ function renderProfileReadingStats() {
     todayProgressText = `<span style="font-size: 1.25rem; font-weight: 500; color: var(--primary-color);">${stats.elapsedDays}</span> <span style="font-size: 0.85rem; font-weight: 500; color: var(--text-secondary);">/ ${stats.totalDays} 天</span>`;
   }
 
-  const lagDisplay = stats.lagDays > 0 
+  const lagDisplay = stats.lagDays > 0
     ? `${stats.lagDays} <span style="font-size: 0.8rem; font-weight: 500; color: var(--text-secondary);">天</span>`
     : `<span style="font-size: 0.95rem; font-weight: 500; color: var(--text-muted);">0 天</span>`;
 
