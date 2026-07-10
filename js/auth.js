@@ -151,6 +151,9 @@ const auth = {
     localStorage.removeItem(this.keys.supabaseProfile);
     localStorage.removeItem("nlc_edge_session_expires_at");
     localStorage.removeItem("nlc_profile_locked_fields");
+    localStorage.removeItem("active_reading_plans");
+    localStorage.removeItem("reading_logs");
+    localStorage.removeItem("selected_plan_key");
   },
 
   _getFlowItem(key) {

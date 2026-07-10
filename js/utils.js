@@ -1130,6 +1130,9 @@ function expandChaptersForLevel(chapters, level) {
 }
 
 function distributeChaptersAcrossDays(chapters, readingDays) {
+  if (typeof readingDays !== 'number' || isNaN(readingDays) || readingDays <= 0) {
+    return [];
+  }
   const dailyChapters = Array.from({ length: readingDays }, () => []);
   const chsPerDay = Math.floor(chapters.length / readingDays);
   let remainder = chapters.length % readingDays;
