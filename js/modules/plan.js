@@ -1617,7 +1617,21 @@ function renderPlanLevelEditor() {
       }
     }
 
-    // 💡 標示並禁用當前設定等級（不可重複選定）
+    // 💡 標示並禁用當前設定等級（紅色外框且不可重複選定）
+    if (optLevel === currentLevel) {
+      option.style.borderColor = "var(--color-danger)";
+      option.style.borderWidth = "2px";
+      option.style.boxShadow = "0 0 0 1px var(--color-danger)";
+      option.disabled = true;
+      option.style.cursor = "default";
+      option.style.pointerEvents = "none";
+    } else {
+      // 非當前等級，重設為預設邊框樣式
+      option.style.borderColor = "";
+      option.style.borderWidth = "";
+      option.style.boxShadow = "";
+    }
+
     const strong = option.querySelector("strong");
     if (strong) {
       // 清除舊有的目前設定標記
@@ -1626,10 +1640,7 @@ function renderPlanLevelEditor() {
       strong.innerHTML = strong.innerHTML.replace(/\s*<span class="current-level-badge".*?<\/span>/g, "");
 
       if (optLevel === currentLevel) {
-        strong.innerHTML += ` <span class="current-level-badge text-brand" style="margin-left: 0.5rem; font-size: 0.84rem; font-weight: 500;">(目前設定)</span>`;
-        option.disabled = true;
-        option.style.cursor = "default";
-        option.style.pointerEvents = "none";
+        strong.innerHTML += ` <span class="current-level-badge text-danger" style="margin-left: 0.5rem; font-size: 0.84rem; font-weight: 500;">(目前設定)</span>`;
       }
     }
   });
