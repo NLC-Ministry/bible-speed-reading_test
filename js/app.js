@@ -15,6 +15,7 @@ import './db.js';
 import './utils.js?v=20260709_badge_back';
 import './gamification.js';
 
+const buildVersion = "__BUILD_VERSION__";
 const moduleCache = {};
 
 async function loadModule(name, path) {
@@ -106,7 +107,7 @@ appRouter.switchTab = async function (tabId, options = {}) {
     }
 
     if (tabId === "dashboard-view") {
-      const mod = await loadModule('home', './modules/home.js?v=20260710_cuv_fix');
+      const mod = await loadModule('home', './modules/home.js?v=' + buildVersion);
       if (mod && typeof mod.updateDashboardView === 'function') {
         await mod.updateDashboardView();
       } else if (typeof window.updateDashboardView === 'function') {
@@ -114,7 +115,7 @@ appRouter.switchTab = async function (tabId, options = {}) {
       }
 
     } else if (tabId === "reader-view") {
-      const mod = await loadModule('bible', './modules/bible.js');
+      const mod = await loadModule('bible', './modules/bible.js?v=' + buildVersion);
       if (mod && typeof mod.renderReaderText === 'function') {
         await mod.renderReaderText();
       } else if (typeof window.renderReaderText === 'function') {
@@ -122,7 +123,7 @@ appRouter.switchTab = async function (tabId, options = {}) {
       }
 
     } else if (tabId === "plan-view") {
-      const mod = await loadModule('plan', './modules/plan.js?v=20260711_devotional_session_fixed');
+      const mod = await loadModule('plan', './modules/plan.js?v=' + buildVersion);
       if (mod && typeof mod.renderPlanView === 'function') {
         await mod.renderPlanView();
       } else if (typeof window.renderPlanView === 'function') {
@@ -130,13 +131,13 @@ appRouter.switchTab = async function (tabId, options = {}) {
       }
 
     } else if (tabId === "stats-view") {
-      const mod = await loadModule('plan', './modules/plan.js?v=20260711_devotional_session_fixed');
+      const mod = await loadModule('plan', './modules/plan.js?v=' + buildVersion);
       if (typeof window.updateStatsView === 'function') {
         await window.updateStatsView();
       }
 
     } else if (tabId === "profile-view") {
-      const mod = await loadModule('profile', './modules/profile.js');
+      const mod = await loadModule('profile', './modules/profile.js?v=' + buildVersion);
       // syncNlcSessionWithSupabase is optional; render profile regardless of outcome
       if (typeof auth !== "undefined" && auth.isLoggedIn() &&
           typeof db !== "undefined" && typeof db.syncNlcSessionWithSupabase === "function") {
@@ -154,7 +155,7 @@ appRouter.switchTab = async function (tabId, options = {}) {
       }
 
     } else if (tabId === "admin-view") {
-      const mod = await loadModule('admin', './modules/admin.js');
+      const mod = await loadModule('admin', './modules/admin.js?v=' + buildVersion);
       // Run both admin renders, await the async one
       if (mod && typeof mod.renderAdminUserManagement === 'function') {
         await mod.renderAdminUserManagement();
@@ -242,7 +243,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // in the background. This guarantees the plan tab shows real data immediately
   // when tapped — eliminating the skeleton-stuck-forever bug.
   // We intentionally do NOT await this (fire-and-forget) to keep startup fast.
-  loadModule('plan', './modules/plan.js?v=20260711_devotional_session_fixed').then(mod => {
+  loadModule('plan', './modules/plan.js?v=' + buildVersion).then(mod => {
     if (mod && typeof mod.renderPlanView === 'function') {
       mod.renderPlanView().catch(() => {});
     }

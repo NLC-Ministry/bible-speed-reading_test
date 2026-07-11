@@ -112,7 +112,11 @@ export function emitBundle({ root, outDir }) {
   const cssContent = readSource(stylesheet);
   console.log("DEBUG: stylesheet read success, length = " + cssContent.length);
 
-  const jsFile = `app.${contentHash(bundleJs)}.js`;
+  // 💡 一勞永逸的快取清除法：動態產生當次建置版號，並替換程式中的 placeholder 欄位
+  const buildVer = new Date().toISOString().replace(/[^0-9]/g, "").slice(0, 14);
+  const processedJs = bundleJs.replace(/"__BUILD_VERSION__"/g, `"${buildVer}"`);
+
+  const jsFile = `app.${contentHash(processedJs)}.js`;
   const cssFile = `index.${contentHash(cssContent)}.css`;
 
   console.log("DEBUG: Removing and creating outDir: " + outDir);
@@ -122,7 +126,7 @@ export function emitBundle({ root, outDir }) {
   mkdirSync(outDir, { recursive: true });
   console.log("DEBUG: outDir created, writing files...");
 
-  writeFileSync(join(outDir, jsFile), bundleJs, "utf8");
+  writeFileSync(join(outDir, jsFile), processedJs, "utf8");
   writeFileSync(join(outDir, cssFile), cssContent, "utf8");
   console.log("DEBUG: Files written successfully!");
 

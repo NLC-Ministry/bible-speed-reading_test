@@ -282,7 +282,6 @@ async function loadTodayDevotional() {
   state.currentEditingNoteId = null;
 }
 
-let devotionalDebounceTimer = null;
 let isSavingDevotional = false;
 
 function initDevotionalControls() {
@@ -295,17 +294,12 @@ function initDevotionalControls() {
   textarea.addEventListener("input", () => {
     const text = textarea.value;
     if (countEl) countEl.textContent = `字數: ${text.length} 字`;
-
-    clearTimeout(devotionalDebounceTimer);
-    devotionalDebounceTimer = setTimeout(() => {
-      saveDevotionalNote(true);
-    }, 1000);
   });
 
   if (saveBtn) {
-    saveBtn.addEventListener("click", () => {
-      clearTimeout(devotionalDebounceTimer);
-      saveDevotionalNote(false);
+    saveBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      publishDevotionalNote();
     });
   }
 
@@ -315,10 +309,9 @@ function initDevotionalControls() {
     toggleBtn.addEventListener("click", () => {
       devCard.classList.toggle("hidden");
       if (!devCard.classList.contains("hidden")) {
-        // 💡 關鍵修復 1：按分享心得時，清空輸入框防止出現上次寫過的字，並將當前編輯 ID 設為 null 以新增全新文章
+        // 💡 關鍵修復：點擊分享心得時清空輸入框，且不自動寫入資料庫
         textarea.value = "";
         if (countEl) countEl.textContent = "字數: 0 字";
-        state.currentEditingNoteId = null;
         textarea.focus();
       }
     });
@@ -332,76 +325,60 @@ function initDevotionalControls() {
   }
 }
 
-async function saveDevotionalNote(isAuto) {
+async function publishDevotionalNote() {
   const textarea = document.getElementById("devotional-content");
-  const statusEl = document.getElementById("devotional-save-status");
   const saveBtn = document.getElementById("btn-save-devotional");
   const countEl = document.getElementById("devotional-word-count");
   if (!textarea) return;
 
-  if (isSavingDevotional) return;
-
   const content = textarea.value.trim();
-  const todayStr = new Date().toLocaleDateString('zh-TW', { timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-');
-
-  if (statusEl && isAuto) {
-    statusEl.innerHTML = `<span class="devotional-save-status__dot" aria-hidden="true"></span>自動儲存中...`;
-    statusEl.style.opacity = "1";
+  if (!content) {
+    alert("請輸入內容後再發佈！");
+    return;
   }
 
-  if (!isAuto) {
-    isSavingDevotional = true;
-    if (saveBtn) {
-      saveBtn.disabled = true;
-      saveBtn.style.opacity = "0.6";
-      const spanText = saveBtn.querySelector("span:not(.nlc-icon)");
-      if (spanText) spanText.textContent = "發佈中...";
-    }
+  if (isSavingDevotional) return;
+
+  const todayStr = new Date().toLocaleDateString('zh-TW', { timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-');
+
+  isSavingDevotional = true;
+  if (saveBtn) {
+    saveBtn.disabled = true;
+    saveBtn.style.opacity = "0.6";
+    const spanText = saveBtn.querySelector("span:not(.nlc-icon)");
+    if (spanText) spanText.textContent = "發佈中...";
   }
 
   try {
-    // 💡 關鍵修復 2：將 state.currentEditingNoteId 帶入儲存方法中。若首次儲存會回傳新產生的 ID，續寫時則以該 ID 進行 update。
-    const newNoteId = await db.saveDevotionalNote(todayStr, content, state.currentEditingNoteId);
-    if (newNoteId) {
-      state.currentEditingNoteId = newNoteId;
+    // 💡 關鍵修復：只在點擊「發佈」按鈕時才呼叫資料庫 API 新增一則心得（傳入 null 代表新增而非 update），
+    // 徹底解決輸入中失去焦點或自動存檔導致在分享牆上跑出未寫完的草稿與產生重複留言的問題。
+    await db.saveDevotionalNote(todayStr, content, null);
+
+    // 發佈成功後清空欄位、關閉心得框並重整分享牆
+    textarea.value = "";
+    if (countEl) countEl.textContent = "字數: 0 字";
+
+    const devCard = document.querySelector(".devotional-card");
+    if (devCard) {
+      devCard.classList.add("hidden");
     }
-    
-    showSaveSuccess(isAuto);
+
     if (typeof renderTodayGroupProgress === "function") {
       renderTodayGroupProgress();
     }
     if (typeof fetchPastoralVerseWall === "function") {
-      fetchPastoralVerseWall();
-    }
-    
-    if (!isAuto) {
-      // 💡 關鍵修復 3：當按下手動發佈完成後，清空輸入框，且將 state.currentEditingNoteId 設回 null，以防下次再分享時蓋掉這次發佈的心得
-      textarea.value = "";
-      if (countEl) countEl.textContent = "字數: 0 字";
-      state.currentEditingNoteId = null;
-
-      const devCard = document.querySelector(".devotional-card");
-      if (devCard) {
-        devCard.classList.add("hidden");
-      }
+      await fetchPastoralVerseWall();
     }
   } catch (err) {
-    console.error("Failed to save devotional note:", err);
-    if (statusEl) {
-      statusEl.textContent = "儲存失敗";
-      statusEl.classList.add("text-danger");
-      statusEl.classList.remove("text-success-fg");
-      statusEl.style.opacity = "1";
-    }
+    console.error("Failed to publish devotional note:", err);
+    alert("發佈失敗，請稍後再試！");
   } finally {
-    if (!isAuto) {
-      isSavingDevotional = false;
-      if (saveBtn) {
-        saveBtn.disabled = false;
-        saveBtn.style.opacity = "";
-        const spanText = saveBtn.querySelector("span:not(.nlc-icon)");
-        if (spanText) spanText.textContent = "發佈";
-      }
+    isSavingDevotional = false;
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.style.opacity = "";
+      const spanText = saveBtn.querySelector("span:not(.nlc-icon)");
+      if (spanText) spanText.textContent = "發佈";
     }
   }
 }
@@ -1321,7 +1298,7 @@ async function syncVerseLikes(verseSource) {
   const label = document.getElementById("like-count-text");
   if (!likeBtn || !label) return;
 
-  let count = parseInt(localStorage.getItem(`verse_like_count_${verseSource}`) || "0");
+  let count = Math.max(0, parseInt(localStorage.getItem(`verse_like_count_${verseSource}`) || "0"));
   let liked = localStorage.getItem(`verse_liked_${verseSource}`) === "true";
 
   const updateUI = () => {
@@ -1344,7 +1321,7 @@ async function syncVerseLikes(verseSource) {
       const { data, error } = await state.supabase.from("verse_likes").select("like_count").eq("source", verseSource).maybeSingle();
       if (!error) {
         if (data) {
-          count = data.like_count || 0;
+          count = Math.max(0, data.like_count || 0);
           localStorage.setItem(`verse_like_count_${verseSource}`, count.toString());
           updateUI();
         } else {
@@ -1375,10 +1352,10 @@ async function toggleVerseLike(e) {
   if (!likeBtn || !label) return;
 
   let liked = localStorage.getItem(`verse_liked_${verseSource}`) === "true";
-  let count = parseInt(localStorage.getItem(`verse_like_count_${verseSource}`) || "0");
+  let count = Math.max(0, parseInt(localStorage.getItem(`verse_like_count_${verseSource}`) || "0"));
 
   liked = !liked;
-  count += liked ? 1 : -1;
+  count = Math.max(0, count + (liked ? 1 : -1));
 
   localStorage.setItem(`verse_liked_${verseSource}`, liked ? "true" : "false");
   localStorage.setItem(`verse_like_count_${verseSource}`, count.toString());
@@ -1400,16 +1377,17 @@ async function toggleVerseLike(e) {
         const rpcName = liked ? "increment_likes" : "decrement_likes";
         const { data, error } = await state.supabase.rpc(rpcName, { verse_source: verseSource }).execute();
         if (!error && typeof data === "number") {
-          localStorage.setItem(`verse_like_count_${verseSource}`, data.toString());
+          const guardedData = Math.max(0, data);
+          localStorage.setItem(`verse_like_count_${verseSource}`, guardedData.toString());
           if (label) {
-            label.textContent = data >= 10000 ? `${(data / 10000).toFixed(1)}萬` : data;
+            label.textContent = guardedData >= 10000 ? `${(guardedData / 10000).toFixed(1)}萬` : guardedData;
           }
         }
       } else {
         const { data, error } = await state.supabase.from("verse_likes").select("like_count").eq("source", verseSource).maybeSingle();
         if (!error && data) {
           const latestDbCount = data.like_count || 0;
-          const newDbCount = latestDbCount + (liked ? 1 : -1);
+          const newDbCount = Math.max(0, latestDbCount + (liked ? 1 : -1));
           await state.supabase.from("verse_likes").update({ like_count: newDbCount }).eq("source", verseSource).execute();
 
           localStorage.setItem(`verse_like_count_${verseSource}`, newDbCount.toString());
