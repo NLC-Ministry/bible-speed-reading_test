@@ -1693,15 +1693,40 @@ const db = {
       const user = await this.getCurrentDbUser();
       if (!user) return;
 
-      const { error } = await state.supabase
+      // 💡 關鍵修復：先檢查當天是否已經有這名使用者的靈修心得紀錄，避免重疊與產生兩則重複留言
+      const { data: existing, error: fetchError } = await state.supabase
         .from("devotional_notes")
-        .insert({
-          user_id: user.id,
-          note_date: date,
-          content: content
-        });
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("note_date", date)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-      if (error) throw error;
+      if (fetchError) {
+        console.error("Failed to query existing devotional note:", fetchError);
+      }
+
+      if (existing) {
+        // 若已有舊紀錄，更新既有內容（解決自動存檔與點擊分享產生兩則紀錄的衝突）
+        const { error } = await state.supabase
+          .from("devotional_notes")
+          .update({ content: content })
+          .eq("id", existing.id);
+
+        if (error) throw error;
+      } else {
+        // 若無紀錄，新增一筆
+        const { error } = await state.supabase
+          .from("devotional_notes")
+          .insert({
+            user_id: user.id,
+            note_date: date,
+            content: content
+          });
+
+        if (error) throw error;
+      }
     } else {
       const notesStr = localStorage.getItem("devotional_notes") || "[]";
       let notes = [];
@@ -1711,13 +1736,20 @@ const db = {
       } catch (e) {
         notes = [];
       }
-      notes.unshift({
-        id: "mock_note_" + Date.now(),
-        user_id: "me",
-        note_date: date,
-        content: content,
-        created_at: new Date().toISOString()
-      });
+
+      // 本地端防重複：檢查當天是否已有心得
+      const existingIdx = notes.findIndex(n => n.user_id === "me" && n.note_date === date);
+      if (existingIdx !== -1) {
+        notes[existingIdx].content = content;
+      } else {
+        notes.unshift({
+          id: "mock_note_" + Date.now(),
+          user_id: "me",
+          note_date: date,
+          content: content,
+          created_at: new Date().toISOString()
+        });
+      }
       localStorage.setItem("devotional_notes", JSON.stringify(notes));
     }
   },
