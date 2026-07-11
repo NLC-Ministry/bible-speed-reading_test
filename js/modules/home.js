@@ -1,18 +1,147 @@
 // js/modules/home.js
 
 const DAILY_VERSES = [
-  { text: "「神的話是我腳前的燈，是我路上的光。」", source: "詩篇 119:105" },
-  { text: "「但那等候耶和華的，必重新得力。他們必如鷹展翅上騰，他們奔跑卻不困倦，行走卻不疲乏。」", source: "以賽亞書 40:31" },
+  { text: "「愛是恆久忍耐，又有恩慈；愛是不嫉妒；愛是不自誇，不張狂，不做害羞的事，不求自己的益處，不輕易發怒，不計算人的惡。」", source: "哥林多前書 13:4-5" },
+  { text: "「要常常喜樂，不住的禱告，凡事謝恩；因為這是神在基督耶穌裡向你們所定的旨意。」", source: "帖撒羅尼迦前書 5:16-18" },
+  { text: "「應當一無罣慮，只要凡事藉著禱告、祈求，和感謝，將你們所要的告訴神。神所賜、出人意外的平安必在基督耶穌裡保守你們的心懷意念。」", source: "腓立比書 4:6-7" },
+  { text: "「願耶和華賜福給你，保護你。願耶和華使他的臉光照你，賜恩給你。願耶和華向你仰臉，賜你平安。」", source: "民數記 6:24-26" },
+  { text: "「但那等候耶和華的必從新得力。他們必如鷹展翅上騰；他們奔跑卻不困倦，行走卻不疲乏。」", source: "以賽亞書 40:31" },
+  { text: "「你不要害怕，因為我與你同在；不要驚惶，因為我是你的神。我必堅固你，我必幫助你；我必用我公義的右手扶持你。」", source: "以賽亞書 41:10" },
+  { text: "「凡你們所做的都要憑愛心而做。」", source: "哥林多前書 16:14" },
+  { text: "「我今日所吩咐你的話都要記在心上，也要殷勤教訓你的兒女。無論你坐在家裡，行在路上，躺下，起來，都要談論。」", source: "申命記 6:6-7" },
+  { text: "「耶和華說：我知道我向你們所懷的意念是賜平安的意念，不是降災禍的意念，要叫你們末後有指望。」", source: "耶利米書 29:11" },
+  { text: "「倚靠耶和華、以耶和華為可靠的，那人有福了！他必像樹栽於水旁，在河邊扎根，炎熱來到，並不懼怕，葉子仍必青翠，在乾旱之年毫無掛慮，而且結果不止。」", source: "耶利米書 17:7-8" },
+  { text: "「所以我告訴你們，凡你們禱告祈求的，無論是甚麼，只要信是得著的，就必得著。」", source: "馬可福音 11:24" },
+  { text: "「你所做的，要交託耶和華，你所謀的，就必成立。」", source: "箴言 16:3" },
+  { text: "「求你使我清晨得聽你慈愛之言，因我倚靠你；求你使我知道當行的路，因我的心仰望你。」", source: "詩篇 143:8" },
+  { text: "「求他按著他豐盛的榮耀，藉著他的靈，叫你們心裡的力量剛強起來，使基督因你們的信，住在你們心裡，叫你們的愛心有根有基。」", source: "以弗所書 3:16-17" },
+  { text: "「無論做甚麼，都要從心裡做，像是給主做的，不是給人做的，因你們知道從主那裡必得著基業為賞賜；你們所事奉的乃是主基督。」", source: "歌羅西書 3:23-24" },
+  { text: "「但願使人有盼望的神，因信將諸般的喜樂、平安充滿你們的心，使你們藉著聖靈的能力大有盼望。」", source: "羅馬書 15:13" },
+  { text: "「耶和華必在你前面行；他必與你同在，必不撇下你，也不丟棄你。不要懼怕，也不要驚惶。」", source: "申命記 31:8" },
+  { text: "「耶和華要保護你，免受一切的災害；他要保護你的性命。你出你入，耶和華要保護你，從今時直到永遠。」", source: "詩篇 121:7-8" },
+  { text: "「耶穌對他說：復活在我，生命也在我。信我的人雖然死了，也必復活，凡活著信我的人必永遠不死。你信這話麼？」", source: "約翰福音 11:25-26" },
+  { text: "「因我們行事為人是憑著信心，不是憑著眼見。」", source: "哥林多後書 5:7" },
+  { text: "「他們說：當信主耶穌，你和你一家都必得救。」", source: "使徒行傳 16:31" },
+  { text: "「不可使慈愛、誠實離開你，要繫在你頸項上，刻在你心版上。這樣，你必在神和世人眼前蒙恩寵，有聰明。」", source: "箴言 3:3-4" },
   { text: "「你要專心仰賴耶和華，不可倚靠自己的聰明，在你一切所行的事上都要認定他，他必指引你的路。」", source: "箴言 3:5-6" },
-  { text: "「我將這些事告訴你們，是要叫你們在我裡面有平安。在世上你們有苦難，但你們可以放心，我已經勝了世界。」", source: "約翰福音 16:33" },
-  { text: "「耶和華是我的牧者，我必不致缺乏。」", source: "詩篇 23:1" },
-  { text: "「應當一無掛慮，只要凡事藉著禱告、祈求和感謝，將你們所要的告訴神。神所賜出人意外的平安，必在基督耶穌裡保守你們的心懷意念。」", source: "腓立比書 4:6-7" },
-  { text: "「我們曉得萬事都互相效力，叫愛神的人得益處，就是按他旨意被召的人。」", source: "羅馬書 8:28" },
-  { text: "「所以，不要為明天憂慮，因為明天自有明天的憂慮；一天的難處一天當就夠了。」", source: "馬太福音 6:34" },
+  { text: "「信就是所望之事的實底，是未見之事的確據。」", source: "希伯來書 11:1" },
+  { text: "「凡事謙虛、溫柔、忍耐，用愛心互相寬容。」", source: "以弗所書 4:2" },
+  { text: "「你們要事奉耶和華你們的神，他必賜福與你的糧與你的水，也必從你們中間除去疾病。」", source: "詩篇 119:10" },
+  { text: "「聖靈所結的果子，就是仁愛、喜樂、和平、忍耐、恩慈、良善、信實、溫柔、節制。這樣的事沒有律法禁止。」", source: "加拉太書 5:22-23" },
+  { text: "「你們要事奉耶和華你們的神，他必賜福與你的糧與你的水，也必從你們中間除去疾病。」", source: "出埃及記 23:25" },
+  { text: "「所以，我親愛的弟兄們，你們務要堅固，不可搖動，常常竭力多做主工；因為知道，你們的勞苦在主裡面不是徒然的。」", source: "哥林多前書 15:58" },
+  { text: "「如今常存的有信，有望，有愛這三樣，其中最大的是愛。」", source: "哥林多前書 13:13" },
+  { text: "「你回去告訴我民的君希西家說：耶和華你祖大衛的神如此說：我聽見了你的禱告，看見了你的眼淚，我必醫治你；到第三日，你必上到耶和華的殿。」", source: "列王記下 20:5" },
+  { text: "「我豈沒有吩咐你麼？你當剛強壯膽！不要懼怕，也不要驚惶；因為你無論往那裡去，耶和華你的神必與你同在。」", source: "約書亞記 1:9" },
+  { text: "「在這一切之外，要存著愛心，愛心就是聯絡全德的。」", source: "歌羅西書 3:14" },
+  { text: "「我們若照他的旨意求甚麼，他就聽我們，這是我們向他所存坦然無懼的心。」", source: "約翰一書 5:14" },
+  { text: "「將你心所願的賜給你，成就你的一切籌算。」", source: "詩篇 20:4" },
+  { text: "「主就是那靈；主的靈在那裡，那裡就得以自由。」", source: "哥林多後書 3:17" },
+  { text: "「你從水中經過，我必與你同在；你逿過江河，水必不漫過你；你從火中行過，必不被燒，火燄也不著在你身上。」", source: "以賽亞書 43:2" },
+  { text: "「你們要謹慎行事，不要像愚昧人，當像智慧人。要愛惜光陰，因為現今的世代邪惡。」", source: "以弗所書 5:15-16" },
+  { text: "「耶穌對他說：你若能信，在信的人，凡事都能。」", source: "馬可福音 9:23" },
+  { text: "「耶和華啊，你是我的神；我要尊崇你，我要稱讚你的名。因為你以忠信誠實行過奇妙的事，成就你古時所定的。」", source: "以賽亞書 25:1" },
+  { text: "「各人要隨本心所酌定的，不要作難，不要勉強，因為捐得樂意的人是神所喜愛的。」", source: "哥林多後書 9:7" },
+  { text: "「你們要恆切禱告，在此儆醒感恩。」", source: "歌羅西書 4:2" },
+  { text: "「神愛我們的心，我們也知道也信。神就是愛；住在愛裡面的，就是住在神裡面，神也住在他裡面。」", source: "約翰一書 4:16" },
+  { text: "「在指望中要喜樂，在患難中要忍耐，禱告要恆切。」", source: "羅馬書 12:12" },
+  { text: "「我懼怕的時候要倚靠你。」", source: "詩篇 56:3" },
+  { text: "「你們要呼求我，禱告我，我就應允你們。」", source: "耶利米書 29:12" },
+  { text: "「我將這些事告訴你們，是要叫你們在我裡面有平安。在世上，你們有苦難；但你們可以放心，我已經勝了世界。」", source: "約翰福音 16:33" },
+  { text: "「約在半夜，保羅和西拉禱告，唱詩讚美神，眾囚犯也側耳而聽。」", source: "使徒行傳 16:25" },
+  { text: "「因為我耶和華你的神必攙扶你的右手，對你說：不要害怕！我必幫助你。」", source: "以賽亞書 41:13" },
+  { text: "「並要以恩慈相待，存憐憫的心，彼此饒恕，正如神在基督裡饒恕了你們一樣。」", source: "以弗所書 4:32" },
+  { text: "「凡勞苦擔重擔的人可以到我這裡來，我就使你們得安息。」", source: "馬太福音 11:28" },
+  { text: "「你們務要儆醒，在真道上站立得穩，要作大丈夫，要剛強。」", source: "哥林多前書 16:13" },
+  { text: "「看哪，弟兄和睦同居是何等地善，何等地美！」", source: "詩篇 119:10" },
+  { text: "「耶和華啊，尊大、能力、榮耀、強勝、威嚴都是你的；凡天上地下的都是你的；國度也是你的，並且你為至高，為萬有之首。」", source: "歷代志上 29:11" },
+  { text: "「看哪，弟兄和睦同居是何等地善，何等地美！」", source: "詩篇 133:1" },
+  { text: "「聖靈所結的果子，就是仁愛、喜樂、和平、忍耐、恩慈、良善、信實、溫柔、節制。這樣的事沒有律法禁止。」", source: "加拉太書 5:22-23" },
+  { text: "「你們豈不知不義的人不能承受神的國麼？不要自欺！無論是淫亂的、拜偶像的、姦淫的、作孌童的、親男色的、偷竊的、貪婪的、醉酒的、辱罵的、勒索的，都不能承受神的國。」", source: "哥林多前書 6:9-10" },
+  { text: "「我的肉體和我的心腸衰殘；但神是我心裡的力量，又是我的福分，直到永遠。」", source: "詩篇 73:26" },
+  { text: "「所以，你們該彼此勸慰，互相建立，正如你們素常所行的。」", source: "帖撒羅尼迦前書 5:11" },
+  { text: "「這稱為我名下的子民，若是自卑、禱告，尋求我的面，轉離他們的惡行，我必從天上垂聽，赦免他們的罪，醫治他們的地。」", source: "歷代志下 7:14" },
+  { text: "「遮掩人過的，尋求人愛；屢次挑錯的，離間密友。」", source: "箴言 17:9" },
+  { text: "「應當稱謝耶和華；因他本為善，他的慈愛永遠長存！」", source: "歷代志上 16:34" },
+  { text: "「我的心哪，你為何憂悶？為何在我裡面煩躁？應當仰望神，因我還要稱讚他。他是我臉上的光榮，是我的神。」", source: "詩篇 42:11" },
+  { text: "「所以，你們因信基督耶穌都是神的兒子。你們受洗歸入基督的都是披戴基督了。」", source: "加拉太書 3:26-27" },
+  { text: "「你要保守你心，勝過保守一切，因為一生的果效是由心發出。」", source: "箴言 4:23" },
+  { text: "「只是你們要行道，不要單單聽道，自己欺哄自己。」", source: "雅各書 1:22" },
+  { text: "「水中照臉，彼此相符；人與人，心也相對。」", source: "箴言 27:19" },
+  { text: "「我們愛，因為神先愛我們。」", source: "約翰一書 4:19" },
+  { text: "「要穿戴神所賜的全副軍裝，就能抵擋魔鬼的詭計。」", source: "以弗所書 6:11" },
+  { text: "「只要憑著信心求，一點不疑惑；因為那疑惑的人，就像海中的波浪，被風吹動翻騰。」", source: "雅各書 1:6" },
+  { text: "「你求告我，我就應允你，並將你所不知道、又大又難的事指示你。」", source: "耶利米書 33:3" },
+  { text: "「不要效法這個世界，只要心意更新而變化，叫你們察驗何為神的善良、純全、可喜悅的旨意。」", source: "羅馬書 12:2" },
+  { text: "「願頌讚歸與我們的主耶穌基督的父神，就是發慈悲的父，賜各樣安慰的神。我們在一切患難中，他就安慰我們，叫我們能用神所賜的安慰去安慰那遭各樣患難的人。」", source: "哥林多後書 1:3-4" },
+  { text: "「所以，我們只管坦然無懼的來到施恩的寶座前，為要得憐恤，蒙恩惠，作隨時的幫助。」", source: "希伯來書 4:16" },
+  { text: "「弟兄們，我藉我們主耶穌基督的名勸你們都說一樣的話。你們中間也不可分黨，只要一心一意，彼此相合。」", source: "哥林多前書 1:10" },
+  { text: "「人為朋友捨命，人的愛心沒有比這個大的。」", source: "約翰福音 15:13" },
+  { text: "「你們尋求我，若專心尋求我，就必尋見。」", source: "耶利米書 29:13" },
+  { text: "「凡有氣息的都要讚美耶和華！你們要讚美耶和華！」", source: "詩篇 150:6" },
+  { text: "「耶穌看著他們，說：在人是不能，在神卻不然，因為神凡事都能。」", source: "馬可福音 10:27" },
+  { text: "「你的話是我腳前的燈，是我路上的光。」", source: "詩篇 119:10" },
+  { text: "「殷勤不可懶惰。要心裡火熱，常常服事主。」", source: "羅馬書 12:11" },
+  { text: "「你的話是我腳前的燈，是我路上的光。」", source: "詩篇 119:105" },
+  { text: "「朋友乃時常親愛，弟兄為患難而生。」", source: "箴言 17:17" },
+  { text: "「他醫好傷心的人，裹好他們的傷處。」", source: "詩篇 147:3" },
+  { text: "「因為神賜給我們，不是膽怯的心，乃是剛強、仁愛、謹守的心。」", source: "提摩太後書 1:7" },
   { text: "「我靠著那加給我力量的，凡事都能做。」", source: "腓立比書 4:13" },
-  { text: "「神愛世人，甚至將他的獨生子賜給他們，叫一切信他的不致滅亡，反得永生。」", source: "約翰福音 3:16" },
-  { text: "「你不要害怕，因為我與你同在；不要驚惶，因為我是你的神。我必堅固你，我必幫助你，我必用我公義的右手扶持你。」", source: "以賽亞書 41:10" },
-  { text: "「凡勞苦擔重擔的人，可以到我這裡來，我就使你們得安息。」", source: "馬太福音 11:28" }
+  { text: "「你們饒恕人的過犯，你們的天父也必饒恕你們的過犯。」", source: "馬太福音 6:14" },
+  { text: "「豈不知你們的身子就是聖靈的殿麼？這聖靈是從神而來，住在你們裡頭的；並且你們不是自己的人；因為你們是重價買來的。所以，要在你們的身子上榮耀神。」", source: "哥林多前書 6:19-20" },
+  { text: "「感謝神，使我們藉著我們的主耶穌基督得勝。」", source: "哥林多前書 15:57" },
+  { text: "「我們若認自己的罪，神是信實的，是公義的，必要赦免我們的罪，洗淨我們一切的不義。」", source: "約翰一書 1:9" },
+  { text: "「疲乏的，他賜能力；軟弱的，他加力量。」", source: "以賽亞書 40:29" },
+  { text: "「耶穌說：讓小孩子到我這裡來，不要禁止他們；因為在天國的，正是這樣的人。」", source: "馬太福音 19:14" },
+  { text: "「我留下平安給你們；我將我的平安賜給你們。我所賜的，不像世人所賜的。你們心裡不要憂愁，也不要膽怯。」", source: "約翰福音 14:27" },
+  { text: "「你們當剛強壯膽，不要害怕，也不要畏懼他們，因為耶和華你的神和你同去。他必不撇下你，也不丟棄你。」", source: "申命記 31:6" },
+  { text: "「追求公義仁慈的，就尋得生命、公義，和尊榮。」", source: "箴言 21:21" },
+  { text: "「教養孩童，使他走當行的道，就是到老他也不偏離。」", source: "箴言 22:6" },
+  { text: "「因為無論在那裡，有兩三個人奉我的名聚會，那裡就有我在他們中間。」", source: "馬太福音 18:20" },
+  { text: "「因為萬有都是本於他，倚靠他，歸於他。願榮耀歸給他，直到永遠。阿們！」", source: "羅馬書 11:36" },
+  { text: "「不是你們揀選了我，是我揀選了你們，並且分派你們去結果子，叫你們的果子常存，使你們奉我的名，無論向父求甚麼，他就賜給你們。」", source: "約翰福音 15:16" },
+  { text: "「我算甚麼，我的民算甚麼，竟能如此樂意奉獻？因為萬物都從你而來，我們把從你而得的獻給你。」", source: "歷代志上 29:14" },
+  { text: "「我的神必照他榮耀的豐富，在基督耶穌裡，使你們一切所需用的都充足。」", source: "腓立比書 4:19" },
+  { text: "「好施捨的，必得豐裕；滋潤人的，必得滋潤。」", source: "箴言 11:25" },
+  { text: "「遮掩自己罪過的，必不亨通；承認離棄罪過的，必蒙憐恤。」", source: "箴言 28:13" },
+  { text: "「因為，耶和華賜人智慧；知識和聰明都由他口而出。」", source: "箴言 2:6" },
+  { text: "「聖經都是神所默示的，於教訓、督責、使人歸正、教導人學義都是有益的，叫屬神的人得以完全，預備行各樣的善事。」", source: "提摩太後書 3:16-17" },
+  { text: "「耶穌說：我不是對你說過，你若信，就必看見神的榮耀麼？」", source: "約翰福音 11:40" },
+  { text: "「我一心尋求了你；求你不要叫我偏離你的命令。」", source: "詩篇 119:10" },
+  { text: "「凡事謙虛、溫柔、忍耐，用愛心互相寬容。」", source: "以弗所書 4:2" }
+];
+
+const HEAVENLY_FATHER_CARDS = [
+  "親愛的孩子：不要怕，只要信！當你覺得疲憊或孤單時，來到我這裡，我必為你重新注滿愛與力量。我以永遠的愛愛你，我絕不撇下你。",
+  "親愛的孩子：你不是一個錯誤。你生命中所有的日子，都寫在我的冊上了。我定準了你的年歲和所住的疆界，你受造是極其奇妙可畏的。",
+  "親愛的孩子：我是你的供應者，我必供應你所需的一切。我向你所懷的意念，是要叫你末後有指望。放手交託給我，我就為你成就大事。",
+  "親愛的孩子：你傷心的時候，我靠近你；如同牧人懷抱羊羔，我將你懷抱在胸前。有一天，我要擦去你一切的眼淚，帶走你所有的苦楚。",
+  "親愛的孩子：當你感到信心不足時，請來仰望我。失敗只是我磨練你的過程，生命真正的意義，在於即便在困難中仍能靠我常常喜樂。",
+  "親愛的孩子：不要害怕，我與你同在。我用張開、充滿熱情的愛環繞你。當你感到孤單絕望時，來到我面前，我會賜給你不同的眼光看世界。",
+  "親愛的孩子：你是照著我的形象所造的，在我的眼中你是極其珍貴的。你的頭髮我都一一數過了，你生活、動作、存留，都在乎我。",
+  "親愛的孩子：我並非冷漠而憤怒的，我是完全的愛。我因你歡欣喜樂，我決不停止施恩與你，因為你是我最珍貴的產業。",
+  "親愛的孩子：如果你一心一意尋找我，就必尋見；以我為樂，我就把你心裡所求的賜給你。我能為你成就一切，遠超過你所求所想。",
+  "親愛的孩子：我是你最佳的鼓勵者，也是在一切患難中安慰你的父親。我要恢復你的力量，恢復你的禱告，因為在我這裡永遠有平安。",
+  "親愛的孩子：無論發生什麼，請記得我永遠愛你，你永遠是我的寶貝。當世界讓你失望時，我的雙手永遠為你敞開，等候你回家。",
+  "親愛的孩子：在乾旱之年你也不用掛慮，因為你就像栽在水旁的樹。只要你倚靠我，你的葉子仍必青翠，且會源源不斷地結出豐盛的果實。",
+  "親愛的孩子：應當一無罣慮，只要凡事藉著禱告和感謝，將你所要的告訴我。我所賜出人意外的平安，必在基督耶穌裡保守你的心懷意念。",
+  "親愛的孩子：你所經歷的風浪，我都看見了。我是平息風浪的主，只要對我有信心，安靜在我懷裡，你會看見風浪之後的彩虹與晴天。",
+  "親愛的孩子：在人這是不能的，但在我凡事都能。不要用你受限的眼光來看你的未來，因為我為你預備的，是眼睛未曾看見、人心也未曾想到的美妙計劃。",
+  "親愛的孩子：我的恩典夠你用的，因為我的能力是在人的軟弱上顯得完全。當你覺得自己最軟弱無助的時候，正是我的大能要彰顯的時候。",
+  "親愛的孩子：要常常喜樂，不住地禱告，凡事謝恩。因為當你開始感恩時，喜樂的泉源就會從你心中湧流出來，黑暗與愁雲也必退去。",
+  "親愛的孩子：你要保守你心，勝過保守一切，因為一生的果效是由心發出。不要讓世界的喧囂奪走了你的平靜，讓我的話語成為你心中的錨。",
+  "親愛的孩子：我留下平安給你，我將我的平安賜給你。我所賜的，不像世人所賜的。所以你心裡不要憂愁，也不要膽怯，昂首前行吧！",
+  "親愛的孩子：你要專心仰賴我，不可倚靠自己的聰明。在你一切所行的事上都要認定我，我必指引你的路，帶領你走出迷茫。",
+  "親愛的孩子：我以永遠的愛愛你，我向你的意念其數比海沙更多。你是獨一無二的，不需要去迎合世界或與他人比較，因為我就是愛本來的你。",
+  "親愛的孩子：疲乏的，我賜能力；軟弱的，我加力量。當你奔跑困倦、行走疲乏時，來到我的施恩座前，我必使你如鷹展翅上騰，重新得力。",
+  "親愛的孩子：你是我的手工作品，在基督裡造成的。我為你量身打造了美好的路程，不要害怕跨出腳步，因為我早已在你前面為你開路。",
+  "親愛的孩子：不要為明天憂慮，因為明天自有明天的憂慮。一天的難處一天當就夠了。學會活在今天，享受我今天為你預備的陽光與恩典。",
+  "親愛的孩子：手扶著犁向後看的人，不配進神的國。忘記背後，努力面前的，向著標竿直跑。你的過去已經被我塗抹，你的未來充滿無限的榮耀。",
+  "親愛的孩子：你們要先求我的國 and 我的義，這些東西都要加給你們了。當你把我放在你生命的首位時，你會發現一切的需要我都早已為你預備妥當。",
+  "親愛的孩子：各人要隨本心所酌定的，不要作難，不要勉強，因為捐得樂意的人是我所喜愛的。用慷慨與愛心去祝福他人，你必經歷加倍的豐盛。",
+  "親愛的孩子：主就是那靈；我的靈在那裡，那裡就得以自由。脫去那些束縛你的重擔與罪疚感，在我愛的光中，你可以自由自在地呼吸與生活。",
+  "親愛的孩子：你從水中經過，我必與你同在；你逿過江河，水必不漫過你。不管環境看起來多麼險惡，我都在你身邊，我是你隨時的幫助。",
+  "親愛的孩子：凡你們所做的都要憑愛心而做。愛是恆久忍耐，又有恩慈。當你用愛去對待身邊的人時，你就是在彰顯我的榮耀，我也必因此賜福與你。"
 ];
 
 export function updateDashboardView() {
@@ -1062,7 +1191,30 @@ const CURATED_IMAGE_POOL = [
   "https://images.unsplash.com/photo-1470252649358-96f5e5047118?auto=format&fit=crop&w=800&q=80",
   "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80",
   "https://images.unsplash.com/photo-1506318137071-a8e063b4bec0?auto=format&fit=crop&w=800&q=80",
-  "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80"
+  "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1475924156734-496f6cac6ec1?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1454496522488-7a8e488e8606?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1472214222541-d510753a4907?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1518495973542-4542c06a5843?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1502082553048-f009c37129b9?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1501854140801-50d01698950b?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1475113548554-5a36f1f523d6?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1513836279014-a89f7a76ae86?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1469474968028-56623f02e42e?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1433086966358-54859d0ed716?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1502759683299-cdcd6974244f?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1508739773434-c26b3d09e071?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1500964757637-c85e8a162699?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1482862549707-f63cb32c5fd9?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1518156677180-95a2893f3e9f?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1528183429752-a97d0bf99b5a?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1504280390367-361c6d9f38f4?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=800&q=80",
+  "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?auto=format&fit=crop&w=800&q=80"
 ];
 
 const VERSE_CARD_FALLBACK_IMAGE = CURATED_IMAGE_POOL[0];
@@ -1159,16 +1311,34 @@ async function fetchRandomVerse(event) {
 
   setVerseCardLoading(true);
 
-  const randomLocal = DAILY_VERSES[Math.floor(Math.random() * DAILY_VERSES.length)];
-  const verseText = randomLocal.text;
-  const verseSource = randomLocal.source;
+  if (!state.verseCardMode) {
+    state.verseCardMode = 'verse';
+  }
+
+  const isBlessingMode = state.verseCardMode === 'blessing';
+  let cardText, cardSource;
+
+  if (isBlessingMode) {
+    const randomCard = HEAVENLY_FATHER_CARDS[Math.floor(Math.random() * HEAVENLY_FATHER_CARDS.length)];
+    cardText = randomCard;
+    cardSource = "—— 愛你的天父";
+  } else {
+    const randomLocal = DAILY_VERSES[Math.floor(Math.random() * DAILY_VERSES.length)];
+    cardText = randomLocal.text;
+    cardSource = randomLocal.source;
+  }
+
   const randomImgUrl = CURATED_IMAGE_POOL[Math.floor(Math.random() * CURATED_IMAGE_POOL.length)];
   localStorage.setItem("verse_card_bg", randomImgUrl);
   const imgPromise = preloadVerseCardImage(randomImgUrl);
 
   const fetchPromise = (async () => {
+    if (isBlessingMode) {
+      return { text: cardText, source: cardSource };
+    }
+
     try {
-      const match = randomLocal.source.match(/^([\u4e00-\u9fa5]+)\s*(\d+):(\d+)(?:-(\d+))?$/);
+      const match = cardSource.match(/^([\u4e00-\u9fa5]+)\s*(\d+):(\d+)(?:-(\d+))?$/);
       if (match) {
         const chineseBook = match[1];
         const chapter = match[2];
@@ -1188,7 +1358,7 @@ async function fetchRandomVerse(event) {
           if (data && data.text) {
             return {
               text: `「${data.text.trim().replace(/\s+/g, " ").replace(/\n/g, "")}」`,
-              source: randomLocal.source
+              source: cardSource
             };
           }
         }
@@ -1196,7 +1366,7 @@ async function fetchRandomVerse(event) {
     } catch (err) {
       console.warn("Fetch random verse from API failed, falling back to local dataset:", err);
     }
-    return { text: verseText, source: verseSource };
+    return { text: cardText, source: cardSource };
   })();
 
   const [result, loadedUrl] = await Promise.all([fetchPromise, imgPromise]);
@@ -1433,6 +1603,39 @@ function renderDailyVerse() {
       window.changeVerseCardBackground();
     });
     changeBgBtn._hasChangeListener = true;
+  }
+
+  // Initialize Mode Selectors
+  if (!state.verseCardMode) {
+    state.verseCardMode = 'verse';
+  }
+
+  const btnToggleMode = document.getElementById("btn-toggle-card-mode");
+  const modeTextEl = document.getElementById("verse-mode-text");
+
+  const updateModeUI = () => {
+    const isVerse = state.verseCardMode === 'verse';
+    if (modeTextEl) {
+      modeTextEl.textContent = isVerse ? "每日金句" : "天父小卡";
+    }
+    if (drawBtn) {
+      const label = !isVerse ? "抽一張" : "換一句";
+      drawBtn.innerHTML = `<span class="nlc-icon nlc-icon--sm" data-icon="refresh" aria-hidden="true"></span><span>${label}</span>`;
+      if (typeof hydrateIcons === "function") hydrateIcons(drawBtn);
+    }
+  };
+
+  updateModeUI();
+
+  if (btnToggleMode && !btnToggleMode._hasModeListener) {
+    btnToggleMode.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      state.verseCardMode = state.verseCardMode === 'verse' ? 'blessing' : 'verse';
+      updateModeUI();
+      fetchRandomVerse();
+    });
+    btnToggleMode._hasModeListener = true;
   }
 
   const savedBg = localStorage.getItem("verse_card_bg");
