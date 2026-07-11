@@ -1689,11 +1689,15 @@ function renderDailyVerse() {
       btnModeVerse.classList.toggle("active", isVerse);
       btnModeVerse.style.background = isVerse ? "rgba(255,255,255,0.22)" : "transparent";
       btnModeVerse.style.color = isVerse ? "#ffffff" : "rgba(255,255,255,0.7)";
+      btnModeVerse.style.minHeight = "15px";
+      btnModeVerse.style.boxShadow = "none";
     }
     if (btnModeBlessing) {
       btnModeBlessing.classList.toggle("active", !isVerse);
       btnModeBlessing.style.background = !isVerse ? "rgba(255,255,255,0.22)" : "transparent";
       btnModeBlessing.style.color = !isVerse ? "#ffffff" : "rgba(255,255,255,0.7)";
+      btnModeBlessing.style.minHeight = "15px";
+      btnModeBlessing.style.boxShadow = "none";
     }
     if (drawBtn) {
       const label = !isVerse ? "抽一張" : "換一句";
