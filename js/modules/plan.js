@@ -172,10 +172,55 @@ function updatePlanTabIndicator(shell, index) {
   });
 }
 
+const GROUP_SUBVIEW = Object.freeze({ STATS: "stats", RANKING: "ranking", MEMBERS: "members" });
+
+async function showPlanGroupSubview(view = GROUP_SUBVIEW.STATS) {
+  const allowedViews = Object.values(GROUP_SUBVIEW);
+  let target = allowedViews.includes(view) ? view : GROUP_SUBVIEW.STATS;
+  if (target === GROUP_SUBVIEW.MEMBERS && !canUseAdvancedGroupStats()) target = GROUP_SUBVIEW.STATS;
+
+  const tabs = getPlanDetailTabs();
+  const tabMap = {
+    [GROUP_SUBVIEW.STATS]: document.getElementById("tab-plan-stats"),
+    [GROUP_SUBVIEW.RANKING]: document.getElementById("tab-plan-ranking"),
+    [GROUP_SUBVIEW.MEMBERS]: document.getElementById("tab-plan-members")
+  };
+  const viewMap = {
+    [GROUP_SUBVIEW.STATS]: document.getElementById("subview-plan-stats"),
+    [GROUP_SUBVIEW.RANKING]: document.getElementById("subview-plan-ranking"),
+    [GROUP_SUBVIEW.MEMBERS]: document.getElementById("subview-plan-members")
+  };
+
+  if (tabs) forceHidden(tabs, false);
+  const legacyScheduleTab = document.getElementById("tab-plan-schedule");
+  if (legacyScheduleTab) {
+    legacyScheduleTab.classList.remove("active");
+    legacyScheduleTab.setAttribute("aria-selected", "false");
+  }
+  Object.entries(tabMap).forEach(([key, button]) => {
+    if (!button) return;
+    const permitted = key !== GROUP_SUBVIEW.MEMBERS || canUseAdvancedGroupStats();
+    forceHidden(button, !permitted);
+    button.classList.toggle("active", key === target);
+    button.setAttribute("aria-selected", key === target ? "true" : "false");
+  });
+  Object.entries(viewMap).forEach(([key, panel]) => forceHidden(panel, key !== target));
+
+  window.PlanPageController.groupSubview = target;
+  if (target === GROUP_SUBVIEW.STATS) {
+    await window.switchStatTab(canUseAdvancedGroupStats() ? "admin" : "personal");
+  } else if (target === GROUP_SUBVIEW.RANKING) {
+    await renderPlanRankingView();
+  } else if (target === GROUP_SUBVIEW.MEMBERS) {
+    await renderPlanMembersView();
+  }
+}
+
 window.PlanPageController = {
   currentIndex: PLAN_PAGE.READING,
   groupLoadedForPlanKey: null,
   groupLoadPromise: null,
+  groupSubview: GROUP_SUBVIEW.STATS,
   ensureShell() {
     const shell = ensurePlanPageShell();
     if (!shell) return null;
@@ -189,6 +234,23 @@ window.PlanPageController = {
         await window.PlanPageController.switchPage(Number(btn.dataset.planPageIndex));
       });
       shell.strip.dataset.planControllerBound = "true";
+    }
+    const groupTabs = getPlanDetailTabs();
+    if (groupTabs && !groupTabs.dataset.groupControllerBound) {
+      const viewById = {
+        "tab-plan-stats": GROUP_SUBVIEW.STATS,
+        "tab-plan-ranking": GROUP_SUBVIEW.RANKING,
+        "tab-plan-members": GROUP_SUBVIEW.MEMBERS
+      };
+      groupTabs.addEventListener("click", async event => {
+        const button = event.target.closest("button");
+        const view = button ? viewById[button.id] : null;
+        if (!view) return;
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        await showPlanGroupSubview(view);
+      }, true);
+      groupTabs.dataset.groupControllerBound = "true";
     }
     return shell;
   },
@@ -209,7 +271,7 @@ window.PlanPageController = {
     });
     updatePlanTabIndicator(shell, target);
     const groupTabs = getPlanDetailTabs();
-    if (groupTabs) groupTabs.style.display = target === PLAN_PAGE.GROUP ? "flex" : "none";
+    if (groupTabs) forceHidden(groupTabs, target !== PLAN_PAGE.GROUP);
     if (target === PLAN_PAGE.READING) {
       forceHidden(shell.schedule, false);
       forceHidden(shell.level, true);
@@ -220,15 +282,15 @@ window.PlanPageController = {
       if (typeof setViewMode === "function") setViewMode("calendar");
       if (typeof renderPlanScheduleTracker === "function") await renderPlanScheduleTracker();
     } else {
-      forceHidden(shell.stats, false);
-      forceHidden(shell.ranking, true);
-      forceHidden(shell.members, true);
       const planKey = state.activePlan.id || state.activePlan.globalPlanId || state.activePlan.presetKey;
       if (this.groupLoadedForPlanKey !== planKey || options.forceReload) {
         this.groupLoadPromise = fetchGroupRankings(planKey).finally(() => { this.groupLoadPromise = null; });
         await this.groupLoadPromise;
         this.groupLoadedForPlanKey = planKey;
-      } else if (this.groupLoadPromise) await this.groupLoadPromise;
+      } else if (this.groupLoadPromise) {
+        await this.groupLoadPromise;
+      }
+      await showPlanGroupSubview(this.groupSubview || GROUP_SUBVIEW.STATS);
     }
     if (!options.skipChrome && typeof appRouter !== "undefined" && typeof appRouter.updateNavigationChrome === "function") appRouter.updateNavigationChrome();
   },
@@ -404,103 +466,9 @@ function initPlanControls() {
     });
   }
 
-  // Sub-tabs Toggle (Daily Reading vs Stats vs Ranking vs History vs Members)
-  const tabSchedule = document.getElementById("tab-plan-schedule");
-  const tabStats = document.getElementById("tab-plan-stats");
-  const tabRanking = document.getElementById("tab-plan-ranking");
-  const tabMembers = document.getElementById("tab-plan-members");
-  const subviewSchedule = document.getElementById("subview-plan-schedule");
-  const subviewPlanStats = document.getElementById("subview-plan-stats");
-  const subviewPlanRanking = document.getElementById("subview-plan-ranking");
-  const subviewPlanMembers = document.getElementById("subview-plan-members");
-  const subviewPlanLevel = document.getElementById("subview-plan-level");
-  // Only leaders and above can see the 組員狀況 tab
-  const _initUserRole = (state.currentUser && state.currentUser.role) || "member";
   const _canSeeMembers = canUseAdvancedGroupStats();
-  if (tabMembers) tabMembers.style.display = _canSeeMembers ? "" : "none";
-  if (subviewPlanMembers) subviewPlanMembers.style.display = _canSeeMembers ? "" : "none";
-
-  // Control visibility of group status using both the active and authenticated role.
   const innerAdminTab = document.getElementById("stats-inner-tab-admin");
-  if (innerAdminTab) {
-    innerAdminTab.style.display = _canSeeMembers ? "" : "none";
-    innerAdminTab.classList.toggle("hidden", !_canSeeMembers);
-  }
-
-  const allTabs = [tabSchedule, tabStats, tabRanking, _canSeeMembers ? tabMembers : null].filter(Boolean);
-  const allSubviews = [subviewSchedule, subviewPlanStats, subviewPlanRanking, subviewPlanLevel, _canSeeMembers ? subviewPlanMembers : null].filter(Boolean);
-
-  function switchToTab(activeTab, activeSubview) {
-    allTabs.forEach(t => t && t.classList.remove("active"));
-    allSubviews.forEach(s => forceHidden(s, s !== activeSubview));
-    if (activeTab) activeTab.classList.add("active");
-    if (activeSubview) forceHidden(activeSubview, false);
-  }
-
-  // Segmented Control (今日讀經 / 讀經統計) switcher
-  const tabTodayTask = document.getElementById("tab-today-task");
-  const tabGroupReport = document.getElementById("tab-group-report");
-  const planDetailTabs = getPlanDetailTabs();
-
-  let lastActiveReportTab = tabStats;
-  let lastActiveReportSubview = subviewPlanStats;
-
-  if (tabTodayTask && tabGroupReport) {
-    tabTodayTask.addEventListener("click", () => {
-      // Style tabTodayTask as active, tabGroupReport as inactive
-      tabTodayTask.style.cssText = "flex: 1; padding: 0.5rem; font-size: 0.78rem; font-weight: 700; border-radius: 8px; text-align: center; background: var(--bg-card); color: var(--text-primary); border: none; box-shadow: var(--shadow-sm); cursor: pointer; transition: all 0.2s;";
-      tabGroupReport.style.cssText = "flex: 1; padding: 0.5rem; font-size: 0.78rem; font-weight: 500; border-radius: 8px; text-align: center; background: transparent; color: var(--text-muted); border: none; cursor: pointer; transition: all 0.2s;";
-
-      // Hide sub tabs
-      if (planDetailTabs) planDetailTabs.style.display = "none";
-
-      // Switch to daily reading schedule
-      switchToTab(tabSchedule, subviewSchedule);
-      renderPlanScheduleTracker();
-    });
-
-    tabGroupReport.addEventListener("click", async () => {
-      // Style tabGroupReport as active, tabTodayTask as inactive
-      tabGroupReport.style.cssText = "flex: 1; padding: 0.5rem; font-size: 0.78rem; font-weight: 700; border-radius: 8px; text-align: center; background: var(--bg-card); color: var(--text-primary); border: none; box-shadow: var(--shadow-sm); cursor: pointer; transition: all 0.2s;";
-      tabTodayTask.style.cssText = "flex: 1; padding: 0.5rem; font-size: 0.78rem; font-weight: 500; border-radius: 8px; text-align: center; background: transparent; color: var(--text-muted); border: none; cursor: pointer; transition: all 0.2s;";
-
-      // Show sub tabs
-      if (planDetailTabs) planDetailTabs.style.display = "flex";
-
-      // Switch to last active subview inside Group Report
-      switchToTab(lastActiveReportTab, lastActiveReportSubview);
-
-      // Render the active tab's view
-      if (lastActiveReportTab === tabStats) {
-        await window.switchStatTab('personal');
-      } else if (lastActiveReportTab === tabRanking) {
-        if (state.activePlan) await renderPlanRankingView();
-      } else if (lastActiveReportTab === tabMembers && _canSeeMembers) {
-        if (state.activePlan) await renderPlanMembersView();
-      }
-    });
-
-    // Make sure we track which tab inside Group Report is active
-    if (tabStats) {
-      tabStats.addEventListener("click", () => {
-        lastActiveReportTab = tabStats;
-        lastActiveReportSubview = subviewPlanStats;
-      });
-    }
-    if (tabRanking) {
-      tabRanking.addEventListener("click", () => {
-        lastActiveReportTab = tabRanking;
-        lastActiveReportSubview = subviewPlanRanking;
-      });
-    }
-    if (tabMembers) {
-      tabMembers.addEventListener("click", () => {
-        lastActiveReportTab = tabMembers;
-        lastActiveReportSubview = subviewPlanMembers;
-      });
-    }
-  }
-
+  if (innerAdminTab) forceHidden(innerAdminTab, !_canSeeMembers);
   function closePlanOptionsMenu() {
     const menu = document.getElementById("plan-options-dropdown");
     if (menu) menu.classList.add("hidden");
@@ -516,42 +484,17 @@ function initPlanControls() {
       closePlanOptionsMenu();
     });
   }
-  if (tabSchedule) {
-    tabSchedule.addEventListener("click", () => {
-      switchToTab(tabSchedule, subviewSchedule);
-      renderPlanScheduleTracker();
-    });
-  }
 
-  if (tabStats) {
-    tabStats.addEventListener("click", async () => {
-      switchToTab(tabStats, subviewPlanStats);
-      // Reset inner tab to 'personal' on click
-      await window.switchStatTab('personal');
-    });
-  }
 
-  if (tabRanking) {
-    tabRanking.addEventListener("click", async () => {
-      switchToTab(tabRanking, subviewPlanRanking);
-      if (state.activePlan) await renderPlanRankingView();
-    });
-  }
 
-  if (tabMembers && _canSeeMembers) {
-    tabMembers.addEventListener("click", async () => {
-      switchToTab(tabMembers, subviewPlanMembers);
-      if (state.activePlan) await renderPlanMembersView();
-    });
-  }
   bindPlanMenuItem("menu-plan-stats", async () => {
-    switchToTab(tabStats, subviewPlanStats);
-    await window.switchStatTab("personal");
+    await window.PlanPageController.switchPage(PLAN_PAGE.GROUP);
+    await showPlanGroupSubview(GROUP_SUBVIEW.STATS);
   });
 
   bindPlanMenuItem("menu-plan-ranking", async () => {
-    switchToTab(tabRanking, subviewPlanRanking);
-    if (state.activePlan) await renderPlanRankingView();
+    await window.PlanPageController.switchPage(PLAN_PAGE.GROUP);
+    await showPlanGroupSubview(GROUP_SUBVIEW.RANKING);
   });
 
   bindPlanMenuItem("menu-plan-level", async () => {
@@ -574,8 +517,7 @@ function initPlanControls() {
       window.openPlanLevelConfirmModal(level, async () => {
         await window.changePlanLevel(level);
         if (window.PlanPageController) window.PlanPageController.closeSettingsModal();
-        switchToTab(tabSchedule, subviewSchedule);
-        renderPlanScheduleTracker();
+        window.PlanPageController.switchPage(PLAN_PAGE.READING);
       });
     });
   });
@@ -583,8 +525,8 @@ function initPlanControls() {
   if (membersMenuItem) membersMenuItem.style.display = _canSeeMembers ? "" : "none";
   bindPlanMenuItem("menu-plan-members", async () => {
     if (!_canSeeMembers) return;
-    switchToTab(tabMembers, subviewPlanMembers);
-    if (state.activePlan) await renderPlanMembersView();
+    await window.PlanPageController.switchPage(PLAN_PAGE.GROUP);
+    await showPlanGroupSubview(GROUP_SUBVIEW.MEMBERS);
   });
   // Category Pills filters inside Plan List Page
   const listPills = document.querySelectorAll("#plan-list-status-pills .pill-btn");
@@ -868,80 +810,6 @@ function renderPresetPlansList() {
     container.appendChild(card);
   });
 }
-
-async function renderPlanDetailView() {
-  if (!state.activePlan) return;
-
-  // Ensure initial active sub tab is 'today'
-  state.planActiveSubTab = state.planActiveSubTab || "today";
-
-  // Set Title
-  const titleEl = document.getElementById("plan-detail-title");
-  if (titleEl) titleEl.textContent = state.activePlan.name;
-
-  // Render current selected tab content
-  const tabSchedule = document.getElementById("tab-plan-schedule");
-  const tabStats = document.getElementById("tab-plan-stats");
-  const tabRanking = document.getElementById("tab-plan-ranking");
-  const tabMembers = document.getElementById("tab-plan-members");
-  const subviewSchedule = document.getElementById("subview-plan-schedule");
-  const subviewPlanStats = document.getElementById("subview-plan-stats");
-  const subviewPlanRanking = document.getElementById("subview-plan-ranking");
-  const subviewPlanMembers = document.getElementById("subview-plan-members");
-  const subviewPlanLevel = document.getElementById("subview-plan-level");
-
-  // Hide the 組員狀況 tab for regular members
-  const _restoreRole = (state.currentUser && state.currentUser.role) || "member";
-  const _restoreCanSeeMembers = canUseAdvancedGroupStats();
-  if (tabMembers) tabMembers.style.display = _restoreCanSeeMembers ? "" : "none";
-  if (subviewPlanMembers) subviewPlanMembers.style.display = _restoreCanSeeMembers ? "" : "none";
-
-  const innerAdminTab = document.getElementById("stats-inner-tab-admin");
-  if (innerAdminTab) {
-    innerAdminTab.style.display = _restoreCanSeeMembers ? "" : "none";
-    innerAdminTab.classList.toggle("hidden", !_restoreCanSeeMembers);
-  }
-
-  const allSubviewsInit = [subviewSchedule, subviewPlanStats, subviewPlanRanking, subviewPlanLevel, _restoreCanSeeMembers ? subviewPlanMembers : null].filter(Boolean);
-
-  if (state.planActiveSubTab === "today") {
-    // Today reading checklist mode
-    if (tabSchedule) tabSchedule.classList.add("active");
-    if (tabStats) tabStats.classList.remove("active");
-    if (tabRanking) tabRanking.classList.remove("active");
-    if (tabMembers) tabMembers.classList.remove("active");
-
-    allSubviewsInit.forEach(s => forceHidden(s, s !== subviewSchedule));
-    if (subviewSchedule) forceHidden(subviewSchedule, false);
-
-    const planDetailTabs = getPlanDetailTabs();
-    if (planDetailTabs) {
-      planDetailTabs.style.display = "none";
-    }
-
-    // Initialize plan view mode (default is 'card')
-    setViewMode("calendar");
-    renderPlanScheduleTracker();
-  } else {
-    // Group Report statistics / ranking mode
-    const planDetailTabs = getPlanDetailTabs();
-    if (planDetailTabs) {
-      planDetailTabs.style.display = "flex";
-    }
-
-    // Default active sub-tab inside group report is stats
-    if (tabSchedule) tabSchedule.classList.remove("active");
-    if (tabStats) tabStats.classList.add("active");
-    if (tabRanking) tabRanking.classList.remove("active");
-    if (tabMembers) tabMembers.classList.remove("active");
-
-    allSubviewsInit.forEach(s => forceHidden(s, s !== subviewPlanStats));
-    if (subviewPlanStats) forceHidden(subviewPlanStats, false);
-
-    await window.switchStatTab('personal');
-  }
-}
-
 
 function isChapterReadForRound(ch, round) {
   if (!ch) return false;
@@ -5716,9 +5584,7 @@ if (typeof renderPlanScheduleTracker === 'function') {
 if (typeof renderHorizontalDateStrip === 'function') {
   window.renderHorizontalDateStrip = renderHorizontalDateStrip;
 }
-if (typeof renderPlanDetailView === 'function') {
-  window.renderPlanDetailView = renderPlanDetailView;
-}
+
 if (typeof renderPlanRankingView === 'function') {
   window.renderPlanRankingView = renderPlanRankingView;
 }
@@ -5777,44 +5643,12 @@ async function fetchGroupRankings(planId) {
     ) || null;
     if (typeof window.syncActivePlanContext === "function") window.syncActivePlanContext(state.activePlan);
   }
-
   if (!state.activePlan) return;
 
-  if (window.PlanPageController) window.PlanPageController.ensureShell();
-
-  window._currentStatsTab = "admin";
   window._statsTabScope = getDefaultGroupStatsScope();
-
-  const tabStats = document.getElementById("tab-plan-stats");
-  const tabRanking = document.getElementById("tab-plan-ranking");
-  const tabMembers = document.getElementById("tab-plan-members");
-  [tabStats, tabRanking, tabMembers].forEach(tab => tab && tab.classList.remove("active"));
-  if (tabStats) tabStats.classList.add("active");
-
-  forceHidden(document.getElementById("subview-plan-stats"), false);
-  forceHidden(document.getElementById("subview-plan-ranking"), true);
-  forceHidden(document.getElementById("subview-plan-members"), true);
-
-  document.querySelectorAll(".stats-inner-tab").forEach(tab => {
-    tab.classList.toggle("active", tab.getAttribute("data-tab") === "admin");
-  });
-
-  const adminScopeBar = document.getElementById("stats-admin-scope-bar");
-  if (adminScopeBar) adminScopeBar.classList.remove("hidden");
-
-  const personalSection = document.getElementById("stats-personal-section");
-  const groupSection = document.getElementById("stats-group-section");
-  if (personalSection) personalSection.classList.add("hidden");
-  if (groupSection) groupSection.classList.remove("hidden");
-
-  await renderPlanStatsView();
-  await renderPlanRankingView();
-
-  const role = (state.currentUser && state.currentUser.role) || "member";
-  const canSeeMembers = ["admin", "senior_pastor", "great_zone_leader", "zone_leader", "group_leader"].includes(role);
-  if (canSeeMembers) await renderPlanMembersView();
+  populateStatsSelector();
+  populateMembersSelector();
 }
-
 async function enterGroupProgressState() {
   if (!state.activePlan) {
     await enterPlanListState();

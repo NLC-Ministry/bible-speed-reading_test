@@ -21,7 +21,7 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&family=Outfit:wght@300;400;500;600;700&display=swap"
     rel="stylesheet">
-  <link rel="stylesheet" href="index.css?v=20260709_badge_back">
+  <link rel="stylesheet" href="index.css?v=20260712_group_controller_v2">
   <!-- Supabase JS Client library -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
   <!-- Chart.js for premium stats dashboard -->
@@ -706,12 +706,12 @@
 
           <!-- Toggle View Pills -->
           <div class="status-pills-row plan-detail-tabs"
-            style="margin-bottom: 0.6rem; border-bottom: 1px solid var(--border-card); padding-bottom: 0.6rem; display: none;">
+            style="margin-bottom: 0.6rem; border-bottom: 1px solid var(--border-card); padding-bottom: 0.6rem;">
             <button class="pill-btn active" id="tab-plan-schedule" style="display: none;"><span
                 class="btn-with-icon"><span class="nlc-icon" data-icon="calendarThirty"
                   aria-hidden="true"></span><span>每日讀經</span></span></button>
             <button class="pill-btn" id="tab-plan-stats"><span class="btn-with-icon"><span class="nlc-icon"
-                  data-icon="barChart" aria-hidden="true"></span><span>讀經統計</span></span></button>
+                  data-icon="barChart" aria-hidden="true"></span><span>團體統計</span></span></button>
             <button class="pill-btn" id="tab-plan-ranking"><span class="btn-with-icon"><span class="nlc-icon"
                   data-icon="trophy" aria-hidden="true"></span><span>排名</span></span></button>
             <button class="pill-btn" id="tab-plan-members"><span class="btn-with-icon"><span class="nlc-icon"
@@ -870,14 +870,6 @@
           </div>
           <div id="subview-plan-stats" class="hidden"
             style="display: flex; flex-direction: column; gap: 1.2rem; width: 100%;">
-
-            <!-- 讀經統計內層 4-tab 列 -->
-            <div class="stats-inner-tab-row segment-track">
-              <button class="stats-inner-tab segment-toggle-btn active" data-tab="personal"
-                onclick="window.switchStatTab('personal')">個人</button>
-              <button class="stats-inner-tab segment-toggle-btn" id="stats-inner-tab-admin" data-tab="admin"
-                onclick="window.switchStatTab('admin')">團體統計</button>
-            </div>
 
             <!-- 管理權限統計篩選器 (只在 管理 tab 顯示) -->
             <div class="stats-admin-scope-bar hidden" id="stats-admin-scope-bar"
@@ -1885,7 +1877,7 @@
     </div>
   </div>
 
-  <script type="module" src="js/app.js?v=20260712_restore_member_status"></script>
+  <script type="module" src="js/app.js?v=20260712_group_controller_v2"></script>
 </body>
 
 </html>

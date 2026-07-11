@@ -4877,9 +4877,7 @@ button.logout-btn:hover {
     min-height: 96px;
     max-height: 128px;
   }
-  .plan-detail-tabs {
-    display: none !important;
-  }
+
   .plan-detail-compact .date-card {
     flex-basis: 48px;
     height: 50px;
@@ -4895,9 +4893,9 @@ button.logout-btn:hover {
     min-height: 170px;
   }
 }
-/* Plan detail navigation is managed dynamically in plan.js */
+/* Group sub-navigation visibility is owned exclusively by PlanPageController. */
 .plan-detail-tabs {
-  display: none;
+  display: flex;
 }
 #plan-options-dropdown {
   min-width: 220px;
