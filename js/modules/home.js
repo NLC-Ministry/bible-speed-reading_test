@@ -1680,13 +1680,20 @@ function renderDailyVerse() {
     state.verseCardMode = 'verse';
   }
 
-  const btnToggleMode = document.getElementById("btn-toggle-card-mode");
-  const modeTextEl = document.getElementById("verse-mode-text");
+  const btnModeVerse = document.getElementById("btn-mode-verse");
+  const btnModeBlessing = document.getElementById("btn-mode-blessing");
 
   const updateModeUI = () => {
     const isVerse = state.verseCardMode === 'verse';
-    if (modeTextEl) {
-      modeTextEl.textContent = isVerse ? "每日金句" : "天父小卡";
+    if (btnModeVerse) {
+      btnModeVerse.classList.toggle("active", isVerse);
+      btnModeVerse.style.background = isVerse ? "rgba(255,255,255,0.22)" : "transparent";
+      btnModeVerse.style.color = isVerse ? "#ffffff" : "rgba(255,255,255,0.7)";
+    }
+    if (btnModeBlessing) {
+      btnModeBlessing.classList.toggle("active", !isVerse);
+      btnModeBlessing.style.background = !isVerse ? "rgba(255,255,255,0.22)" : "transparent";
+      btnModeBlessing.style.color = !isVerse ? "#ffffff" : "rgba(255,255,255,0.7)";
     }
     if (drawBtn) {
       const label = !isVerse ? "抽一張" : "換一句";
@@ -1697,15 +1704,28 @@ function renderDailyVerse() {
 
   updateModeUI();
 
-  if (btnToggleMode && !btnToggleMode._hasModeListener) {
-    btnToggleMode.addEventListener("click", (e) => {
+  if (btnModeVerse && !btnModeVerse._hasModeListener) {
+    btnModeVerse.addEventListener("click", (e) => {
       e.preventDefault();
       e.stopPropagation();
-      state.verseCardMode = state.verseCardMode === 'verse' ? 'blessing' : 'verse';
+      if (state.verseCardMode === 'verse') return;
+      state.verseCardMode = 'verse';
       updateModeUI();
       fetchRandomVerse();
     });
-    btnToggleMode._hasModeListener = true;
+    btnModeVerse._hasModeListener = true;
+  }
+
+  if (btnModeBlessing && !btnModeBlessing._hasModeListener) {
+    btnModeBlessing.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (state.verseCardMode === 'blessing') return;
+      state.verseCardMode = 'blessing';
+      updateModeUI();
+      fetchRandomVerse();
+    });
+    btnModeBlessing._hasModeListener = true;
   }
 
   const savedBg = localStorage.getItem("verse_card_bg");
