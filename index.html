@@ -901,73 +901,72 @@
             <div id="stats-personal-section" style="display: flex; flex-direction: column; gap: 0.8rem; width: 100%;">
 
               <!-- 第一層：5格不對稱便當盒數據網格 (Bento Grid) -->
-              <div class="grid grid-cols-2 gap-3 px-4 pt-4"
-                style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; width: 100%;">
+              <div class="profile-personal-stats-grid px-4 pt-4" style="width: 100%;">
 
                 <!-- 卡片 1 - 累積閱讀章數 (核心主卡，橫跨兩欄) -->
-                <div class="col-span-2 bento-card stat-card--primary" style="grid-column: span 2 / span 2;">
-                  <div class="stat-bento__row">
-                    <div class="stat-bento__value stat-bento__value--hero">
+                <div class="bento-card profile-stat-card--primary stat-card--primary">
+                  <div class="profile-stat-card__meta">
+                    <div class="profile-stat-card__value">
                       <span id="report-stat-total-chapters">0</span>
-                      <span class="stat-bento__unit">章</span>
+                      <span class="profile-stat-card__unit">章</span>
                     </div>
-                    <span class="stat-bento__icon-wrap stat-bento__icon-wrap--brand stat-bento__icon-wrap--hero"><span
+                    <span class="stat-bento__icon-wrap stat-bento__icon-wrap--brand"><span
                         class="nlc-icon" data-icon="bookOpen" aria-hidden="true"></span></span>
                   </div>
-                  <span class="stat-bento__label">累積閱讀章數</span>
+                  <span class="profile-stat-card__label">累積閱讀章數</span>
                 </div>
 
                 <!-- 卡片 2 - 最高連續 -->
                 <div class="bento-card">
-                  <div class="stat-bento__row">
-                    <div class="stat-bento__value">
+                  <div class="profile-stat-card__meta">
+                    <div class="profile-stat-card__value">
                       <span id="report-stat-streak">0</span>
-                      <span class="stat-bento__unit">天</span>
+                      <span class="profile-stat-card__unit">天</span>
                     </div>
                     <span class="stat-bento__icon-wrap stat-bento__icon-wrap--warning"><span class="nlc-icon"
                         data-icon="fire" aria-hidden="true"></span></span>
                   </div>
-                  <span class="stat-bento__label">最高連續</span>
+                  <span class="profile-stat-card__label">最高連續</span>
                 </div>
 
                 <!-- 卡片 3 - 累計完成 -->
                 <div class="bento-card">
-                  <div class="stat-bento__row">
-                    <div class="stat-bento__value">
+                  <div class="profile-stat-card__meta">
+                    <div class="profile-stat-card__value">
                       <span id="report-stat-completed">0</span>
-                      <span class="stat-bento__unit">天</span>
+                      <span class="profile-stat-card__unit">天</span>
                     </div>
                     <span class="stat-bento__icon-wrap stat-bento__icon-wrap--success"><span class="nlc-icon"
                         data-icon="calendarCheck" aria-hidden="true"></span></span>
                   </div>
-                  <span class="stat-bento__label">累計完成</span>
+                  <span class="profile-stat-card__label">累計完成</span>
                   <span id="report-stat-start-date" class="hidden" style="display: none;"></span>
                 </div>
 
                 <!-- 卡片 4 - 進度狀態 -->
                 <div class="bento-card">
-                  <div class="stat-bento__row">
-                    <div class="stat-bento__value stat-bento__value--status">
+                  <div class="profile-stat-card__meta">
+                    <div class="profile-stat-card__value" style="font-size: 0.85rem; line-height: 1.2;">
                       <span id="report-stat-progress-status" class="stat-badge stat-badge--brand">進度一致</span>
                     </div>
                     <span class="stat-bento__icon-wrap stat-bento__icon-wrap--brand"><span class="nlc-icon"
                         data-icon="refresh" aria-hidden="true"></span></span>
                   </div>
-                  <span class="stat-bento__label">進度狀態</span>
+                  <span class="profile-stat-card__label">進度狀態</span>
                 </div>
 
                 <!-- 卡片 5 - 補讀天數 -->
                 <div class="bento-card" id="report-stat-makeup-card">
-                  <div class="stat-bento__row">
-                    <div class="stat-bento__value stat-bento__value--danger">
+                  <div class="profile-stat-card__meta">
+                    <div class="profile-stat-card__value stat-bento__value--danger">
                       <span id="report-stat-makeup">0</span>
-                      <span class="stat-bento__unit">天</span>
+                      <span class="profile-stat-card__unit">天</span>
                     </div>
                     <span
                       class="stat-bento__icon-wrap stat-bento__icon-wrap--danger stat-bento__icon-wrap--danger-only"><span
                         class="nlc-icon" data-icon="hourglass" aria-hidden="true"></span></span>
                   </div>
-                  <span class="stat-bento__label">補讀天數</span>
+                  <span class="profile-stat-card__label">補讀天數</span>
                 </div>
 
               </div>
@@ -1066,15 +1065,15 @@
                   <span class="stat-bento__label" id="grp-label-active">每日活躍</span>
                 </div>
 
-                <!-- 卡片 4 - 今日完成% -->
+                <!-- 卡片 4 - 落後人數 -->
                 <div class="bento-card">
                   <div class="stat-bento__row">
                     <div class="stat-bento__value">
-                      <span id="grp-today-rate">0</span>
-                      <span class="stat-bento__unit">%</span>
+                      <span id="grp-behind-count">0</span>
+                      <span class="stat-bento__unit">人</span>
                     </div>
-                    <span class="stat-bento__icon-wrap stat-bento__icon-wrap--brand"><span class="nlc-icon"
-                        data-icon="checkOne" aria-hidden="true"></span></span>
+                    <span class="stat-bento__icon-wrap stat-bento__icon-wrap--danger"><span class="nlc-icon"
+                        data-icon="hourglass" aria-hidden="true"></span></span>
                   </div>
 
                   <!-- 三色進度條 -->
@@ -1085,7 +1084,7 @@
                     <div id="grp-today-bar-ahead" class="progress-segment--ahead" style="width: 0%" title="超前"></div>
                   </div>
 
-                  <span class="stat-bento__label">今日完成 %</span>
+                  <span class="stat-bento__label">落後人數</span>
                 </div>
 
                 <!-- 卡片 5 - 複讀人數 -->
@@ -1150,6 +1149,18 @@
                   <span class="heatmap-legend__swatch heatmap-legend__swatch--3"></span>
                   <span class="heatmap-legend__swatch heatmap-legend__swatch--4"></span>
                   <span>多</span>
+                </div>
+              </div>
+
+              <!-- 第四層：每日活躍人數折線面積圖 -->
+              <div class="glass-card-upgrade mx-4 my-2" id="grp-daily-active-chart-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                  <h3 class="card-title text-slate-800 dark:text-neutral-100" id="grp-daily-active-chart-title"
+                    style="margin-bottom: 0; font-size: 0.95rem; font-weight: 500; text-align: left;">每日活躍人數（近30天）</h3>
+                  <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 500;">人</span>
+                </div>
+                <div style="position: relative; height: 180px; width: 100%;">
+                  <canvas id="grp-daily-active-chart"></canvas>
                 </div>
               </div>
 

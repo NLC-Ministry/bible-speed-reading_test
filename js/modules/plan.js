@@ -3231,13 +3231,13 @@ function renderGroupProgressDistribution() {
   const elTotal = document.getElementById('grp-total-read');
   const elMembers = document.getElementById('grp-total-members');
   const elActive = document.getElementById('grp-active-members');
-  const elTodayRate = document.getElementById('grp-today-rate');
+  const elBehindCount = document.getElementById('grp-behind-count');
   const elReread = document.getElementById('grp-reread-count');
 
   if (elTotal) elTotal.textContent = totalChapters;
   if (elMembers) elMembers.textContent = totalCount;
   if (elActive) elActive.textContent = dailyActiveCount;
-  if (elTodayRate) elTodayRate.textContent = todayRate;
+  if (elBehindCount) elBehindCount.textContent = behindCount;
   if (elReread) elReread.textContent = rereadCount;
 
   // Update segments of three-color progress bar
@@ -3269,7 +3269,173 @@ function renderGroupZoneChartWithSelector() {
 }
 
 function renderGroupGrowthTrend() {
-  return; // Disabled
+  const scopedUsers = window._grpScopedUsers || [];
+  const chartCard = document.getElementById('grp-daily-active-chart-card');
+  const titleEl = document.getElementById('grp-daily-active-chart-title');
+  const canvasEl = document.getElementById('grp-daily-active-chart');
+
+  if (!canvasEl) return;
+
+  // Hide chart if no data
+  if (scopedUsers.length === 0) {
+    if (chartCard) chartCard.style.display = 'none';
+    return;
+  }
+  if (chartCard) chartCard.style.display = '';
+
+  // Update title based on scope
+  if (titleEl) {
+    const rankingZoneSelector = document.getElementById('ranking-zone-selector');
+    const selectedFilter = window._statsTabScope !== null
+      ? window._statsTabScope
+      : (rankingZoneSelector ? rankingZoneSelector.value : null);
+    let scopeLabel = '全教會';
+    if (selectedFilter) {
+      if (selectedFilter === 'all') scopeLabel = '全教會';
+      else if (selectedFilter === 'all_great_region') scopeLabel = state.currentUser.great_region || '大區';
+      else if (selectedFilter === 'all_zones') scopeLabel = state.currentUser.pastoral_zone || '牧區';
+      else if (selectedFilter === 'all_groups') scopeLabel = state.currentUser.small_group || '小組';
+      else if (selectedFilter.startsWith('region:')) scopeLabel = selectedFilter.replace('region:', '');
+      else if (selectedFilter.startsWith('zone:')) scopeLabel = selectedFilter.replace('zone:', '');
+      else if (selectedFilter.startsWith('group:')) scopeLabel = selectedFilter.replace('group:', '');
+    } else {
+      const userRole = state.currentUser.role || 'member';
+      if (userRole === 'admin' || userRole === 'senior_pastor') scopeLabel = '全教會';
+      else if (userRole === 'great_zone_leader') scopeLabel = state.currentUser.great_region || '大區';
+      else if (userRole === 'zone_leader') scopeLabel = state.currentUser.pastoral_zone || '牧區';
+      else scopeLabel = state.currentUser.small_group || '小組';
+    }
+    titleEl.textContent = `${scopeLabel} 每日活躍人數（近30天）`;
+  }
+
+  // Build 30-day window
+  const today = new Date();
+  const labels = [];
+  const data = [];
+  const DAYS = 30;
+
+  const userIds = new Set(scopedUsers.map(u => u.id).filter(Boolean));
+  const userNames = new Set(scopedUsers.map(u => u.name).filter(Boolean));
+  const scopedPlanIds = new Set(scopedUsers.map(u => u.plan_id).filter(Boolean));
+  const currentPlanId = state.activePlan && state.activePlan.id;
+  const currentPresetKey = state.activePlan && state.activePlan.presetKey;
+
+  // Build per-day unique user sets from logs
+  const activeByDate = {}; // date string -> Set of user_id / name
+
+  if (state.isSupabaseMode && state.allLogsCache) {
+    state.allLogsCache.forEach(log => {
+      if (!log.read_at) return;
+      if (!userIds.has(log.user_id)) return;
+      if (scopedPlanIds.size > 0) {
+        if (!scopedPlanIds.has(log.plan_id)) return;
+      } else if (!logMatchesPlan(log, currentPlanId, currentPresetKey)) {
+        return;
+      }
+      const dStr = log.read_at.substring(0, 10);
+      if (!activeByDate[dStr]) activeByDate[dStr] = new Set();
+      activeByDate[dStr].add(log.user_id || log.name);
+    });
+  } else {
+    (state.readingLogs || []).forEach(log => {
+      if (!log.read_at) return;
+      const nameMatch = log.name ? userNames.has(log.name) : true;
+      if (!nameMatch) return;
+      if (!logMatchesPlan(log, currentPlanId, currentPresetKey)) return;
+      const dStr = log.read_at.substring(0, 10);
+      if (!activeByDate[dStr]) activeByDate[dStr] = new Set();
+      activeByDate[dStr].add(log.user_id || log.name);
+    });
+  }
+
+  for (let i = DAYS - 1; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    const dStr = d.toISOString().substring(0, 10);
+    const mmdd = dStr.substring(5).replace('-', '/');
+    // Only show every 5th label to avoid crowding on mobile
+    labels.push(i % 5 === 0 || i === 0 ? mmdd : '');
+    data.push(activeByDate[dStr] ? activeByDate[dStr].size : 0);
+  }
+
+  // Destroy previous chart if exists
+  if (state.statsCharts) {
+    if (state.statsCharts.dailyActive) {
+      state.statsCharts.dailyActive.destroy();
+    }
+  } else {
+    state.statsCharts = {};
+  }
+
+  const isDark = state.theme === 'dark' || document.body.classList.contains('dark-theme');
+  const fontColor = isDark ? 'rgba(180,180,180,0.85)' : 'rgba(60,60,60,0.75)';
+  const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)';
+  const brandColor = '#04A9D2';
+  const brandFill = isDark
+    ? 'rgba(4,169,210,0.18)'
+    : 'rgba(4,169,210,0.10)';
+
+  const ctx = canvasEl.getContext('2d');
+  state.statsCharts.dailyActive = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: '活躍人數',
+        data,
+        borderColor: brandColor,
+        backgroundColor: brandFill,
+        borderWidth: 2,
+        fill: true,
+        tension: 0.42,
+        pointRadius: 2.5,
+        pointBackgroundColor: brandColor,
+        pointHoverRadius: 5,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => `${ctx.parsed.y} 人`
+          },
+          backgroundColor: isDark ? 'rgba(30,30,35,0.92)' : 'rgba(255,255,255,0.95)',
+          borderColor: brandColor,
+          borderWidth: 1,
+          titleColor: isDark ? '#fff' : '#111',
+          bodyColor: isDark ? 'rgba(200,200,200,0.9)' : 'rgba(60,60,60,0.85)',
+          padding: 10,
+          cornerRadius: 8,
+        }
+      },
+      scales: {
+        x: {
+          ticks: {
+            color: fontColor,
+            font: { size: 10 },
+            maxRotation: 0,
+          },
+          grid: { display: false },
+          border: { display: false },
+        },
+        y: {
+          ticks: {
+            color: fontColor,
+            font: { size: 10 },
+            stepSize: 1,
+            precision: 0,
+          },
+          grid: { color: gridColor },
+          border: { display: false },
+          beginAtZero: true,
+        }
+      }
+    }
+  });
 }
 
 function renderGroupTeamHeatmap() {
