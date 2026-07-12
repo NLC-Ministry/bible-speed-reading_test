@@ -297,45 +297,7 @@ export function openMemberEditBottomSheet(user) {
     { value: "admin", label: "系統管理員" }
   ];
 
-  const isLeader = ["great_zone_leader", "zone_leader", "group_leader"].includes(user.role);
-  if (isLeader) {
-    const scopeBtn = document.createElement("button");
-    scopeBtn.className = "bottom-sheet-item";
-    scopeBtn.style.background = "var(--color-brand-subtle, rgba(4,169,210,0.12))";
-    scopeBtn.style.borderColor = "var(--color-brand-border, rgba(4,169,210,0.24))";
-    scopeBtn.style.color = "#a5b4fc";
-    scopeBtn.style.marginBottom = "0.8rem";
-    scopeBtn.type = "button";
-    scopeBtn.innerHTML = iconLabel("edit", `修改管轄範圍 (${user.great_region}/${user.pastoral_zone}/${user.small_group})`);
-    scopeBtn.onclick = async () => {
-      console.log(`✏️ [Debug] 修改管轄範圍按鈕被點擊，成員：${user.name}`);
-      closeAdminFilterBottomSheet();
-      const resp = await showResponsibilityModal(user.role, user);
-      if (!resp) return;
 
-      loader.show();
-      const success = await db.updateUserRole(user.id, user.role, user.name, resp);
-      loader.hide();
-
-      if (success) {
-        if (resp.great_region !== undefined) user.great_region = resp.great_region;
-        if (resp.pastoral_zone !== undefined) user.pastoral_zone = resp.pastoral_zone;
-        if (resp.small_group !== undefined) user.small_group = resp.small_group;
-
-        if (user.name === state.currentUser.name) {
-          if (resp.great_region !== undefined) state.currentUser.great_region = resp.great_region;
-          if (resp.pastoral_zone !== undefined) state.currentUser.pastoral_zone = resp.pastoral_zone;
-          if (resp.small_group !== undefined) state.currentUser.small_group = resp.small_group;
-          if (typeof renderProfileView === "function") renderProfileView();
-        }
-        alert("已成功更新管轄範圍！");
-        renderAdminUserManagement();
-      } else {
-        alert("更新管轄範圍失敗，請重試。");
-      }
-    };
-    listEl.appendChild(scopeBtn);
-  }
 
   const headerText = document.createElement("div");
   headerText.style.fontSize = "0.75rem";
@@ -356,29 +318,16 @@ export function openMemberEditBottomSheet(user) {
       closeAdminFilterBottomSheet();
       if (isSelected) return;
 
-      let additionalFields = {};
-      if (["great_zone_leader", "zone_leader", "group_leader"].includes(opt.value)) {
-        const resp = await showResponsibilityModal(opt.value, user);
-        if (!resp) return;
-        additionalFields = resp;
-      }
-
       loader.show();
-      const success = await db.updateUserRole(user.id, opt.value, user.name, additionalFields);
+      const success = await db.updateUserRole(user.id, opt.value, user.name, {});
       loader.hide();
 
       if (success) {
         user.role = opt.value;
-        if (additionalFields.great_region !== undefined) user.great_region = additionalFields.great_region;
-        if (additionalFields.pastoral_zone !== undefined) user.pastoral_zone = additionalFields.pastoral_zone;
-        if (additionalFields.small_group !== undefined) user.small_group = additionalFields.small_group;
 
         if (user.name === state.currentUser.name) {
           state.currentUser.role = opt.value;
           state.realRole = opt.value;
-          if (additionalFields.great_region !== undefined) state.currentUser.great_region = additionalFields.great_region;
-          if (additionalFields.pastoral_zone !== undefined) state.currentUser.pastoral_zone = additionalFields.pastoral_zone;
-          if (additionalFields.small_group !== undefined) state.currentUser.small_group = additionalFields.small_group;
           if (typeof renderProfileView === "function") renderProfileView();
         }
         alert("已成功變更成員權限角色！");

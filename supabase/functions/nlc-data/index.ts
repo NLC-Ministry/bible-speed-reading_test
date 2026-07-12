@@ -26,7 +26,7 @@ const READ_TABLES = new Set([
   "view_small_group_stats"
 ]);
 const USER_TABLES = new Set(["reading_plans", "reading_logs", "devotional_notes"]);
-const ADMIN_WRITE_TABLES = new Set(["great_regions", "pastoral_zones", "small_groups", "global_plans", "church_announcements"]);
+const ADMIN_WRITE_TABLES = new Set(["great_regions", "pastoral_zones", "small_groups", "global_plans", "church_announcements", "profiles"]);
 const OWN_WRITE_TABLES = new Set(["reading_plans", "reading_logs", "devotional_notes", "devotional_likes", "devotional_comments"]);
 const RPC_FUNCTIONS = new Set(["increment_likes", "decrement_likes"]);
 
@@ -121,14 +121,30 @@ function normalizeRows(payload: any) {
   return [];
 }
 
-function forceUserPayload(table: string, payload: any, profileId: string) {
+function forceUserPayload(table: string, payload: any, profileId: string, action?: string) {
   if (table === "profiles") {
-    const rows = normalizeRows(payload).map(row => ({ ...row, id: profileId }));
+    const rows = normalizeRows(payload).map(row => {
+      const copy = { ...row };
+      if (action === "update") {
+        delete copy.id;
+      } else {
+        copy.id = copy.id || profileId;
+      }
+      return copy;
+    });
     return Array.isArray(payload) ? rows : rows[0];
   }
   const writeProtected = ["reading_plans", "reading_logs", "devotional_notes", "devotional_likes", "devotional_comments"];
   if (writeProtected.includes(table)) {
-    const rows = normalizeRows(payload).map(row => ({ ...row, user_id: profileId }));
+    const rows = normalizeRows(payload).map(row => {
+      const copy = { ...row };
+      if (action === "update") {
+        delete copy.user_id;
+      } else {
+        copy.user_id = profileId;
+      }
+      return copy;
+    });
     return Array.isArray(payload) ? rows : rows[0];
   }
   return payload;
@@ -242,13 +258,13 @@ Deno.serve(async (req: Request) => {
     if (action === "select") {
       query = supabaseAdmin.from(table).select(body.select || "*");
     } else if (action === "insert") {
-      query = supabaseAdmin.from(table).insert(forceUserPayload(table, body.payload, profile.id));
+      query = supabaseAdmin.from(table).insert(forceUserPayload(table, body.payload, profile.id, action));
     } else if (action === "update") {
-      query = supabaseAdmin.from(table).update(forceUserPayload(table, body.payload, profile.id));
+      query = supabaseAdmin.from(table).update(forceUserPayload(table, body.payload, profile.id, action));
     } else if (action === "delete") {
       query = supabaseAdmin.from(table).delete();
     } else if (action === "upsert") {
-      query = supabaseAdmin.from(table).upsert(forceUserPayload(table, body.payload, profile.id), body.options || undefined);
+      query = supabaseAdmin.from(table).upsert(forceUserPayload(table, body.payload, profile.id, action), body.options || undefined);
     } else {
       return jsonResponse({ error: "unsupported_action" }, 400);
     }
