@@ -48,7 +48,14 @@ const db = {
   // Initialize Supabase Connection
   async init() {
     const urlParams = new URLSearchParams(window.location.search);
-    const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.startsWith('192.168.');
+    const hostname = window.location.hostname;
+    const isLocalhost = hostname === 'localhost' || 
+                        hostname === '127.0.0.1' || 
+                        hostname === '::1' || 
+                        hostname.startsWith('192.168.') || 
+                        hostname.startsWith('10.') || 
+                        hostname.startsWith('172.') || 
+                        hostname.endsWith('.local');
     const forceOfflineDemo = isLocalhost && (urlParams.get("demo") === "true" || urlParams.get("offline") === "true");
 
     const sbUrl = forceOfflineDemo ? "" : (typeof SUPABASE_CONFIG !== 'undefined' && SUPABASE_CONFIG.url ? SUPABASE_CONFIG.url.trim() : "");
@@ -1694,7 +1701,7 @@ const db = {
     if (appRouter.currentTab === "stats-view") {
       await updateStatsView();
     } else if (appRouter.currentTab === "profile-view") {
-      renderProfileView();
+      await (window.renderProfileView || renderProfileView)();
     } else if (appRouter.currentTab === "admin-view") {
       const isSimulatedAdmin = state.currentUser.role === "admin" || state.currentUser.role === "senior_pastor";
       if (!isSimulatedAdmin) {
@@ -2373,15 +2380,27 @@ const db = {
   },
 
   async fetchCareReminders() {
+    const hostname = window.location.hostname;
+    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1' ||
+                        hostname === '::1' || hostname.startsWith('192.168.') ||
+                        hostname.startsWith('10.') || hostname.startsWith('172.') ||
+                        hostname.endsWith('.local');
+
+    // 🔒 安全防護：虛擬關心提醒資料僅限 localhost 測試環境
     if (state.currentUser && state.currentUser.is_demo) {
-      try {
-        const data = JSON.parse(localStorage.getItem("mock_care_reminders") || "[]");
-        // Only return unread reminders
-        return { data: data.filter(r => r.status === "unread"), error: null };
-      } catch (e) {
-        return { data: [], error: e };
+      if (!isLocalhost) {
+        // Production demo mode: never expose mock care data
+        return { data: [], error: null };
       }
-    } else if (state.isSupabaseMode && state.supabase) {
+      // localhost + demo: use getMockCareReminders() from mock_stats.js
+      if (typeof window.getMockCareReminders === 'function') {
+        return { data: window.getMockCareReminders(), error: null };
+      }
+      return { data: [], error: null };
+    }
+
+    // Real Supabase mode
+    if (state.isSupabaseMode && state.supabase) {
       try {
         const { data: { user } } = await state.supabase.auth.getUser();
         if (!user) return { data: [], error: null };
@@ -2407,19 +2426,17 @@ const db = {
   },
 
   async acknowledgeCareReminder(reminderId) {
+    const hostname = window.location.hostname;
+    const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1' ||
+                        hostname === '::1' || hostname.startsWith('192.168.') ||
+                        hostname.startsWith('10.') || hostname.startsWith('172.') ||
+                        hostname.endsWith('.local');
+
     if (state.currentUser && state.currentUser.is_demo) {
-      try {
-        const data = JSON.parse(localStorage.getItem("mock_care_reminders") || "[]");
-        const reminder = data.find(r => r.id === reminderId);
-        if (reminder) {
-          reminder.status = "read";
-          reminder.read_at = new Date().toISOString();
-        }
-        localStorage.setItem("mock_care_reminders", JSON.stringify(data));
-        return { error: null };
-      } catch (e) {
-        return { error: e };
+      if (isLocalhost && typeof window.dismissMockCareReminder === 'function') {
+        window.dismissMockCareReminder(reminderId);
       }
+      return { error: null };
     } else if (state.isSupabaseMode && state.supabase) {
       try {
         const { error } = await state.supabase

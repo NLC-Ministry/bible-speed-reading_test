@@ -354,7 +354,7 @@ export async function renderProfileView() {
   }
 
   const urlParams = new URLSearchParams(window.location.search);
-  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.startsWith('192.168.');
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname === '::1' || window.location.hostname.startsWith('192.168.') || window.location.hostname.startsWith('10.') || window.location.hostname.startsWith('172.') || window.location.hostname.endsWith('.local');
   const forceOfflineDemo = isLocalhost && (urlParams.get("demo") === "true" || urlParams.get("offline") === "true");
   const showDemoData = (forceOfflineDemo && typeof MockStatsService !== 'undefined' && MockStatsService !== null) || (state.currentUser && !!state.currentUser.is_demo);
 
@@ -536,6 +536,27 @@ async function renderCareReminders() {
 
   containerCol.innerHTML = "";
   containerCol.classList.add("hidden");
+
+  // 🔒 安全防護：虛擬關心提醒 UI 僅在本機測試環境顯示
+  const _hostname = window.location.hostname;
+  const _isLocalhost = _hostname === 'localhost' || _hostname === '127.0.0.1' || _hostname === '::1' ||
+                       _hostname.startsWith('192.168.') || _hostname.startsWith('10.') ||
+                       _hostname.startsWith('172.') || _hostname.endsWith('.local');
+  const isDemoMode = state.currentUser && !!state.currentUser.is_demo;
+  const isSupabaseLive = state.isSupabaseMode && state.supabase && !isDemoMode;
+
+  // Only proceed if: (a) localhost demo mode, OR (b) live Supabase with real user
+  if (isDemoMode && !_isLocalhost) return;
+
+  // 等待 mock_stats.js 動態載入完成（最多 2 秒）
+  // mock_stats.js 是非同步插入的 <script>，可能在 renderCareReminders 被呼叫時還沒載入
+  if (isDemoMode && _isLocalhost) {
+    let waited = 0;
+    while (!window.__mockStatsLoaded && waited < 2000) {
+      await new Promise(r => setTimeout(r, 100));
+      waited += 100;
+    }
+  }
 
   const { data: reminders, error } = await db.fetchCareReminders();
   if (error || !reminders || reminders.length === 0) {

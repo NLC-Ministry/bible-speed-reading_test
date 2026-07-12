@@ -1,6 +1,6 @@
-import { CacheManager } from "./js/pwa/CacheManager.js?v=20260712-4";
+import { CacheManager } from "./js/pwa/CacheManager.js?v=20260712-5";
 
-const VERSION = "20260712-4";
+const VERSION = "20260712-5";
 const cacheManager = new CacheManager({
   prefix: "newlife-bible",
   version: VERSION,
@@ -25,6 +25,7 @@ function shouldBypassCache(request) {
   return isSupabaseApiRequest(request) || hostname.includes("logto") || hostname.includes("sso.newlife.org.tw") ||
     url.pathname.includes("/auth/") || url.pathname.includes("/functions/v1/nlc-");
 }
+
 function isBibleRequest(request) {
   const hostname = new URL(request.url).hostname.toLowerCase();
   return hostname === "bible-api.com" || hostname === "bolls.life";

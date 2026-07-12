@@ -1805,11 +1805,19 @@
     window.MOCK_SMALL_GROUPS = {};
   </script>
   <script>
-    // Load local demo data only during local development.
-    if (["localhost", "127.0.0.1", "::1"].includes(window.location.hostname)) {
-      const mockScript = document.createElement("script");
-      mockScript.src = "demo/mock_stats.js?v=20260704_v2";
-      mockScript.onerror = () => console.warn("Local demo data was not loaded.");
+    // Safe stubs – overwritten by mock_stats.js once loaded on localhost
+    window.getMockCareReminders = function() { return []; };
+    window.dismissMockCareReminder = function() {};
+
+    // Load local demo data only during local development (covers LAN IP ranges for mobile testing).
+    const _lh = window.location.hostname;
+    const _isDevHost = _lh === 'localhost' || _lh === '127.0.0.1' || _lh === '::1' ||
+                       _lh.startsWith('192.168.') || _lh.startsWith('10.') ||
+                       _lh.startsWith('172.') || _lh.endsWith('.local');
+    if (_isDevHost) {
+      const mockScript = document.createElement('script');
+      mockScript.src = 'demo/mock_stats.js?v=20260712_v3';
+      mockScript.onerror = () => console.warn('Local demo data was not loaded.');
       document.head.appendChild(mockScript);
     }
   </script>
