@@ -1656,37 +1656,31 @@ const db = {
     };
 
     // Setup mock active plan to match their plan_progress
-    if (role === "member") {
-      state.activePlan = null;
-      state.activePlans = [];
-      state.readingLogs = [];
-    } else {
-      state.activePlan = generatePlanObject(CHURCH_PLAN_PRESETS.q1.name, CHURCH_PLAN_PRESETS.q1.startDate, CHURCH_PLAN_PRESETS.q1.endDate, CHURCH_PLAN_PRESETS.q1.books, "q1");
-      state.activePlan.progress = mockUser.plan_progress;
-      state.activePlan.completedChapters = Math.round((state.activePlan.totalChapters * mockUser.plan_progress) / 100);
-      state.activePlans = [state.activePlan];
-      localStorage.setItem("selected_plan_key", "q1");
+    state.activePlan = generatePlanObject(CHURCH_PLAN_PRESETS.q1.name, CHURCH_PLAN_PRESETS.q1.startDate, CHURCH_PLAN_PRESETS.q1.endDate, CHURCH_PLAN_PRESETS.q1.books, "q1");
+    state.activePlan.progress = mockUser.plan_progress;
+    state.activePlan.completedChapters = Math.round((state.activePlan.totalChapters * mockUser.plan_progress) / 100);
+    state.activePlans = [state.activePlan];
+    localStorage.setItem("selected_plan_key", "q1");
 
-      const completedList = [];
-      let count = 0;
-      for (const day of state.activePlan.days) {
-        for (const ch of day.chapters) {
-          if (count < state.activePlan.completedChapters) {
-            completedList.push({
-              book: ch.book,
-              chapter: ch.chapter,
-              read_at: new Date(state.activePlan.startDate).toISOString(),
-              presetKey: "q1"
-            });
-            count++;
-          } else {
-            break;
-          }
+    const completedList = [];
+    let count = 0;
+    for (const day of state.activePlan.days) {
+      for (const ch of day.chapters) {
+        if (count < state.activePlan.completedChapters) {
+          completedList.push({
+            book: ch.book,
+            chapter: ch.chapter,
+            read_at: new Date(state.activePlan.startDate).toISOString(),
+            presetKey: "q1"
+          });
+          count++;
+        } else {
+          break;
         }
-        if (count >= state.activePlan.completedChapters) break;
       }
-      state.readingLogs = completedList;
+      if (count >= state.activePlan.completedChapters) break;
     }
+    state.readingLogs = completedList;
 
     window._cachedAllUsersList = null;
     this.saveLocalUserStats();
@@ -2376,6 +2370,68 @@ const db = {
       localStorage.setItem("church_announcements", JSON.stringify(current));
       return true;
     }
+  },
+
+  async fetchCareReminders() {
+    if (state.currentUser && state.currentUser.is_demo) {
+      try {
+        const data = JSON.parse(localStorage.getItem("mock_care_reminders") || "[]");
+        // Only return unread reminders
+        return { data: data.filter(r => r.status === "unread"), error: null };
+      } catch (e) {
+        return { data: [], error: e };
+      }
+    } else if (state.isSupabaseMode && state.supabase) {
+      try {
+        const { data: { user } } = await state.supabase.auth.getUser();
+        if (!user) return { data: [], error: null };
+        const { data, error } = await state.supabase
+          .from("care_reminders")
+          .select(`
+            id,
+            reason,
+            message,
+            status,
+            sent_on,
+            sender:profiles!sender_id (name, role)
+          `)
+          .eq("recipient_id", user.id)
+          .eq("status", "unread")
+          .order("created_at", { ascending: false });
+        return { data: data || [], error };
+      } catch (e) {
+        return { data: [], error: e };
+      }
+    }
+    return { data: [], error: null };
+  },
+
+  async acknowledgeCareReminder(reminderId) {
+    if (state.currentUser && state.currentUser.is_demo) {
+      try {
+        const data = JSON.parse(localStorage.getItem("mock_care_reminders") || "[]");
+        const reminder = data.find(r => r.id === reminderId);
+        if (reminder) {
+          reminder.status = "read";
+          reminder.read_at = new Date().toISOString();
+        }
+        localStorage.setItem("mock_care_reminders", JSON.stringify(data));
+        return { error: null };
+      } catch (e) {
+        return { error: e };
+      }
+    } else if (state.isSupabaseMode && state.supabase) {
+      try {
+        const { error } = await state.supabase
+          .from("care_reminders")
+          .update({ status: "read", read_at: new Date().toISOString() })
+          .eq("id", reminderId);
+        return { error };
+      } catch (e) {
+        return { error: e };
+      }
+    }
+    return { error: null };
   }
 };
 

@@ -137,7 +137,7 @@ function ensurePlanPageShell() {
     strip.className = "plan-detail-tab-strip hidden";
     strip.setAttribute("aria-label", "計畫分頁");
     strip.style.display = "none";
-    strip.innerHTML = `<div class="plan-detail-tab-strip__scroller" role="tablist"><button id="tab-btn-0" class="plan-detail-tab-btn active" type="button" role="tab" aria-selected="true" data-plan-page-index="0">今日讀經</button><button id="tab-btn-1" class="plan-detail-tab-btn" type="button" role="tab" aria-selected="false" data-plan-page-index="1">讀經統計</button><div id="tab-indicator" aria-hidden="true"></div></div>`;
+    strip.innerHTML = `<div class="plan-detail-tab-strip__scroller" role="tablist"><button id="plan-primary-tab-progress" class="plan-detail-tab-btn active" type="button" role="tab" aria-selected="true" data-plan-primary-view="progress">進度</button><button id="plan-primary-tab-members" class="plan-detail-tab-btn" type="button" role="tab" aria-selected="false" data-plan-primary-view="members">組員狀況</button><button id="plan-primary-tab-stats" class="plan-detail-tab-btn" type="button" role="tab" aria-selected="false" data-plan-primary-view="stats">團體統計</button><button id="plan-primary-tab-ranking" class="plan-detail-tab-btn" type="button" role="tab" aria-selected="false" data-plan-primary-view="ranking">排名</button><div id="tab-indicator" aria-hidden="true"></div></div>`;
     detail.insertBefore(strip, detail.querySelector(".px-4.py-2, .plan-detail-tabs, #subview-plan-schedule") || detail.firstChild);
   }
   if (!windowEl) {
@@ -162,9 +162,25 @@ function ensurePlanPageShell() {
   return { shell, detail, strip, windowEl, wrapper, page0, page1, schedule, level, stats, ranking, members };
 }
 
-function updatePlanTabIndicator(shell, index) {
-  const active = shell?.strip?.querySelector(`[data-plan-page-index="${index}"]`);
-  const indicator = shell?.strip?.querySelector("#tab-indicator");
+const PLAN_PRIMARY_VIEW = Object.freeze({
+  PROGRESS: "progress",
+  MEMBERS: "members",
+  STATS: "stats",
+  RANKING: "ranking"
+});
+
+function updatePlanPrimaryTabs(view = PLAN_PRIMARY_VIEW.PROGRESS) {
+  const strip = document.getElementById("plan-detail-tab-strip");
+  if (!strip) return;
+  const activeView = Object.values(PLAN_PRIMARY_VIEW).includes(view) ? view : PLAN_PRIMARY_VIEW.PROGRESS;
+  strip.querySelectorAll("[data-plan-primary-view]").forEach(button => {
+    const isActive = button.dataset.planPrimaryView === activeView;
+    button.classList.toggle("active", isActive);
+    button.setAttribute("aria-selected", isActive ? "true" : "false");
+    button.tabIndex = isActive ? 0 : -1;
+  });
+  const active = strip.querySelector(`[data-plan-primary-view="${activeView}"]`);
+  const indicator = strip.querySelector("#tab-indicator");
   if (!active || !indicator) return;
   window.requestAnimationFrame(() => {
     indicator.style.width = `${active.offsetWidth}px`;
@@ -177,7 +193,6 @@ const GROUP_SUBVIEW = Object.freeze({ STATS: "stats", RANKING: "ranking", MEMBER
 async function showPlanGroupSubview(view = GROUP_SUBVIEW.STATS) {
   const allowedViews = Object.values(GROUP_SUBVIEW);
   let target = allowedViews.includes(view) ? view : GROUP_SUBVIEW.STATS;
-  if (target === GROUP_SUBVIEW.MEMBERS && !canUseAdvancedGroupStats()) target = GROUP_SUBVIEW.STATS;
 
   const tabs = getPlanDetailTabs();
   const tabMap = {
@@ -191,7 +206,7 @@ async function showPlanGroupSubview(view = GROUP_SUBVIEW.STATS) {
     [GROUP_SUBVIEW.MEMBERS]: document.getElementById("subview-plan-members")
   };
 
-  if (tabs) forceHidden(tabs, false);
+  if (tabs) forceHidden(tabs, true);
   const legacyScheduleTab = document.getElementById("tab-plan-schedule");
   if (legacyScheduleTab) {
     legacyScheduleTab.classList.remove("active");
@@ -199,14 +214,14 @@ async function showPlanGroupSubview(view = GROUP_SUBVIEW.STATS) {
   }
   Object.entries(tabMap).forEach(([key, button]) => {
     if (!button) return;
-    const permitted = key !== GROUP_SUBVIEW.MEMBERS || canUseAdvancedGroupStats();
-    forceHidden(button, !permitted);
+    forceHidden(button, true);
     button.classList.toggle("active", key === target);
     button.setAttribute("aria-selected", key === target ? "true" : "false");
   });
   Object.entries(viewMap).forEach(([key, panel]) => forceHidden(panel, key !== target));
 
   window.PlanPageController.groupSubview = target;
+  updatePlanPrimaryTabs(target);
   if (target === GROUP_SUBVIEW.STATS) {
     await window.switchStatTab(canUseAdvancedGroupStats() ? "admin" : "personal");
   } else if (target === GROUP_SUBVIEW.RANKING) {
@@ -228,10 +243,22 @@ window.PlanPageController = {
     forceHidden(shell.windowEl, false);
     if (!shell.strip.dataset.planControllerBound) {
       shell.strip.addEventListener("click", async event => {
-        const btn = event.target.closest("[data-plan-page-index]");
-        if (!btn) return;
+        const button = event.target.closest("[data-plan-primary-view]");
+        if (!button) return;
         event.preventDefault();
-        await window.PlanPageController.switchPage(Number(btn.dataset.planPageIndex));
+        await window.PlanPageController.switchPrimaryView(button.dataset.planPrimaryView);
+      });
+      shell.strip.addEventListener("keydown", async event => {
+        if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+        const buttons = [...shell.strip.querySelectorAll("[data-plan-primary-view]")];
+        const current = buttons.indexOf(document.activeElement);
+        if (current < 0) return;
+        event.preventDefault();
+        const next = event.key === "Home" ? 0
+          : event.key === "End" ? buttons.length - 1
+            : (current + (event.key === "ArrowRight" ? 1 : -1) + buttons.length) % buttons.length;
+        buttons[next].focus();
+        await window.PlanPageController.switchPrimaryView(buttons[next].dataset.planPrimaryView);
       });
       shell.strip.dataset.planControllerBound = "true";
     }
@@ -254,6 +281,14 @@ window.PlanPageController = {
     }
     return shell;
   },
+  async switchPrimaryView(view, options = {}) {
+    const targetView = Object.values(PLAN_PRIMARY_VIEW).includes(view) ? view : PLAN_PRIMARY_VIEW.PROGRESS;
+    if (targetView === PLAN_PRIMARY_VIEW.PROGRESS) {
+      return this.switchPage(PLAN_PAGE.READING, options);
+    }
+    this.groupSubview = targetView;
+    return this.switchPage(PLAN_PAGE.GROUP, { ...options, primaryView: targetView });
+  },
   async switchPage(index, options = {}) {
     if (!state.activePlan) return;
     const target = Number(index) === PLAN_PAGE.GROUP ? PLAN_PAGE.GROUP : PLAN_PAGE.READING;
@@ -261,18 +296,13 @@ window.PlanPageController = {
     if (!shell?.wrapper) return;
     this.currentIndex = target;
     state.planDetailOpen = true;
-    state.planActiveSubTab = target === PLAN_PAGE.GROUP ? "group" : "today";
+    state.planActiveSubTab = target === PLAN_PAGE.GROUP ? (options.primaryView || this.groupSubview || "stats") : "today";
     window.currentPlanViewState = target === PLAN_PAGE.GROUP ? PLAN_ROUTE.GROUP : PLAN_ROUTE.DETAIL;
     shell.wrapper.style.transform = `translateX(-${target * 100}%)`;
-    shell.strip.querySelectorAll("[data-plan-page-index]").forEach(btn => {
-      const isActive = Number(btn.dataset.planPageIndex) === target;
-      btn.classList.toggle("active", isActive);
-      btn.setAttribute("aria-selected", isActive ? "true" : "false");
-    });
-    updatePlanTabIndicator(shell, target);
     const groupTabs = getPlanDetailTabs();
-    if (groupTabs) forceHidden(groupTabs, target !== PLAN_PAGE.GROUP);
+    if (groupTabs) forceHidden(groupTabs, true);
     if (target === PLAN_PAGE.READING) {
+      updatePlanPrimaryTabs(PLAN_PRIMARY_VIEW.PROGRESS);
       forceHidden(shell.schedule, false);
       forceHidden(shell.level, true);
       state.inlineReader.active = false;
@@ -290,7 +320,7 @@ window.PlanPageController = {
       } else if (this.groupLoadPromise) {
         await this.groupLoadPromise;
       }
-      await showPlanGroupSubview(this.groupSubview || GROUP_SUBVIEW.STATS);
+      await showPlanGroupSubview(options.primaryView || this.groupSubview || GROUP_SUBVIEW.STATS);
     }
     if (!options.skipChrome && typeof appRouter !== "undefined" && typeof appRouter.updateNavigationChrome === "function") appRouter.updateNavigationChrome();
   },
@@ -606,7 +636,11 @@ async function renderPlanView() {
     ensurePlanRouteShell();
 
     if (state.activePlan && state.planDetailOpen) {
-      if (state.planActiveSubTab === "group") {
+      const groupViews = [GROUP_SUBVIEW.MEMBERS, GROUP_SUBVIEW.STATS, GROUP_SUBVIEW.RANKING, "group"];
+      if (groupViews.includes(state.planActiveSubTab)) {
+        if (window.PlanPageController && state.planActiveSubTab !== "group") {
+          window.PlanPageController.groupSubview = state.planActiveSubTab;
+        }
         await setPlanState(PLAN_ROUTE.GROUP);
       } else {
         await setPlanState(PLAN_ROUTE.DETAIL);
@@ -5656,9 +5690,15 @@ async function enterGroupProgressState() {
   }
   window.currentPlanViewState = PLAN_ROUTE.GROUP;
   state.planDetailOpen = true;
-  state.planActiveSubTab = "group";
+  const requestedSubview = Object.values(GROUP_SUBVIEW).includes(state.planActiveSubTab)
+    ? state.planActiveSubTab
+    : (window.PlanPageController?.groupSubview || GROUP_SUBVIEW.STATS);
+  state.planActiveSubTab = requestedSubview;
   setOnlyPlanRouteVisible(PLAN_ROUTE.GROUP);
-  if (window.PlanPageController) await window.PlanPageController.switchPage(PLAN_PAGE.GROUP, { skipChrome: true });
+  if (window.PlanPageController) {
+    window.PlanPageController.groupSubview = requestedSubview;
+    await window.PlanPageController.switchPage(PLAN_PAGE.GROUP, { skipChrome: true, primaryView: requestedSubview });
+  }
 }
 
 async function setPlanState(newState) {
