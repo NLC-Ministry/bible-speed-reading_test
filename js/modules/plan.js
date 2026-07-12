@@ -4008,13 +4008,16 @@ async function renderGroupParticipantsRankingTable() {
       }
 
       return {
+        id: u.id,
         name: u.name,
         streak: streak,
         completed: completed,
         makeup: makeup,
         statusStr: statusStr,
         statusColor: statusColor,
-        isMe: isMe
+        isMe: isMe,
+        isBehind: hasAnyPlanRead && diff < 0,
+        isNotStarted: !hasAnyPlanRead
       };
     });
 
@@ -4055,11 +4058,15 @@ window.displayParticipantsList = function (limit = 100) {
   // Slice items to show only the specified limit
   const visibleItems = items.slice(0, limit);
 
+  // Determine if current user is a leader who can send care reminders
+  const _careRole = (state.currentUser && state.currentUser.role) || "member";
+  const _canSendCare = ["group_leader", "zone_leader", "great_zone_leader", "senior_pastor", "admin"].includes(_careRole);
+
   visibleItems.forEach(m => {
     const itemRow = document.createElement("div");
     itemRow.style.cssText = `
       display: grid;
-      grid-template-columns: 1fr 80px 80px 70px 90px;
+      grid-template-columns: 1fr 80px 80px 70px 90px${_canSendCare && !m.isMe ? ' 44px' : ''};
       gap: 0.4rem;
       align-items: center;
       padding: 0.6rem 0.2rem;
@@ -4082,6 +4089,36 @@ window.displayParticipantsList = function (limit = 100) {
       <div class="text-warning">${m.makeup}</div>
       <div style="color: ${m.statusColor}; font-size: 0.8rem;">${m.statusStr}</div>
     `;
+
+    // 💌 關心戳一下按鈕（僅限領袖，自己的列不顯示）
+    if (_canSendCare && !m.isMe) {
+      const careBtn = document.createElement("button");
+      careBtn.title = "傳送關心提醒";
+      careBtn.setAttribute("aria-label", `關心 ${m.name}`);
+      careBtn.style.cssText = `
+        display: flex; align-items: center; justify-content: center;
+        width: 32px; height: 32px; border-radius: 50%;
+        border: 1px solid var(--border-card);
+        background: var(--bg-input);
+        cursor: pointer; transition: background 0.18s, border-color 0.18s;
+        margin: 0 auto;
+        color: var(--color-warning-text, #D97706);
+        flex-shrink: 0;
+      `;
+      careBtn.innerHTML = `<span class="nlc-icon nlc-icon--sm" data-icon="remind" aria-hidden="true"></span>`;
+      careBtn.addEventListener("mouseenter", () => {
+        careBtn.style.background = "var(--color-warning-muted, rgba(251,191,36,0.15))";
+        careBtn.style.borderColor = "var(--color-warning-text, #D97706)";
+      });
+      careBtn.addEventListener("mouseleave", () => {
+        careBtn.style.background = "var(--bg-input)";
+        careBtn.style.borderColor = "var(--border-card)";
+      });
+      careBtn.onclick = () => window.openCareReminderDialog(m);
+      itemRow.appendChild(careBtn);
+      if (typeof hydrateIcons === "function") hydrateIcons(careBtn);
+    }
+
     listContainer.appendChild(itemRow);
   });
 
@@ -5741,3 +5778,213 @@ window.setPlanState = setPlanState;
 window.planGoBack = planGoBack;
 window.planToggleGroupProgress = planToggleGroupProgress;
 window.togglePlanDetailSubTab = planToggleGroupProgress;
+
+// ==================== 關心戳一下 Dialog ====================
+window.openCareReminderDialog = function(member) {
+  // Remove any existing dialog
+  const existingDialog = document.getElementById("care-reminder-dialog-overlay");
+  if (existingDialog) existingDialog.remove();
+
+  const reasonLabels = {
+    behind: "📉 進度落後",
+    inactive: "😴 很久沒打卡",
+    care: "💛 一般關心",
+    encouragement: "🌟 特別鼓勵"
+  };
+
+  // Auto-pick a default reason based on member status
+  const defaultReason = member.isBehind ? "behind" : member.isNotStarted ? "inactive" : "care";
+
+  const defaultMessages = {
+    behind: `Hi ${member.name}！這週的讀經進度稍微落後囉，有任何困難都可以跟我說喔，加油！`,
+    inactive: `${member.name} 你好，最近都沒看到你打卡讀經，希望一切都好，我們在等你哦！`,
+    care: `${member.name} 你好，只是想關心一下你最近的讀經狀況，如果有任何需要都可以找我！`,
+    encouragement: `${member.name}！你最近讀經很穩定，真的很棒！繼續加油哦，感謝主！`
+  };
+
+  const overlay = document.createElement("div");
+  overlay.id = "care-reminder-dialog-overlay";
+  overlay.style.cssText = `
+    position: fixed; inset: 0; z-index: 9999;
+    background: rgba(0,0,0,0.55); backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 1rem;
+    animation: fadeIn 0.2s ease;
+  `;
+
+  overlay.innerHTML = `
+    <div id="care-reminder-dialog" style="
+      background: var(--bg-card, white);
+      border-radius: 16px;
+      padding: 1.5rem;
+      width: 100%; max-width: 440px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+      animation: slideUp 0.25s cubic-bezier(0.34,1.56,0.64,1);
+    ">
+      <div style="display:flex; align-items:center; gap:0.6rem; margin-bottom:1rem;">
+        <span class="nlc-icon nlc-icon--md" data-icon="remind" style="color:var(--color-warning-text, rgb(217,119,6));" aria-hidden="true"></span>
+        <h3 style="margin:0; font-size:1rem; font-weight:700; color:var(--text-primary);">關心提醒 ・ ${escapeHTML(member.name)}</h3>
+      </div>
+
+      <p style="margin:0 0 1rem; font-size:0.82rem; color:var(--text-muted);">
+        進度：<strong style="color:${member.statusColor}">${member.statusStr}</strong>
+        &nbsp;・&nbsp;完成：${member.completed} 天
+      </p>
+
+      <label style="display:block; font-size:0.82rem; font-weight:600; color:var(--text-secondary); margin-bottom:0.4rem;">
+        關心原因
+      </label>
+      <div id="care-reason-btns" style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-bottom:1rem;">
+        ${Object.entries(reasonLabels).map(([key, label]) => `
+          <button type="button"
+            data-reason="${key}"
+            class="care-reason-btn${key === defaultReason ? ' active' : ''}"
+            style="
+              padding: 0.35rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight:500;
+              border: 1.5px solid ${key === defaultReason ? 'var(--color-warning-text, rgb(217,119,6))' : 'var(--border-card)'};
+              background: ${key === defaultReason ? 'var(--color-warning-muted,rgba(251,191,36,0.15))' : 'var(--bg-input)'};
+              color: ${key === defaultReason ? 'var(--color-warning-text, rgb(217,119,6))' : 'var(--text-secondary)'};
+              cursor: pointer; transition: all 0.15s;
+            ">
+            ${label}
+          </button>
+        `).join("")}
+      </div>
+
+      <label for="care-msg-input" style="display:block; font-size:0.82rem; font-weight:600; color:var(--text-secondary); margin-bottom:0.4rem;">
+        訊息內容
+      </label>
+      <textarea id="care-msg-input"
+        rows="4"
+        maxlength="300"
+        placeholder="輸入關心訊息..."
+        style="
+          width:100%; box-sizing:border-box;
+          padding: 0.65rem 0.75rem;
+          border-radius: 10px;
+          border: 1.5px solid var(--border-card);
+          background: var(--bg-input);
+          color: var(--text-primary);
+          font-size: 0.88rem;
+          resize: vertical;
+          font-family: inherit;
+          outline: none;
+          transition: border-color 0.15s;
+          margin-bottom: 0.25rem;
+        "
+      >${defaultMessages[defaultReason]}</textarea>
+      <div id="care-char-count" style="text-align:right; font-size:0.75rem; color:var(--text-muted); margin-bottom:1rem;">
+        ${defaultMessages[defaultReason].length} / 300
+      </div>
+
+      <div id="care-dialog-error" style="display:none; color:var(--color-danger); font-size:0.82rem; margin-bottom:0.75rem; padding:0.5rem 0.75rem; background:var(--color-danger-muted,rgba(239,68,68,0.1)); border-radius:8px;"></div>
+
+      <div style="display:flex; gap:0.75rem; justify-content:flex-end;">
+        <button id="care-cancel-btn" type="button" style="
+          padding:0.55rem 1.2rem; border-radius:10px; font-size:0.88rem; font-weight:600;
+          border:1.5px solid var(--border-card); background:var(--bg-input);
+          color:var(--text-secondary); cursor:pointer;
+        ">取消</button>
+        <button id="care-send-btn" type="button" style="
+          padding:0.55rem 1.4rem; border-radius:10px; font-size:0.88rem; font-weight:600;
+          border:none; background:var(--color-warning-text, rgb(217,119,6));
+          color:white; cursor:pointer; display:flex; align-items:center; gap:0.4rem;
+          transition: opacity 0.15s;
+        ">
+          <span class="nlc-icon nlc-icon--sm" data-icon="send" aria-hidden="true"></span>
+          傳送關心
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+  if (typeof hydrateIcons === "function") hydrateIcons(overlay);
+
+  // Wire up reason buttons
+  let selectedReason = defaultReason;
+  const reasonBtns = overlay.querySelectorAll(".care-reason-btn");
+  const msgInput = overlay.querySelector("#care-msg-input");
+  const charCount = overlay.querySelector("#care-char-count");
+
+  reasonBtns.forEach(btn => {
+    btn.addEventListener("click", () => {
+      selectedReason = btn.dataset.reason;
+      reasonBtns.forEach(b => {
+        const isActive = b.dataset.reason === selectedReason;
+        b.style.borderColor = isActive ? "var(--color-warning-text, rgb(217,119,6))" : "var(--border-card)";
+        b.style.background = isActive ? "var(--color-warning-muted,rgba(251,191,36,0.15))" : "var(--bg-input)";
+        b.style.color = isActive ? "var(--color-warning-text, rgb(217,119,6))" : "var(--text-secondary)";
+      });
+      msgInput.value = defaultMessages[selectedReason];
+      charCount.textContent = `${msgInput.value.length} / 300`;
+    });
+  });
+
+  msgInput.addEventListener("input", () => {
+    charCount.textContent = `${msgInput.value.length} / 300`;
+  });
+
+  // Close on overlay click
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) overlay.remove();
+  });
+  overlay.querySelector("#care-cancel-btn").addEventListener("click", () => overlay.remove());
+
+  // Send
+  overlay.querySelector("#care-send-btn").addEventListener("click", async () => {
+    const message = msgInput.value.trim();
+    const errorEl = overlay.querySelector("#care-dialog-error");
+    const sendBtn = overlay.querySelector("#care-send-btn");
+
+    errorEl.style.display = "none";
+
+    if (!message) {
+      errorEl.textContent = "請輸入關心訊息！";
+      errorEl.style.display = "block";
+      return;
+    }
+    if (message.length > 300) {
+      errorEl.textContent = "訊息不能超過 300 字！";
+      errorEl.style.display = "block";
+      return;
+    }
+
+    sendBtn.disabled = true;
+    sendBtn.style.opacity = "0.6";
+    sendBtn.innerHTML = `<span class="nlc-icon nlc-icon--sm" data-icon="loader" aria-hidden="true"></span> 傳送中...`;
+    if (typeof hydrateIcons === "function") hydrateIcons(sendBtn);
+
+    try {
+      const { error } = await db.sendCareReminder({
+        recipientId: member.id,
+        reason: selectedReason,
+        message: message,
+        planKey: state.activePlan ? (state.activePlan.presetKey || state.activePlan.globalPlanId || "") : ""
+      });
+
+      if (error) throw error;
+
+      overlay.remove();
+      if (typeof showToast === "function") showToast(`已傳送關心提醒給 ${member.name} 💛`);
+    } catch (err) {
+      console.error("sendCareReminder failed:", err);
+      sendBtn.disabled = false;
+      sendBtn.style.opacity = "1";
+      sendBtn.innerHTML = `<span class="nlc-icon nlc-icon--sm" data-icon="send" aria-hidden="true"></span> 傳送關心`;
+      if (typeof hydrateIcons === "function") hydrateIcons(sendBtn);
+
+      const isDemoOrNoId = !member.id || (state.currentUser && state.currentUser.is_demo);
+      if (isDemoOrNoId) {
+        overlay.remove();
+        if (typeof showToast === "function") showToast(`(Demo) 已模擬傳送關心提醒給 ${member.name} 💛`);
+      } else {
+        errorEl.textContent = `傳送失敗：${err.message || "請稍後再試"}`;
+        errorEl.style.display = "block";
+      }
+    }
+  });
+
+  // Focus textarea
+  setTimeout(() => { if (msgInput) msgInput.focus(); }, 100);
+};

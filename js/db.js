@@ -2449,6 +2449,81 @@ const db = {
       }
     }
     return { error: null };
+  },
+
+  // 💌 sendCareReminder – 領袖對組員傳送關心提醒
+  // recipientId: 收件人 profile ID (UUID)
+  // reason: 'behind' | 'inactive' | 'care' | 'encouragement'
+  // message: 關心訊息文字 (最多 300 字)
+  // planKey: 計畫識別碼 (presetKey 或 globalPlanId)
+  async sendCareReminder({ recipientId, reason, message, planKey = "" }) {
+    // 輸入驗證
+    const validReasons = ["behind", "inactive", "care", "encouragement"];
+    if (!recipientId || typeof recipientId !== "string" || !recipientId.trim()) {
+      return { error: new Error("收件人 ID 不可為空") };
+    }
+    if (!validReasons.includes(reason)) {
+      return { error: new Error(`無效的關心原因：${reason}`) };
+    }
+    const trimmedMsg = String(message || "").trim();
+    if (!trimmedMsg) {
+      return { error: new Error("關心訊息不可為空") };
+    }
+    if (trimmedMsg.length > 300) {
+      return { error: new Error("訊息不能超過 300 字") };
+    }
+
+    // Demo 模式：僅模擬，不真正寫入
+    if (state.currentUser && state.currentUser.is_demo) {
+      console.info("[Demo] sendCareReminder (simulated):", { recipientId, reason, message: trimmedMsg });
+      return { error: null };
+    }
+
+    // 生產模式：寫入 Supabase（RLS 會驗證發送者是否在授權範圍內）
+    if (state.isSupabaseMode && state.supabase) {
+      try {
+        const { data: { user } } = await state.supabase.auth.getUser();
+        if (!user) return { error: new Error("請先登入後再傳送關心提醒") };
+
+        // 取得發送者的 profile ID
+        const { data: senderProfile, error: profileErr } = await state.supabase
+          .from("profiles")
+          .select("id")
+          .eq("user_id", user.id)
+          .single();
+        if (profileErr || !senderProfile) {
+          return { error: profileErr || new Error("找不到發送者的牧養資料") };
+        }
+
+        const { error } = await state.supabase
+          .from("care_reminders")
+          .insert({
+            sender_id: senderProfile.id,
+            recipient_id: recipientId,
+            plan_key: String(planKey || ""),
+            reason: reason,
+            message: trimmedMsg,
+            status: "unread",
+            sent_on: new Date().toISOString().slice(0, 10)
+          });
+
+        if (error) {
+          // 409 Conflict = 今日已傳送過
+          if (error.code === "23505") {
+            return { error: new Error("今日已傳送過關心提醒給此成員，明日再試") };
+          }
+          // RLS 拒絕 = 超出牧養範圍
+          if (error.code === "42501" || (error.message && error.message.includes("policy"))) {
+            return { error: new Error("此成員不在您的牧養範圍內") };
+          }
+          return { error };
+        }
+        return { error: null };
+      } catch (e) {
+        return { error: e };
+      }
+    }
+    return { error: new Error("目前為離線模式，無法傳送關心提醒") };
   }
 };
 
