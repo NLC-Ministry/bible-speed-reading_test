@@ -582,7 +582,7 @@ async function renderCareReminders() {
   reminders.forEach(reminder => {
     const card = document.createElement("div");
     card.className = "glass-card";
-    card.style.cssText = "margin-bottom: 0.75rem; border-left: 4px solid var(--color-warning-text, #D97706); padding: 1rem; position: relative; transition: opacity 0.3s ease, transform 0.3s ease;";
+    card.style.cssText = "margin-bottom: 0.75rem; border-left: 4px solid var(--color-warning-text, rgb(217,119,6)); padding: 1rem; position: relative; transition: opacity 0.3s ease, transform 0.3s ease; height: auto !important;";
 
     // Sender details
     const sender = reminder.sender || {};
