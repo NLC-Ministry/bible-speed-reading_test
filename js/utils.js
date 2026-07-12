@@ -200,20 +200,16 @@ function getScopedUsers(allUsers, currentUser) {
     return allUsers;
   }
   if (role === "great_zone_leader") {
-    const assignedRegions = (currentUser.great_region || "").split(",");
+    const assignedRegions = (currentUser.managed_regions || currentUser.great_region || "").split(",").map(s => s.trim()).filter(Boolean);
     return allUsers.filter(u => assignedRegions.includes(u.great_region));
   }
   if (role === "zone_leader") {
-    const assignedZones = (currentUser.pastoral_zone || "").split(",");
+    const assignedZones = (currentUser.managed_zones || currentUser.pastoral_zone || "").split(",").map(s => s.trim()).filter(Boolean);
     return allUsers.filter(u => assignedZones.includes(u.pastoral_zone));
   }
   if (role === "group_leader") {
-    const assignedZones = (currentUser.pastoral_zone || "").split(",");
-    const assignedGroups = (currentUser.small_group || "").split(",");
-    return allUsers.filter(u =>
-      assignedZones.includes(u.pastoral_zone) &&
-      assignedGroups.includes(u.small_group)
-    );
+    const assignedGroups = (currentUser.managed_groups || currentUser.small_group || "").split(",").map(s => s.trim()).filter(Boolean);
+    return allUsers.filter(u => assignedGroups.includes(u.small_group));
   }
   // member — only themselves
   return allUsers.filter(u => u.name === currentUser.name);

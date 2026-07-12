@@ -299,6 +299,52 @@ export function openMemberEditBottomSheet(user) {
 
 
 
+  const isLeader = ["great_zone_leader", "zone_leader", "group_leader"].includes(user.role);
+  if (isLeader) {
+    const scopeBtn = document.createElement("button");
+    scopeBtn.className = "bottom-sheet-item";
+    scopeBtn.style.background = "var(--color-brand-subtle, rgba(4,169,210,0.12))";
+    scopeBtn.style.borderColor = "var(--color-brand-border, rgba(4,169,210,0.24))";
+    scopeBtn.style.color = "#a5b4fc";
+    scopeBtn.style.marginBottom = "0.8rem";
+    scopeBtn.type = "button";
+
+    let scopeDesc = "";
+    if (user.role === "great_zone_leader") scopeDesc = user.managed_regions || user.great_region || "未設定";
+    else if (user.role === "zone_leader") scopeDesc = user.managed_zones || user.pastoral_zone || "未設定";
+    else if (user.role === "group_leader") scopeDesc = user.managed_groups || user.small_group || "未設定";
+
+    scopeBtn.innerHTML = iconLabel("edit", `修改管轄範圍 (${scopeDesc})`);
+    scopeBtn.onclick = async () => {
+      console.log(`✏️ [Debug] 修改管轄範圍按鈕被點擊，成員：${user.name}`);
+      closeAdminFilterBottomSheet();
+      const resp = await showResponsibilityModal(user.role, user);
+      if (!resp) return;
+
+      loader.show();
+      const success = await db.updateUserRole(user.id, user.role, user.name, resp);
+      loader.hide();
+
+      if (success) {
+        user.managed_regions = resp.managed_regions;
+        user.managed_zones = resp.managed_zones;
+        user.managed_groups = resp.managed_groups;
+
+        if (user.name === state.currentUser.name) {
+          state.currentUser.managed_regions = resp.managed_regions;
+          state.currentUser.managed_zones = resp.managed_zones;
+          state.currentUser.managed_groups = resp.managed_groups;
+          if (typeof renderProfileView === "function") renderProfileView();
+        }
+        alert("已成功更新管轄範圍！");
+        renderAdminUserManagement();
+      } else {
+        alert("更新管轄範圍失敗，請重試。");
+      }
+    };
+    listEl.appendChild(scopeBtn);
+  }
+
   const headerText = document.createElement("div");
   headerText.style.fontSize = "0.75rem";
   headerText.style.color = "var(--text-secondary)";
@@ -318,16 +364,29 @@ export function openMemberEditBottomSheet(user) {
       closeAdminFilterBottomSheet();
       if (isSelected) return;
 
+      let additionalFields = {};
+      if (["great_zone_leader", "zone_leader", "group_leader"].includes(opt.value)) {
+        const resp = await showResponsibilityModal(opt.value, user);
+        if (!resp) return;
+        additionalFields = resp;
+      }
+
       loader.show();
-      const success = await db.updateUserRole(user.id, opt.value, user.name, {});
+      const success = await db.updateUserRole(user.id, opt.value, user.name, additionalFields);
       loader.hide();
 
       if (success) {
         user.role = opt.value;
+        if (additionalFields.managed_regions !== undefined) user.managed_regions = additionalFields.managed_regions;
+        if (additionalFields.managed_zones !== undefined) user.managed_zones = additionalFields.managed_zones;
+        if (additionalFields.managed_groups !== undefined) user.managed_groups = additionalFields.managed_groups;
 
         if (user.name === state.currentUser.name) {
           state.currentUser.role = opt.value;
           state.realRole = opt.value;
+          if (additionalFields.managed_regions !== undefined) state.currentUser.managed_regions = additionalFields.managed_regions;
+          if (additionalFields.managed_zones !== undefined) state.currentUser.managed_zones = additionalFields.managed_zones;
+          if (additionalFields.managed_groups !== undefined) state.currentUser.managed_groups = additionalFields.managed_groups;
           if (typeof renderProfileView === "function") renderProfileView();
         }
         alert("已成功變更成員權限角色！");
@@ -644,35 +703,34 @@ export function showResponsibilityModal(role, user) {
           設定 ${roleText} 的負責範圍
         </h3>
         <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0; line-height: 1.4;">
-          請勾選該成員所負責的區域或小組（支援複選）。系統將依此授權管理範圍。
+          請勾選該成員所管轄的範圍（支援複選）。系統將依此授權管理權限。
         </p>
       </div>
       
       <div style="display: flex; flex-direction: column; gap: 0.8rem; max-height: 380px; overflow-y: auto; padding-right: 0.2rem;">
-        <div class="form-group" style="margin-bottom: 0;">
-          <label style="display: block; font-size: 0.8rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.3rem;">負責大區 (可複選)</label>
-          <div id="modal-regions-container" style="background: var(--bg-input); border: 1px solid var(--border-card); border-radius: 6px; padding: 0.6rem; max-height: 110px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.3rem;">
-          </div>
-        </div>
     `;
     
-    if (role === "zone_leader" || role === "group_leader") {
+    if (role === "great_zone_leader") {
       htmlContent += `
         <div class="form-group" style="margin-bottom: 0;">
-          <label style="display: block; font-size: 0.8rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.3rem;">負責牧區 (可複選)</label>
-          <div id="modal-zones-container" style="background: var(--bg-input); border: 1px solid var(--border-card); border-radius: 6px; padding: 0.6rem; max-height: 110px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.3rem;">
-            <span style="font-size: 0.8rem; color: var(--text-muted);">請先勾選大區</span>
+          <label style="display: block; font-size: 0.8rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.3rem;">負責大區 (可複選)</label>
+          <div id="modal-regions-container" style="background: var(--bg-input); border: 1px solid var(--border-card); border-radius: 6px; padding: 0.6rem; max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.3rem;">
           </div>
         </div>
       `;
-    }
-    
-    if (role === "group_leader") {
+    } else if (role === "zone_leader") {
+      htmlContent += `
+        <div class="form-group" style="margin-bottom: 0;">
+          <label style="display: block; font-size: 0.8rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.3rem;">負責牧區 (可複選)</label>
+          <div id="modal-zones-container" style="background: var(--bg-input); border: 1px solid var(--border-card); border-radius: 6px; padding: 0.6rem; max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.3rem;">
+          </div>
+        </div>
+      `;
+    } else if (role === "group_leader") {
       htmlContent += `
         <div class="form-group" style="margin-bottom: 0;">
           <label style="display: block; font-size: 0.8rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.3rem;">負責小組 (可複選)</label>
-          <div id="modal-groups-container" style="background: var(--bg-input); border: 1px solid var(--border-card); border-radius: 6px; padding: 0.6rem; max-height: 110px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.3rem;">
-            <span style="font-size: 0.8rem; color: var(--text-muted);">請先勾選牧區</span>
+          <div id="modal-groups-container" style="background: var(--bg-input); border: 1px solid var(--border-card); border-radius: 6px; padding: 0.6rem; max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.3rem;">
           </div>
         </div>
       `;
@@ -695,112 +753,89 @@ export function showResponsibilityModal(role, user) {
       container.style.transform = "translateY(0)";
     }, 10);
     
-    const currentRegions = (user.great_region || "").split(",").map(s => s.trim()).filter(Boolean);
-    const currentZones = (user.pastoral_zone || "").split(",").map(s => s.trim()).filter(Boolean);
-    const currentGroups = (user.small_group || "").split(",").map(s => s.trim()).filter(Boolean);
+    const currentRegions = (user.managed_regions || user.great_region || "").split(",").map(s => s.trim()).filter(Boolean);
+    const currentZones = (user.managed_zones || user.pastoral_zone || "").split(",").map(s => s.trim()).filter(Boolean);
+    const currentGroups = (user.managed_groups || user.small_group || "").split(",").map(s => s.trim()).filter(Boolean);
     
     const regionContainer = overlay.querySelector("#modal-regions-container");
     const zoneContainer = overlay.querySelector("#modal-zones-container");
     const groupContainer = overlay.querySelector("#modal-groups-container");
     
-    let regions = [];
-    if (state.isSupabaseMode && state.orgStructure.rawRegions) {
-      regions = state.orgStructure.rawRegions;
-    } else if (state.orgStructure.regions) {
-      regions = state.orgStructure.regions.map(rName => ({ id: rName, name: rName }));
+    if (role === "great_zone_leader" && regionContainer) {
+      let regions = [];
+      if (state.isSupabaseMode && state.orgStructure.rawRegions) {
+        regions = state.orgStructure.rawRegions;
+      } else if (state.orgStructure.regions) {
+        regions = state.orgStructure.regions.map(rName => ({ id: rName, name: rName }));
+      }
+      let html = "";
+      regions.forEach(r => {
+        const isChecked = currentRegions.includes(r.name) ? "checked" : "";
+        html += `
+          <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-primary); cursor: pointer; padding: 0.15rem 0;">
+            <input type="checkbox" name="region-checkbox" value="${r.id}" data-name="${r.name}" ${isChecked} style="cursor: pointer;">
+            <span>${r.name}</span>
+          </label>
+        `;
+      });
+      regionContainer.innerHTML = html || `<span style="font-size: 0.8rem; color: var(--text-muted);">無大區資料</span>`;
     }
     
-    let regionsHtml = "";
-    regions.forEach(r => {
-      const isChecked = currentRegions.includes(r.name) ? "checked" : "";
-      regionsHtml += `
-        <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-primary); cursor: pointer; padding: 0.15rem 0;">
-          <input type="checkbox" name="region-checkbox" value="${r.id}" data-name="${r.name}" ${isChecked} style="cursor: pointer;">
-          <span>${r.name}</span>
-        </label>
-      `;
-    });
-    regionContainer.innerHTML = regionsHtml || `<span style="font-size: 0.8rem; color: var(--text-muted);">無大區資料</span>`;
-    
-    const updateZones = () => {
-      if (!zoneContainer) return;
-      const checkedRegions = Array.from(regionContainer.querySelectorAll("input[name='region-checkbox']:checked")).map(cb => cb.value);
-      
-      if (checkedRegions.length === 0) {
-        zoneContainer.innerHTML = `<span style="font-size: 0.8rem; color: var(--text-muted);">請先勾選大區</span>`;
-        if (groupContainer) groupContainer.innerHTML = `<span style="font-size: 0.8rem; color: var(--text-muted);">請先勾選牧區</span>`;
-        return;
-      }
-      
+    if (role === "zone_leader" && zoneContainer) {
       let zones = [];
       if (state.isSupabaseMode && state.orgStructure.rawZones) {
-        zones = state.orgStructure.rawZones.filter(z => checkedRegions.includes(z.great_region_id));
-      } else if (state.orgStructure.zones) {
-        checkedRegions.forEach(rName => {
-          const regionZones = state.orgStructure.zones[rName] || [];
-          regionZones.forEach(zName => {
-            zones.push({ id: zName, name: zName });
-          });
+        state.orgStructure.rawZones.forEach(z => {
+          const region = state.orgStructure.rawRegions?.find(r => r.id === z.great_region_id);
+          const regionSuffix = region ? ` (${region.name})` : "";
+          zones.push({ id: z.id, name: z.name, label: `${z.name}${regionSuffix}` });
         });
+      } else if (state.orgStructure.zones) {
+        for (const [rName, zList] of Object.entries(state.orgStructure.zones)) {
+          zList.forEach(zName => {
+            zones.push({ id: zName, name: zName, label: `${zName} (${rName})` });
+          });
+        }
       }
-      
-      let zonesHtml = "";
+      let html = "";
       zones.forEach(z => {
         const isChecked = currentZones.includes(z.name) ? "checked" : "";
-        zonesHtml += `
+        html += `
           <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-primary); cursor: pointer; padding: 0.15rem 0;">
             <input type="checkbox" name="zone-checkbox" value="${z.id}" data-name="${z.name}" ${isChecked} style="cursor: pointer;">
-            <span>${z.name}</span>
+            <span>${z.label}</span>
           </label>
         `;
       });
-      zoneContainer.innerHTML = zonesHtml || `<span style="font-size: 0.8rem; color: var(--text-muted);">無牧區資料</span>`;
-      
-      zoneContainer.querySelectorAll("input[name='zone-checkbox']").forEach(cb => {
-        cb.onclick = updateGroups;
-      });
-      updateGroups();
-    };
+      zoneContainer.innerHTML = html || `<span style="font-size: 0.8rem; color: var(--text-muted);">無牧區資料</span>`;
+    }
     
-    const updateGroups = () => {
-      if (!groupContainer) return;
-      const checkedZones = Array.from(zoneContainer.querySelectorAll("input[name='zone-checkbox']:checked")).map(cb => cb.value);
-      
-      if (checkedZones.length === 0) {
-        groupContainer.innerHTML = `<span style="font-size: 0.8rem; color: var(--text-muted);">請先勾選牧區</span>`;
-        return;
-      }
-      
+    if (role === "group_leader" && groupContainer) {
       let groups = [];
       if (state.isSupabaseMode && state.orgStructure.rawGroups) {
-        groups = state.orgStructure.rawGroups.filter(g => checkedZones.includes(g.pastoral_zone_id));
-      } else if (state.orgStructure.groups) {
-        checkedZones.forEach(zName => {
-          const zoneGroups = state.orgStructure.groups[zName] || [];
-          zoneGroups.forEach(gName => {
-            groups.push({ id: gName, name: gName });
-          });
+        state.orgStructure.rawGroups.forEach(g => {
+          const zone = state.orgStructure.rawZones?.find(z => z.id === g.pastoral_zone_id);
+          const zoneSuffix = zone ? ` (${zone.name})` : "";
+          groups.push({ id: g.id, name: g.name, label: `${g.name}${zoneSuffix}` });
         });
+      } else if (state.orgStructure.groups) {
+        for (const [zName, gList] of Object.entries(state.orgStructure.groups)) {
+          gList.forEach(gName => {
+            groups.push({ id: gName, name: gName, label: `${gName} (${zName})` });
+          });
+        }
       }
-      
-      let groupsHtml = "";
+      let html = "";
       groups.forEach(g => {
         const isChecked = currentGroups.includes(g.name) ? "checked" : "";
-        groupsHtml += `
+        html += `
           <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-primary); cursor: pointer; padding: 0.15rem 0;">
             <input type="checkbox" name="group-checkbox" value="${g.id}" data-name="${g.name}" ${isChecked} style="cursor: pointer;">
-            <span>${g.name}</span>
+            <span>${g.label}</span>
           </label>
         `;
       });
-      groupContainer.innerHTML = groupsHtml || `<span style="font-size: 0.8rem; color: var(--text-muted);">無小組資料</span>`;
-    };
-    
-    regionContainer.querySelectorAll("input[name='region-checkbox']").forEach(cb => {
-      cb.onclick = updateZones;
-    });
-    
-    updateZones();
+      groupContainer.innerHTML = html || `<span style="font-size: 0.8rem; color: var(--text-muted);">無小組資料</span>`;
+    }
     
     const closeModal = (result) => {
       overlay.style.opacity = "0";
@@ -814,40 +849,40 @@ export function showResponsibilityModal(role, user) {
     overlay.querySelector("#modal-btn-cancel").onclick = () => closeModal(null);
     
     overlay.querySelector("#modal-btn-confirm").onclick = () => {
-      const checkedRegionCbs = Array.from(regionContainer.querySelectorAll("input[name='region-checkbox']:checked"));
-      const checkedZoneCbs = zoneContainer ? Array.from(zoneContainer.querySelectorAll("input[name='zone-checkbox']:checked")) : [];
-      const checkedGroupCbs = groupContainer ? Array.from(groupContainer.querySelectorAll("input[name='group-checkbox']:checked")) : [];
-      
-      if (checkedRegionCbs.length === 0) {
-        alert("請至少選擇一個大區！");
-        return;
+      if (role === "great_zone_leader") {
+        const checkedRegions = Array.from(regionContainer.querySelectorAll("input[name='region-checkbox']:checked")).map(cb => cb.dataset.name);
+        if (checkedRegions.length === 0) {
+          alert("請至少選擇一個大區！");
+          return;
+        }
+        closeModal({
+          managed_regions: checkedRegions.join(","),
+          managed_zones: "",
+          managed_groups: ""
+        });
+      } else if (role === "zone_leader") {
+        const checkedZones = Array.from(zoneContainer.querySelectorAll("input[name='zone-checkbox']:checked")).map(cb => cb.dataset.name);
+        if (checkedZones.length === 0) {
+          alert("請至少選擇一個牧區！");
+          return;
+        }
+        closeModal({
+          managed_regions: "",
+          managed_zones: checkedZones.join(","),
+          managed_groups: ""
+        });
+      } else if (role === "group_leader") {
+        const checkedGroups = Array.from(groupContainer.querySelectorAll("input[name='group-checkbox']:checked")).map(cb => cb.dataset.name);
+        if (checkedGroups.length === 0) {
+          alert("請至少選擇一個小組！");
+          return;
+        }
+        closeModal({
+          managed_regions: "",
+          managed_zones: "",
+          managed_groups: checkedGroups.join(",")
+        });
       }
-      if ((role === "zone_leader" || role === "group_leader") && checkedZoneCbs.length === 0) {
-        alert("請至少選擇一個牧區！");
-        return;
-      }
-      if (role === "group_leader" && checkedGroupCbs.length === 0) {
-        alert("請至少選擇一個小組！");
-        return;
-      }
-      
-      const regionNames = checkedRegionCbs.map(cb => cb.dataset.name).join(",");
-      const regionId = checkedRegionCbs.length === 1 && state.isSupabaseMode ? checkedRegionCbs[0].value : null;
-      
-      const zoneNames = checkedZoneCbs.map(cb => cb.dataset.name).join(",");
-      const zoneId = checkedZoneCbs.length === 1 && state.isSupabaseMode ? checkedZoneCbs[0].value : null;
-      
-      const groupNames = checkedGroupCbs.map(cb => cb.dataset.name).join(",");
-      const groupId = checkedGroupCbs.length === 1 && state.isSupabaseMode ? checkedGroupCbs[0].value : null;
-      
-      closeModal({
-        great_region: regionNames,
-        great_region_id: regionId,
-        pastoral_zone: zoneNames,
-        pastoral_zone_id: zoneId,
-        small_group: groupNames,
-        small_group_id: groupId
-      });
     };
   });
 }
