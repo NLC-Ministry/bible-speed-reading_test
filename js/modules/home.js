@@ -1871,12 +1871,12 @@ async function fetchPastoralVerseWall() {
 
   const isHistory = document.getElementById("btn-wall-tab-history")?.classList.contains("active");
   const historyFilter = document.getElementById("wall-history-filter")?.value || "all";
-  const historyFilterEl = document.getElementById("wall-history-filter");
+  const historyFilterWrapper = document.getElementById("wall-history-filter-wrapper");
 
   if (isHistory) {
-    historyFilterEl?.classList.remove("hidden");
+    historyFilterWrapper?.classList.remove("hidden");
   } else {
-    historyFilterEl?.classList.add("hidden");
+    historyFilterWrapper?.classList.add("hidden");
   }
 
   if (state.isSupabaseMode && state.supabase) {
