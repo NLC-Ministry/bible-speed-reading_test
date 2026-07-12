@@ -1,6 +1,6 @@
-import { CacheManager } from "./js/pwa/CacheManager.js?v=20260712-3";
+import { CacheManager } from "./js/pwa/CacheManager.js?v=20260712-4";
 
-const VERSION = "20260712-3";
+const VERSION = "20260712-4";
 const cacheManager = new CacheManager({
   prefix: "newlife-bible",
   version: VERSION,
@@ -8,15 +8,23 @@ const cacheManager = new CacheManager({
 });
 const APP_SHELL = ["/", "/index.html", "/manifest.json", "/assets/icon-192.png", "/assets/icon-512.png"];
 
-function isSensitiveRequest(request) {
+function isSupabaseApiRequest(request) {
+  const url = new URL(request.url);
+  const hostname = url.hostname.toLowerCase();
+  const isSupabaseHost = hostname === "supabase.co" || hostname.endsWith(".supabase.co");
+  const isSupabaseApiPath = ["/rest/v1/", "/auth/v1/", "/functions/v1/", "/storage/v1/", "/realtime/v1/"].some(path =>
+    url.pathname.includes(path)
+  );
+  return isSupabaseHost || isSupabaseApiPath;
+}
+
+function shouldBypassCache(request) {
   if (request.method !== "GET") return true;
   const url = new URL(request.url);
   const hostname = url.hostname.toLowerCase();
-  return hostname.includes("supabase") || hostname.includes("logto") || hostname.includes("sso.newlife.org.tw") ||
-    url.pathname.includes("/auth/") || url.pathname.includes("/rest/v1/") ||
-    url.pathname.includes("/functions/v1/nlc-");
+  return isSupabaseApiRequest(request) || hostname.includes("logto") || hostname.includes("sso.newlife.org.tw") ||
+    url.pathname.includes("/auth/") || url.pathname.includes("/functions/v1/nlc-");
 }
-
 function isBibleRequest(request) {
   const hostname = new URL(request.url).hostname.toLowerCase();
   return hostname === "bible-api.com" || hostname === "bolls.life";
@@ -41,7 +49,8 @@ self.addEventListener("activate", event => {
 
 self.addEventListener("fetch", event => {
   const { request } = event;
-  if (isSensitiveRequest(request)) return;
+  // No respondWith means a true browser network bypass: no CacheStorage read or write.
+  if (shouldBypassCache(request)) return;
 
   if (request.mode === "navigate") {
     event.respondWith(cacheManager.networkFirst(request, { timeoutMs: 5000, fallbackUrl: "/index.html" }));

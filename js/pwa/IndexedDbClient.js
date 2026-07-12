@@ -1,5 +1,5 @@
 export class IndexedDbClient {
-  constructor({ name = "newlife-bible", version = 1 } = {}) {
+  constructor({ name = "newlife-bible", version = 2 } = {}) {
     this.name = name;
     this.version = version;
     this.connectionPromise = null;
@@ -24,6 +24,11 @@ export class IndexedDbClient {
       store.createIndex("nextAttemptAt", "nextAttemptAt", { unique: false });
       store.createIndex("idempotencyKey", "idempotencyKey", { unique: true });
     }
+    if (!db.objectStoreNames.contains("server_cache")) {
+      const cacheStore = db.createObjectStore("server_cache", { keyPath: "key" });
+      cacheStore.createIndex("table", "table", { unique: false });
+      cacheStore.createIndex("updatedAt", "updatedAt", { unique: false });
+    }
   }
 
   async run(storeName, mode, executor) {
@@ -39,6 +44,7 @@ export class IndexedDbClient {
     });
   }
 
+  get(storeName, key) { return this.run(storeName, "readonly", store => store.get(key)); }
   put(storeName, value) { return this.run(storeName, "readwrite", store => store.put(value)); }
   delete(storeName, key) { return this.run(storeName, "readwrite", store => store.delete(key)); }
   getAll(storeName) { return this.run(storeName, "readonly", store => store.getAll()); }

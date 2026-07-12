@@ -15,6 +15,8 @@ import './db.js';
 import './utils.js?v=20260709_badge_back';
 import './gamification.js';
 import { initializePwa } from './pwa/PwaCoordinator.js';
+import { IndexedDbClient } from './pwa/IndexedDbClient.js';
+import { SupabaseRepository } from './pwa/SupabaseRepository.js';
 
 const buildVersion = "__BUILD_VERSION__";
 const moduleCache = {};
@@ -215,6 +217,23 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.error('Failed to initialize database connection & auth:', err);
   }
 
+  // One authoritative path for reading-log snapshots and mutations.
+  const repositoryCache = "indexedDB" in window ? new IndexedDbClient() : null;
+  window.pwaDataStore = repositoryCache;
+  window.readingLogRepository = new SupabaseRepository({
+    table: "reading_logs",
+    clientProvider: () => window.state?.supabase,
+    cacheClient: repositoryCache
+  });
+  window.readingLogRepository.addEventListener("data", event => {
+    document.documentElement.dataset.readingDataSource = event.detail.source;
+    document.documentElement.dataset.readingDataStale = String(Boolean(event.detail.stale));
+  });
+  window.readingLogRepository.addEventListener("error", event => {
+    const error = event.detail;
+    document.documentElement.dataset.repositoryError = error.category || "unknown";
+    console.error(`[Repository:reading_logs] ${error.operation} failed (${error.category})`, error);
+  });
   // Load all user data in one shot. db.init() guarantees auth is resolved before we reach here.
   try {
     await Promise.all([

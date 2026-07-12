@@ -7,7 +7,7 @@ const READING_OPERATION = "SET_CHAPTER_READ_STATE";
 
 export class PwaCoordinator {
   constructor() {
-    this.dbClient = new IndexedDbClient();
+    this.dbClient = window.pwaDataStore || new IndexedDbClient();
     this.queueRepository = new OfflineQueueRepository(this.dbClient);
     this.registrar = new ServiceWorkerRegistrar();
     this.syncManager = null;
@@ -107,22 +107,30 @@ export class PwaCoordinator {
       throw error;
     }
 
+    const repository = window.readingLogRepository || null;
+    const cacheKey = `reading_logs:${user.id}`;
+    const row = {
+      user_id: user.id,
+      plan_id: payload.planId,
+      book: payload.book,
+      chapter: payload.chapter,
+      round: payload.round,
+      read_at: payload.readAt
+    };
     let result;
     if (payload.isChecked) {
-      result = await dataClient.from("reading_logs").upsert({
-        user_id: user.id,
-        plan_id: payload.planId,
-        book: payload.book,
-        chapter: payload.chapter,
-        round: payload.round,
-        read_at: payload.readAt
-      }, { onConflict: "user_id,plan_id,book,chapter,round" });
+      result = repository
+        ? await repository.upsert(row, { onConflict: "user_id,plan_id,book,chapter,round" }, { invalidate: [cacheKey] })
+        : await dataClient.from("reading_logs").upsert(row, { onConflict: "user_id,plan_id,book,chapter,round" });
     } else {
-      let query = dataClient.from("reading_logs").delete()
-        .eq("user_id", user.id).eq("book", payload.book)
-        .eq("chapter", payload.chapter).eq("round", payload.round);
-      query = payload.planId ? query.eq("plan_id", payload.planId) : query.is("plan_id", null);
-      result = await query;
+      const applyFilters = query => {
+        query = query.eq("user_id", user.id).eq("book", payload.book)
+          .eq("chapter", payload.chapter).eq("round", payload.round);
+        return payload.planId ? query.eq("plan_id", payload.planId) : query.is("plan_id", null);
+      };
+      result = repository
+        ? await repository.delete(applyFilters, { invalidate: [cacheKey] })
+        : await applyFilters(dataClient.from("reading_logs").delete());
     }
     if (result?.error) {
       const error = new Error(result.error.message || result.error.error || String(result.error));

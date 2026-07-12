@@ -517,6 +517,24 @@ const db = {
 
   // Load User Data (either Supabase or LocalStorage fallbacks)
   _userDataPromise: null,
+  applyReadingLogsSnapshot(rawLogs, { notify = false, source = "initial" } = {}) {
+    const uniqueMap = {};
+    (rawLogs || []).forEach(log => {
+      const round = log.round || 1;
+      const planKey = log.plan_id || "";
+      const key = `${log.book}_${log.chapter}_${planKey}_${round}`;
+      if (!uniqueMap[key] || new Date(log.read_at) > new Date(uniqueMap[key].read_at)) uniqueMap[key] = log;
+    });
+    state.readingLogs = Object.values(uniqueMap);
+    if (state.currentUser) state.currentUser.chapters_read = state.readingLogs.length;
+    if (notify) {
+      window.dispatchEvent(new CustomEvent("app:dataRefresh", {
+        detail: { scope: "plan", source: `repository-${source}` }
+      }));
+    }
+    return state.readingLogs;
+  },
+
   async loadUserData(force = false) {
     if (force) {
       this._userDataPromise = null;
@@ -549,7 +567,13 @@ const db = {
         const [globalPlansResult, profileResult, logsResult, plansResult] = await Promise.all([
           state.supabase.from("global_plans").select("*").order("start_date", { ascending: true }),
           state.supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
-          state.supabase.from("reading_logs").select("book, chapter, read_at, plan_id, round").eq("user_id", user.id),
+          window.readingLogRepository
+            ? window.readingLogRepository.fetch({
+              cacheKey: `reading_logs:${user.id}`,
+              query: table => table.select("book, chapter, read_at, plan_id, round").eq("user_id", user.id),
+              onData: (rows, meta) => this.applyReadingLogsSnapshot(rows, { notify: true, source: meta.source })
+            })
+            : state.supabase.from("reading_logs").select("book, chapter, read_at, plan_id, round").eq("user_id", user.id),
           state.supabase.from("reading_plans").select("*").eq("user_id", user.id).order("created_at", { ascending: false })
         ]);
 
@@ -617,17 +641,7 @@ const db = {
 
         // 2. Load Reading Logs
         const rawLogs = logsResult.data || [];
-        const uniqueMap = {};
-        rawLogs.forEach(l => {
-          const r = l.round || 1;
-          const planKey = l.plan_id || '';
-          const key = `${l.book}_${l.chapter}_${planKey}_${r}`;
-          if (!uniqueMap[key] || new Date(l.read_at) > new Date(uniqueMap[key].read_at)) {
-            uniqueMap[key] = l;
-          }
-        });
-        state.readingLogs = Object.values(uniqueMap);
-        state.currentUser.chapters_read = state.readingLogs.length;
+        this.applyReadingLogsSnapshot(rawLogs);
 
         // 3. Load Active Reading Plans
         const plans = plansResult.data || [];
@@ -1029,19 +1043,26 @@ const db = {
           read_at: todayISO,
           round: Number(round)
         };
+        const cacheKey = `reading_logs:${user.id}`;
+        const repository = window.readingLogRepository || null;
         let writeResult;
         if (planId) {
-          writeResult = await state.supabase.from("reading_logs").upsert(row, {
-            onConflict: "user_id,plan_id,book,chapter,round"
-          });
+          writeResult = repository
+            ? await repository.upsert(row, { onConflict: "user_id,plan_id,book,chapter,round" }, { invalidate: [cacheKey] })
+            : await state.supabase.from("reading_logs").upsert(row, { onConflict: "user_id,plan_id,book,chapter,round" });
         } else {
-          const deleteResult = await state.supabase.from("reading_logs").delete()
-            .eq("user_id", user.id).eq("book", book).eq("chapter", chapter)
-            .eq("round", round).is("plan_id", null);
+          const deleteResult = repository
+            ? await repository.delete(query => query.eq("user_id", user.id).eq("book", book)
+              .eq("chapter", chapter).eq("round", round).is("plan_id", null), { invalidate: [cacheKey] })
+            : await state.supabase.from("reading_logs").delete()
+              .eq("user_id", user.id).eq("book", book).eq("chapter", chapter)
+              .eq("round", round).is("plan_id", null);
           if (deleteResult && deleteResult.error) {
             throw new Error(deleteResult.error.message || deleteResult.error.error || String(deleteResult.error));
           }
-          writeResult = await state.supabase.from("reading_logs").insert(row);
+          writeResult = repository
+            ? await repository.insert(row, { invalidate: [cacheKey] })
+            : await state.supabase.from("reading_logs").insert(row);
         }
         if (writeResult && writeResult.error) {
           throw new Error(writeResult.error.message || writeResult.error.error || String(writeResult.error));
@@ -1053,13 +1074,14 @@ const db = {
       if (state.isSupabaseMode && state.supabase && !(state.currentUser && state.currentUser.is_demo)) {
         const user = await this.getCurrentDbUser();
         if (user) {
-          let query = state.supabase.from("reading_logs").delete().eq("user_id", user.id).eq("book", book).eq("chapter", chapter).eq("round", round);
-          if (planId) {
-            query = query.or(`plan_id.eq.${planId},plan_id.is.null`);
-          } else {
-            query = query.is("plan_id", null);
-          }
-          const deleteResult = await query;
+          const applyDeleteFilters = query => {
+            query = query.eq("user_id", user.id).eq("book", book).eq("chapter", chapter).eq("round", round);
+            return planId ? query.or(`plan_id.eq.${planId},plan_id.is.null`) : query.is("plan_id", null);
+          };
+          const cacheKey = `reading_logs:${user.id}`;
+          const deleteResult = window.readingLogRepository
+            ? await window.readingLogRepository.delete(applyDeleteFilters, { invalidate: [cacheKey] })
+            : await applyDeleteFilters(state.supabase.from("reading_logs").delete());
           if (deleteResult && deleteResult.error) {
             throw new Error(deleteResult.error.message || deleteResult.error.error || String(deleteResult.error));
           }
