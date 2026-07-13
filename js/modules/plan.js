@@ -649,7 +649,14 @@ async function renderPlanView() {
 
 
 function getPlanCoverColor(plan) {
-  const covers = window.NLC_PLAN_COVERS || ["#B8E8F5", "#C8F5D8", "#FFE4CC", "#D4E4F7", "#E8E0F5"];
+  const covers = window.NLC_PLAN_COVERS || ["#B8E8F5", "#C8F5D8", "#FFE4CC", "#D4E4F7", "#E8E0F5", "#F7D4E4", "#F4F7D4", "#E4D4F7", "#D4F7F2"];
+  if (plan && plan.presetKey && plan.presetKey.startsWith("m_")) {
+    const parts = plan.presetKey.split("_");
+    if (parts.length >= 4) {
+      const catNum = parseInt(parts[3].replace("cat", "")) || 1;
+      return covers[(catNum - 1) % covers.length];
+    }
+  }
   const presetMap = { q1: 1, q2: 2, q3: 3, q4: 4 };
   const idx = presetMap[plan.presetKey] ?? 0;
   return covers[idx] || covers[0];
@@ -662,6 +669,20 @@ function getPlanCoverHtml(plan) {
   else if (plan.presetKey === "q2") text = "第二季";
   else if (plan.presetKey === "q3") text = "第三季";
   else if (plan.presetKey === "q4") text = "第四季";
+  else if (plan.presetKey && plan.presetKey.startsWith("m_")) {
+    const parts = plan.presetKey.split("_");
+    if (parts.length >= 4) {
+      const month = parseInt(parts[2]);
+      const catKey = parts[3];
+      const abbrevs = {
+        cat1: "五經", cat2: "歷史", cat3: "詩歌", cat4: "大先", cat5: "小先",
+        cat6: "福音", cat7: "保羅一", cat8: "保羅二", cat9: "普通"
+      };
+      const catAbbrev = abbrevs[catKey] || "速讀";
+      text = `<div style="font-size: 0.8rem; line-height: 1.2; text-align: center;">${month}月<br><span style="font-weight: 700; font-size: 0.95rem;">${catAbbrev}</span></div>`;
+      return `<div class="plan-cover-thumbnail" style="width: 72px; height: 72px; border-radius: 12px; background: ${bg}; display: flex; align-items: center; justify-content: center; color: var(--color-black); font-weight: 500; flex-shrink: 0; box-shadow: var(--shadow-sm);">${text}</div>`;
+    }
+  }
   return `<div class="plan-cover-thumbnail" style="width: 72px; height: 72px; border-radius: 12px; background: ${bg}; display: flex; align-items: center; justify-content: center; color: var(--color-black); font-weight: 500; font-size: 0.95rem; flex-shrink: 0; box-shadow: var(--shadow-sm);">${text}</div>`;
 }
 
@@ -745,11 +766,9 @@ function renderPresetPlansList() {
 
   container.innerHTML = "";
 
-  let plans = [];
-  if (state.globalPlans && state.globalPlans.length > 0) {
-    plans = getVisiblePlans(state.globalPlans);
-  } else {
-    plans = Object.entries(CHURCH_PLAN_PRESETS).map(([key, p]) => ({
+  let monthlyPlans = Object.entries(CHURCH_PLAN_PRESETS)
+    .filter(([key]) => key.startsWith("m_"))
+    .map(([key, p]) => ({
       id: key,
       name: p.name,
       startDate: p.startDate,
@@ -757,60 +776,122 @@ function renderPresetPlansList() {
       books: p.books,
       presetKey: key
     }));
+
+  if (state.globalPlans && state.globalPlans.length > 0) {
+    state.globalPlans.forEach(gp => {
+      const exists = monthlyPlans.some(mp => mp.presetKey === gp.presetKey || mp.name === gp.name);
+      if (!exists && !gp.isHidden) {
+        monthlyPlans.push(gp);
+      }
+    });
   }
 
-  plans = getVisiblePlans(plans);
+  // Sort monthlyPlans by startDate
+  monthlyPlans.sort((a, b) => a.startDate.localeCompare(b.startDate));
 
-  plans.forEach(plan => {
-    const key = plan.presetKey || plan.id;
-    // Check if user already joined
-    const isJoined = state.activePlans && state.activePlans.some(p => p.presetKey === key || p.id === plan.id);
+  // Group by startDate
+  const groups = {};
+  monthlyPlans.forEach(plan => {
+    const key = plan.startDate;
+    if (!groups[key]) {
+      groups[key] = [];
+    }
+    groups[key].push(plan);
+  });
 
-    const card = document.createElement("div");
-    card.className = "joined-plan-item-card";
-    card.style = `
-      background: var(--bg-card);
-      border: 1px solid var(--border-card);
-      border-radius: 16px;
-      padding: 1rem;
+  Object.entries(groups).forEach(([startDate, plansInMonth]) => {
+    const dateParts = startDate.split("-");
+    const year = parseInt(dateParts[0]);
+    const month = parseInt(dateParts[1]);
+    const monthLabel = `${year}年${month}月`;
+
+    const section = document.createElement("div");
+    section.style = "display: flex; flex-direction: column; gap: 0.75rem; width: 100%; margin-bottom: 1.5rem;";
+    
+    const header = document.createElement("div");
+    header.style = `
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      border-left: 4px solid var(--primary-color);
+      padding-left: 0.6rem;
+      margin-bottom: 0.25rem;
       display: flex;
       align-items: center;
-      gap: 1rem;
-      cursor: pointer;
-      transition: all 0.2s ease;
+      gap: 0.5rem;
     `;
-    card.onclick = async () => {
-      if (isJoined) {
-        state.activePlan = state.activePlans.find(p => p.presetKey === key || p.id === plan.id);
-        state.planDetailOpen = true;
-        state.planActiveSubTab = "today";
-        window.currentPlanViewState = PLAN_ROUTE.DETAIL;
-        state.selectedPlanDay = null;
-        if (typeof window.setPlanState === 'function') {
-          await window.setPlanState(PLAN_ROUTE.DETAIL);
-        } else {
-          renderPlanView();
-        }
-      } else {
-        if (confirm(`確定要加入 ${plan.name} 讀經計畫挑戰嗎？`)) {
-          await db.joinPresetPlan(key);
-        }
-      }
-    };
+    header.innerHTML = `
+      <span class="nlc-icon nlc-icon--sm" data-icon="calendar" aria-hidden="true" style="color: var(--primary-color);"></span>
+      <span>${monthLabel}</span>
+    `;
+    section.appendChild(header);
 
-    card.innerHTML = `
-      ${getPlanCoverHtml({ presetKey: key })}
-      <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 0.25rem; min-width: 0;">
-        <h4 style="margin: 0; font-size: 1.05rem; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${plan.name}</h4>
-        <div style="font-size: 0.78rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.3rem;">
-          <span class="nlc-icon" data-icon="calendarThirty" aria-hidden="true"></span> <span>${plan.startDate} ~ ${plan.endDate}</span>
-        </div>
-        <div style="font-size: 0.76rem; font-weight: 500; color: ${isJoined ? 'var(--color-success-foreground)' : 'var(--primary-color)'}; margin-top: 0.2rem; display: flex; align-items: center; gap: 0.25rem;">
-          ${isJoined ? '✓ 已加入挑戰' : '+ 點擊加入計畫挑戰'}
-        </div>
-      </div>
+    const grid = document.createElement("div");
+    grid.style = `
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
+      width: 100%;
     `;
-    container.appendChild(card);
+
+    plansInMonth.forEach(plan => {
+      const key = plan.presetKey || plan.id;
+      const isJoined = state.activePlans && state.activePlans.some(p => p.presetKey === key || p.id === plan.id);
+
+      const card = document.createElement("div");
+      card.className = "joined-plan-item-card";
+      card.style = `
+        background: var(--bg-card);
+        border: 1px solid var(--border-card);
+        border-radius: 16px;
+        padding: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      `;
+      card.onclick = async () => {
+        if (isJoined) {
+          state.activePlan = state.activePlans.find(p => p.presetKey === key || p.id === plan.id);
+          state.planDetailOpen = true;
+          state.planActiveSubTab = "today";
+          window.currentPlanViewState = PLAN_ROUTE.DETAIL;
+          state.selectedPlanDay = null;
+          if (typeof window.setPlanState === 'function') {
+            await window.setPlanState(PLAN_ROUTE.DETAIL);
+          } else {
+            renderPlanView();
+          }
+        } else {
+          if (confirm(`確定要加入 ${plan.name} 讀經計畫挑戰嗎？`)) {
+            await db.joinPresetPlan(key);
+          }
+        }
+      };
+
+      let displayName = plan.name;
+      if (displayName.includes("：")) {
+        displayName = displayName.split("：")[1];
+      }
+
+      card.innerHTML = `
+        ${getPlanCoverHtml({ presetKey: key })}
+        <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 0.25rem; min-width: 0;">
+          <h4 style="margin: 0; font-size: 1.05rem; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${displayName}</h4>
+          <div style="font-size: 0.78rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.3rem;">
+            <span class="nlc-icon" data-icon="calendarThirty" aria-hidden="true"></span> <span>${plan.startDate} ~ ${plan.endDate}</span>
+          </div>
+          <div style="font-size: 0.76rem; font-weight: 500; color: ${isJoined ? 'var(--color-success-foreground)' : 'var(--primary-color)'}; margin-top: 0.2rem; display: flex; align-items: center; gap: 0.25rem;">
+            ${isJoined ? '✓ 已加入挑戰' : '+ 點擊加入計畫挑戰'}
+          </div>
+        </div>
+      `;
+      grid.appendChild(card);
+    });
+
+    section.appendChild(grid);
+    container.appendChild(section);
   });
 }
 

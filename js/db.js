@@ -1894,6 +1894,58 @@ const db = {
     }
     if (!preset) return;
 
+    // Monthly single-choice & seasonal category-uniqueness validations
+    if (key && key.startsWith("m_")) {
+      const parts = key.split("_");
+      if (parts.length >= 4) {
+        const year = parseInt(parts[1]);
+        const month = parseInt(parts[2]);
+        const catKey = parts[3];
+
+        const getMonthSeason = (y, m) => {
+          if (y === 2026 && (m === 8 || m === 9 || m === 10)) return 1;
+          if ((y === 2026 && m === 11) || (y === 2026 && m === 12) || (y === 2027 && m === 1)) return 2;
+          if (y === 2027 && (m === 2 || m === 3 || m === 4)) return 3;
+          return null;
+        };
+
+        const targetSeason = getMonthSeason(year, month);
+
+        // 1. Check if user already joined a plan in this exact month
+        const hasPlanInMonth = (state.activePlans || []).some(p => {
+          const pk = p.presetKey;
+          if (!pk || !pk.startsWith("m_")) return false;
+          const pParts = pk.split("_");
+          return pParts.length >= 4 && parseInt(pParts[1]) === year && parseInt(pParts[2]) === month;
+        });
+
+        if (hasPlanInMonth) {
+          showToast("您已加入了該月份的讀經計畫，每個月只能選擇一類。");
+          return;
+        }
+
+        // 2. Check if user already joined a plan with the same category in the same season
+        if (targetSeason !== null) {
+          const hasSameCatInSeason = (state.activePlans || []).some(p => {
+            const pk = p.presetKey;
+            if (!pk || !pk.startsWith("m_")) return false;
+            const pParts = pk.split("_");
+            if (pParts.length < 4) return false;
+            const pYear = parseInt(pParts[1]);
+            const pMonth = parseInt(pParts[2]);
+            const pCatKey = pParts[3];
+            return getMonthSeason(pYear, pMonth) === targetSeason && pCatKey === catKey;
+          });
+
+          if (hasSameCatInSeason) {
+            const catName = (window.BIBLE_CATEGORIES && window.BIBLE_CATEGORIES[catKey] ? window.BIBLE_CATEGORIES[catKey].name : catKey);
+            showToast(`在此季度中您已選擇過「${catName}」，請選擇其他類別。`);
+            return;
+          }
+        }
+      }
+    }
+
     loader.show("加入挑戰計畫中...");
 
     const planName = preset.name;

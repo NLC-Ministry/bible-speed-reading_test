@@ -1,5 +1,37 @@
 // Global configuration presets, state object, router, loader, theme switcher, and local settings loader.
 
+// 9 Categories of Bible Books
+const BIBLE_CATEGORIES = {
+  cat1: { name: "摩西五經", books: ["創世記", "出埃及記", "利未記", "民數記", "申命記"] },
+  cat2: { name: "歷史書", books: ["約書亞記", "士師記", "路得記", "撒母耳記上", "撒母耳記下", "列王紀上", "列王紀下", "歷代志上", "歷代志下", "以斯拉記", "尼希米記", "以斯帖記"] },
+  cat3: { name: "詩歌智慧書", books: ["約伯記", "詩篇 1-110", "詩篇 111-150", "箴言", "傳道書", "雅歌"] },
+  cat4: { name: "大先知書", books: ["以賽亞書", "耶利米書", "耶利米哀歌", "以西結書", "但以理書"] },
+  cat5: { name: "小先知書", books: ["何西阿書", "約珥書", "阿摩司書", "俄巴底亞書", "約拿書", "彌迦書", "那鴻書", "哈巴谷書", "西番雅書", "哈該書", "撒迦利亞書", "瑪拉基書"] },
+  cat6: { name: "福音書+徒", books: ["馬太福音", "馬可福音", "路加福音", "約翰福音", "使徒行傳"] },
+  cat7: { name: "保羅書信一", books: ["羅馬書", "哥林多前書", "哥林多後書", "加拉太書", "以弗所書", "腓立比書"] },
+  cat8: { name: "保羅書信二", books: ["歌羅西書", "帖撒羅尼迦前書", "帖撒羅尼迦後書", "提摩太前書", "提摩太後書", "提多書", "腓利門書"] },
+  cat9: { name: "普通書信+啟", books: ["希伯來書", "雅各書", "彼得前書", "彼得後書", "約翰一書", "約翰二書", "約翰三書", "猶大書", "啟示錄"] }
+};
+
+window.BIBLE_CATEGORIES = BIBLE_CATEGORIES;
+
+const SEASON_MONTHS = [
+  // 第一季
+  { year: 2026, month: 8, label: "2026年8月" },
+  { year: 2026, month: 9, label: "2026年9月" },
+  { year: 2026, month: 10, label: "2026年10月" },
+  // 第二季
+  { year: 2026, month: 11, label: "2026年11月" },
+  { year: 2026, month: 12, label: "2026年12月" },
+  { year: 2027, month: 1, label: "2027年1月" },
+  // 第三季
+  { year: 2027, month: 2, label: "2027年2月" },
+  { year: 2027, month: 3, label: "2027年3月" },
+  { year: 2027, month: 4, label: "2027年4月" }
+];
+
+window.SEASON_MONTHS = SEASON_MONTHS;
+
 // Predefined Church Quarterly Plan Presets (2026-2027)
 const CHURCH_PLAN_PRESETS = {
   q1: {
@@ -47,6 +79,40 @@ const CHURCH_PLAN_PRESETS = {
     ]
   }
 };
+
+// Dynamically generate the 73 monthly presets
+SEASON_MONTHS.forEach(mSpec => {
+  const isFirstMonth = (mSpec.year === 2026 && mSpec.month === 8);
+  const lastDay = new Date(mSpec.year, mSpec.month, 0).getDate();
+  const startDate = `${mSpec.year}-${String(mSpec.month).padStart(2, '0')}-01`;
+  const endDate = `${mSpec.year}-${String(mSpec.month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+  
+  if (isFirstMonth) {
+    const key = `m_2026_08_cat1`;
+    CHURCH_PLAN_PRESETS[key] = {
+      name: `${mSpec.label}：${BIBLE_CATEGORIES.cat1.name}`,
+      startDate,
+      endDate,
+      books: BIBLE_CATEGORIES.cat1.books,
+      months: [
+        { name: `${mSpec.label}：${BIBLE_CATEGORIES.cat1.name}`, year: mSpec.year, month: mSpec.month, readingDays: lastDay, books: BIBLE_CATEGORIES.cat1.books }
+      ]
+    };
+  } else {
+    Object.entries(BIBLE_CATEGORIES).forEach(([catKey, catSpec]) => {
+      const key = `m_${mSpec.year}_${String(mSpec.month).padStart(2, '0')}_${catKey}`;
+      CHURCH_PLAN_PRESETS[key] = {
+        name: `${mSpec.label}：${catSpec.name}`,
+        startDate,
+        endDate,
+        books: catSpec.books,
+        months: [
+          { name: `${mSpec.label}：${catSpec.name}`, year: mSpec.year, month: mSpec.month, readingDays: lastDay, books: catSpec.books }
+        ]
+      };
+    });
+  }
+});;
 
 // Global Application State
 const state = {
