@@ -329,6 +329,15 @@ const BADGE_UNLOCK_TARGETS = {
 };
 
 function getBadgeMilestoneConfig(badgeId) {
+  if (badgeId && badgeId.startsWith("badge_cat")) {
+    const catKey = badgeId.replace("badge_cat", "cat");
+    return {
+      levels: [10, 5, 3, 2, 1],
+      unit: "遍",
+      getValue: () => (typeof window.getCategoryCompletedRounds === "function" ? window.getCategoryCompletedRounds(catKey) : 0)
+    };
+  }
+
   const milestoneConfig = {
     "badge-subscribe": { levels: [5, 3, 1], unit: "個計畫", getValue: () => (state.subscribedPlans ? state.subscribedPlans.length : 0) },
     subscribe_plan: { levels: [5, 3, 1], unit: "個計畫", getValue: () => (state.subscribedPlans ? state.subscribedPlans.length : 0) },
@@ -357,6 +366,11 @@ function getBadgeMilestoneConfig(badgeId) {
 }
 
 function getBadgeProgressValue(badgeId) {
+  if (badgeId && badgeId.startsWith("badge_cat")) {
+    const catKey = badgeId.replace("badge_cat", "cat");
+    return typeof window.getCategoryCompletedRounds === "function" ? window.getCategoryCompletedRounds(catKey) : 0;
+  }
+
   if (badgeId === "subscribe_plan") {
     return state.activePlan ? 1 : 0;
   }
@@ -421,9 +435,19 @@ function attachBadgeOpenHandlers(element, badge, isUnlocked) {
       openDetail();
     }
   };
-}
+}window.getBadgeTierClass = function(starsCount) {
+  if (starsCount === 1) return "tier-bronze";
+  if (starsCount === 2) return "tier-silver";
+  if (starsCount === 3) return "tier-gold";
+  if (starsCount === 4) return "tier-platinum";
+  if (starsCount >= 5) return "tier-legendary";
+  return "";
+};
 
 function renderBadgeWall(containerId) {
+  if (typeof window.syncRoundBadges === "function") {
+    window.syncRoundBadges();
+  }
   const container = document.getElementById("badges-grid") || document.getElementById(containerId);
   if (!container) return;
 
@@ -454,15 +478,30 @@ function renderBadgeWall(containerId) {
 
     const safeTitle = typeof escapeHTML === "function" ? escapeHTML(badge.title) : badge.title;
     const hexState = isUnlocked ? "honor-badge-hex--unlocked" : "honor-badge-hex--locked";
+    let starsHtml = "";
+    let tierClass = "";
+    if (isUnlocked && badge.categoryKey) {
+      const starsCount = typeof window.getCategoryCompletedRounds === "function"
+        ? window.getCategoryCompletedRounds(badge.categoryKey)
+        : 1;
+      if (starsCount > 0) {
+        starsHtml = `<div class="badge-item-stars" style="display: flex; gap: 2px; justify-content: center; margin-top: 4px; color: #fbbf24; font-size: 0.8rem; text-shadow: 0 1px 3px rgba(0,0,0,0.3);">${"★".repeat(starsCount)}</div>`;
+        if (typeof window.getBadgeTierClass === "function") {
+          tierClass = window.getBadgeTierClass(starsCount);
+        }
+      }
+    }
+
     badgeItem.innerHTML = `
       ${!isUnlocked ? `<div class="honor-badge-item__lock"><span class="nlc-icon nlc-icon--sm" data-icon="lock" aria-hidden="true"></span></div>` : ""}
       <div class="honor-badge-item__icon-wrap honor-badge-hex-shell">
-        <div class="honor-badge-hex ${hexState}">
+        <div class="honor-badge-hex ${hexState} ${tierClass}">
           <span class="nlc-icon nlc-icon--md" data-icon="${badge.iconKey || "award"}" aria-hidden="true"></span>
         </div>
         ${isUnlocked ? `<span class="honor-badge-hex__check" aria-hidden="true"><span class="nlc-icon nlc-icon--sm" data-icon="checkCircle"></span></span>` : ""}
       </div>
       <span class="honor-badge-item__title">${safeTitle}</span>
+      ${starsHtml}
     `;
 
     attachBadgeOpenHandlers(badgeItem, badge, isUnlocked);
@@ -477,6 +516,9 @@ function renderBadgeWall(containerId) {
 }
 
 function renderBadgeStrip(containerId, options) {
+  if (typeof window.syncRoundBadges === "function") {
+    window.syncRoundBadges();
+  }
   const container = document.getElementById(containerId);
   if (!container) return;
 
@@ -498,10 +540,19 @@ function renderBadgeStrip(containerId, options) {
     item.type = "button";
     item.className = "badge-strip__item " + (isUnlocked ? "unlocked" : "locked");
     item.setAttribute("aria-label", (isUnlocked ? "已解鎖：" : "尚未解鎖：") + badge.title);
+    let tierClass = "";
+    if (isUnlocked && badge.categoryKey) {
+      const starsCount = typeof window.getCategoryCompletedRounds === "function"
+        ? window.getCategoryCompletedRounds(badge.categoryKey)
+        : 1;
+      if (starsCount > 0 && typeof window.getBadgeTierClass === "function") {
+        tierClass = window.getBadgeTierClass(starsCount);
+      }
+    }
     const hexState = isUnlocked ? "honor-badge-hex--unlocked" : "honor-badge-hex--locked";
     item.innerHTML = `
       <span class="honor-badge-hex-shell honor-badge-hex-shell--sm">
-        <span class="honor-badge-hex ${hexState}">
+        <span class="honor-badge-hex ${hexState} ${tierClass}">
           <span class="nlc-icon nlc-icon--sm" data-icon="${badge.iconKey || "award"}" aria-hidden="true"></span>
         </span>
         ${!isUnlocked ? `<span class="honor-badge-hex__lock" aria-hidden="true"><span class="nlc-icon nlc-icon--sm" data-icon="lock"></span></span>` : ""}
@@ -581,7 +632,16 @@ window.openBadgeDetailPage = function(badge, isUnlocked, isDark) {
   }
 
   // Render text contents
-  title.textContent = badge.title;
+  let starsText = "";
+  if (isUnlocked && badge.categoryKey) {
+    const starsCount = typeof window.getCategoryCompletedRounds === "function"
+      ? window.getCategoryCompletedRounds(badge.categoryKey)
+      : 1;
+    if (starsCount > 0) {
+      starsText = ` (已讀 ${starsCount} 遍 ${"★".repeat(starsCount)})`;
+    }
+  }
+  title.textContent = badge.title + starsText;
   desc.textContent = badge.description.split("：").pop();
 
   const triggerEl = document.getElementById("detail-trigger-text");
@@ -612,8 +672,17 @@ window.openBadgeDetailPage = function(badge, isUnlocked, isDark) {
     }
     const hexInner = shield.querySelector(".honor-badge-hex");
     if (hexInner) {
-      hexInner.classList.remove("honor-badge-hex--unlocked", "honor-badge-hex--locked");
+      hexInner.classList.remove("honor-badge-hex--unlocked", "honor-badge-hex--locked", "tier-bronze", "tier-silver", "tier-gold", "tier-platinum", "tier-legendary");
       hexInner.classList.add(isUnlocked ? "honor-badge-hex--unlocked" : "honor-badge-hex--locked");
+      if (isUnlocked && badge.categoryKey) {
+        const starsCount = typeof window.getCategoryCompletedRounds === "function"
+          ? window.getCategoryCompletedRounds(badge.categoryKey)
+          : 1;
+        if (starsCount > 0 && typeof window.getBadgeTierClass === "function") {
+          const tierClass = window.getBadgeTierClass(starsCount);
+          if (tierClass) hexInner.classList.add(tierClass);
+        }
+      }
     }
     shield.style.background = "";
     shield.style.borderColor = "";

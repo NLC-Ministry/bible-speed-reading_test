@@ -8994,4 +8994,46 @@ body.dark-theme .plan-calendar .plan-day-cell.active .day-number, body.dark-them
   box-shadow: 0 2px 6px -1px rgba(0, 0, 0, 0.4), inset 0 1px 0 0 rgba(255, 255, 255, 0.08) !important;
 }
 
+/* ──────────────── Honor Badge Tiers ──────────────── */
+.honor-badge-hex.tier-bronze {
+  --badge-tone-top: #ffedd5;
+  --badge-tone-mid: #c2410c;
+  --badge-tone-deep: #7c2d12;
+  --badge-tone-icon: #ffedd5;
+}
 
+.honor-badge-hex.tier-silver {
+  --badge-tone-top: #f3f4f6;
+  --badge-tone-mid: #6b7280;
+  --badge-tone-deep: #374151;
+  --badge-tone-icon: #f9fafb;
+}
+
+.honor-badge-hex.tier-gold {
+  --badge-tone-top: #fef9c3;
+  --badge-tone-mid: #d97706;
+  --badge-tone-deep: #78350f;
+  --badge-tone-icon: #fef9c3;
+}
+
+.honor-badge-hex.tier-platinum {
+  --badge-tone-top: #ecfeff;
+  --badge-tone-mid: #0891b2;
+  --badge-tone-deep: #164e63;
+  --badge-tone-icon: #ecfeff;
+  box-shadow: inset 0 1px 0 var(--badge-gloss-rim), inset 0 -3px 8px var(--badge-tone-inner-shadow), 0 0 12px rgba(8, 145, 178, 0.4);
+}
+
+.honor-badge-hex.tier-legendary {
+  --badge-tone-top: #fae8ff;
+  --badge-tone-mid: #a21caf;
+  --badge-tone-deep: #4a044e;
+  --badge-tone-icon: #fae8ff;
+  animation: cosmicPulse 3s infinite ease-in-out;
+  box-shadow: inset 0 1px 0 var(--badge-gloss-rim), inset 0 -3px 8px var(--badge-tone-inner-shadow), 0 0 16px rgba(162, 28, 175, 0.6);
+}
+
+@keyframes cosmicPulse {
+  0%, 100% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.03); filter: brightness(1.15); }
+}

@@ -1688,6 +1688,39 @@ window.triggerPlanUpgradeFlow = async function() {
 
   const currentRound = plan.currentRound || 1;
   const nextRound = currentRound + 1;
+
+  // 記錄此類別完成的遍數，並觸發勳章解鎖檢查
+  const pk = plan.presetKey || "";
+  const planParts = pk.split("_");
+  if (planParts.length >= 4) {
+    const catKey = planParts[3]; // e.g. cat1
+    const prevMax = parseInt(localStorage.getItem(`cat_completed_rounds_${catKey}`) || "0");
+    if (currentRound > prevMax) {
+      localStorage.setItem(`cat_completed_rounds_${catKey}`, currentRound.toString());
+    }
+    
+    // 解鎖或更新該類別勳章
+    const badgeId = `badge_${catKey}`;
+    const unlockedBadges = JSON.parse(localStorage.getItem("unlocked_badges") || "[]");
+    if (!unlockedBadges.includes(badgeId)) {
+      unlockedBadges.push(badgeId);
+      localStorage.setItem("unlocked_badges", JSON.stringify(unlockedBadges));
+      const unlockDateKey = `date_unlocked_${badgeId}_lvl_1`; // round 1 unlock date
+      if (!localStorage.getItem(unlockDateKey)) {
+        localStorage.setItem(unlockDateKey, `${new Date().getFullYear()}年${new Date().getMonth() + 1}月${new Date().getDate()}日`);
+      }
+    }
+    
+    // 記錄該遍完成的解鎖日期（供勳章詳細頁的時間軸展示）
+    const roundUnlockDateKey = `date_unlocked_${badgeId}_lvl_${currentRound}`;
+    if (!localStorage.getItem(roundUnlockDateKey)) {
+      localStorage.setItem(roundUnlockDateKey, `${new Date().getFullYear()}年${new Date().getMonth() + 1}月${new Date().getDate()}日`);
+    }
+  }
+
+  if (typeof checkAchievements === "function") {
+    checkAchievements().catch(console.error);
+  }
   let nextLevel = "level" + nextRound;
   if (nextRound === 2) nextLevel = "breakthrough";
   else if (nextRound === 3) nextLevel = "super";

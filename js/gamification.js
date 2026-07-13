@@ -35,6 +35,78 @@ const ACHIEVEMENTS = [
     description: "讀完全本聖經所有卷書與章節",
     triggerText: "讀完全本聖經 1189 章後解鎖",
     iconKey: "bookOpen"
+  },
+  {
+    id: "badge_cat1",
+    title: "摩西五經勳章",
+    description: "完成「摩西五經」一個月的讀經挑戰",
+    triggerText: "完成摩西五經計畫後解鎖",
+    iconKey: "award",
+    categoryKey: "cat1"
+  },
+  {
+    id: "badge_cat2",
+    title: "歷史書勳章",
+    description: "完成「歷史書」一個月的讀經挑戰",
+    triggerText: "完成歷史書計畫後解鎖",
+    iconKey: "award",
+    categoryKey: "cat2"
+  },
+  {
+    id: "badge_cat3",
+    title: "詩歌智慧書勳章",
+    description: "完成「詩歌智慧書」一個月的讀經挑戰",
+    triggerText: "完成詩歌智慧書計畫後解鎖",
+    iconKey: "award",
+    categoryKey: "cat3"
+  },
+  {
+    id: "badge_cat4",
+    title: "大先知書勳章",
+    description: "完成「大先知書」一個月的讀經挑戰",
+    triggerText: "完成大先知書計畫後解鎖",
+    iconKey: "award",
+    categoryKey: "cat4"
+  },
+  {
+    id: "badge_cat5",
+    title: "小先知書勳章",
+    description: "完成「小先知書」一個月的讀經挑戰",
+    triggerText: "完成小先知書計畫後解鎖",
+    iconKey: "award",
+    categoryKey: "cat5"
+  },
+  {
+    id: "badge_cat6",
+    title: "福音書+徒勳章",
+    description: "完成「福音書+徒」一個月的讀經挑戰",
+    triggerText: "完成福音書+徒計畫後解鎖",
+    iconKey: "award",
+    categoryKey: "cat6"
+  },
+  {
+    id: "badge_cat7",
+    title: "保羅書信一勳章",
+    description: "完成「保羅書信一」一個月的讀經挑戰",
+    triggerText: "完成保羅書信一計畫後解鎖",
+    iconKey: "award",
+    categoryKey: "cat7"
+  },
+  {
+    id: "badge_cat8",
+    title: "保羅書信二勳章",
+    description: "完成「保羅書信二」一個月的讀經挑戰",
+    triggerText: "完成保羅書信二計畫後解鎖",
+    iconKey: "award",
+    categoryKey: "cat8"
+  },
+  {
+    id: "badge_cat9",
+    title: "普通書信+啟勳章",
+    description: "完成「普通書信+啟」一個月的讀經挑戰",
+    triggerText: "完成普通書信+啟計畫後解鎖",
+    iconKey: "award",
+    categoryKey: "cat9"
   }
 ];
 
@@ -72,6 +144,9 @@ function refreshBadgeSurfaces() {
 
 // Check achievements and trigger popup if newly unlocked
 async function checkAchievements() {
+  if (typeof window.syncRoundBadges === "function") {
+    window.syncRoundBadges();
+  }
   const unlocked = JSON.parse(localStorage.getItem("unlocked_badges") || "[]");
   const newlyUnlocked = [];
 
@@ -104,6 +179,18 @@ async function checkAchievements() {
     });
     if (uniqueChapters.size >= 1189 && !unlocked.includes("read_all_bible")) {
       newlyUnlocked.push("read_all_bible");
+    }
+  }
+
+  // Check category achievements
+  if (typeof window.getCategoryCompletedRounds === "function") {
+    for (let i = 1; i <= 9; i++) {
+      const catKey = `cat${i}`;
+      const badgeId = `badge_cat${i}`;
+      const rounds = window.getCategoryCompletedRounds(catKey);
+      if (rounds > 0 && !unlocked.includes(badgeId)) {
+        newlyUnlocked.push(badgeId);
+      }
     }
   }
 
@@ -273,6 +360,30 @@ window.triggerBadgeUnlockNotification = function(badgeId, badgeName) {
   refreshBadgeSurfaces();
 };
 
+window.getCategoryCompletedRounds = function(catKey) {
+  let maxCompleted = 0;
+  
+  const backupVal = parseInt(localStorage.getItem(`cat_completed_rounds_${catKey}`) || "0");
+  maxCompleted = Math.max(maxCompleted, backupVal);
+
+  if (state.activePlans) {
+    state.activePlans.forEach(plan => {
+      const pk = plan.presetKey || "";
+      if (pk.endsWith(`_${catKey}`) || pk === catKey) {
+        const completedOfThisPlan = (plan.progress >= 100) ? (plan.currentRound || 1) : ((plan.currentRound || 1) - 1);
+        if (completedOfThisPlan > maxCompleted) {
+          maxCompleted = completedOfThisPlan;
+        }
+      }
+    });
+  }
+  return maxCompleted;
+};
+
+window.syncRoundBadges = function() {
+  // Deprecated round-based badges in favor of category-based badges with stars.
+};
+
 window.refreshBadgeSurfaces = refreshBadgeSurfaces;
 window.launchFireworks = launchFireworks;
 window.renderUnlockedBadgesWall = renderUnlockedBadgesWall;
@@ -280,3 +391,4 @@ window.ACHIEVEMENTS = ACHIEVEMENTS;
 window.BADGE_UNLOCK_LEVELS = BADGE_UNLOCK_LEVELS;
 window.checkAchievements = checkAchievements;
 window.recordBadgeUnlockDate = recordBadgeUnlockDate;
+
