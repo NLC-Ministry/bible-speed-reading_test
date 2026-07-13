@@ -8,6 +8,15 @@ export class ServiceWorkerRegistrar extends EventTarget {
 
   async register() {
     if (!("serviceWorker" in navigator) || !window.isSecureContext) return null;
+
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (!refreshing) {
+        refreshing = true;
+        window.location.reload();
+      }
+    });
+
     this.registration = await navigator.serviceWorker.register(this.scriptUrl, {
       scope: this.scope, type: "module", updateViaCache: "none"
     });
