@@ -1,6 +1,6 @@
-import { CacheManager } from "./js/pwa/CacheManager.js?v=20260712-9";
+import { CacheManager } from "./js/pwa/CacheManager.js?v=20260713-1";
 
-const VERSION = "20260712-9";
+const VERSION = "20260713-1";
 const cacheManager = new CacheManager({
   prefix: "newlife-bible",
   version: VERSION,
