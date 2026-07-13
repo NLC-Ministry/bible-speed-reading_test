@@ -9037,3 +9037,193 @@ body.dark-theme .plan-calendar .plan-day-cell.active .day-number, body.dark-them
   0%, 100% { transform: scale(1); filter: brightness(1); }
   50% { transform: scale(1.03); filter: brightness(1.15); }
 }
+
+/* Congratulations Medal Modal Styles */
+.congrats-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.congrats-modal-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: 24px;
+  padding: 2.5rem;
+  width: 90%;
+  max-width: 440px;
+  box-shadow: var(--shadow-lg);
+  animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.congrats-confetti-container {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.congrats-confetti-p1 {
+  position: absolute; width: 8px; height: 8px; background: #fbbf24; border-radius: 50%; top: 10%; left: 15%; animation: float 3s infinite ease-in-out;
+}
+.congrats-confetti-p2 {
+  position: absolute; width: 6px; height: 12px; background: #6366f1; transform: rotate(45deg); top: 20%; right: 20%; animation: float 4s infinite ease-in-out 1s;
+}
+.congrats-confetti-p3 {
+  position: absolute; width: 10px; height: 10px; background: #ec4899; transform: rotate(15deg); bottom: 15%; left: 25%; animation: float 3.5s infinite ease-in-out 0.5s;
+}
+.congrats-confetti-p4 {
+  position: absolute; width: 8px; height: 8px; background: var(--color-success); border-radius: 50%; bottom: 25%; right: 15%; animation: float 4.5s infinite ease-in-out 1.5s;
+}
+
+.congrats-medal-container {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  margin-bottom: 1.5rem;
+  filter: drop-shadow(0 8px 16px rgba(251, 191, 36, 0.35));
+  animation: pulseMedal 2s infinite ease-in-out;
+}
+
+.congrats-svg-ribbon-left {
+  fill: #ef4444;
+}
+
+.congrats-svg-ribbon-right {
+  fill: #3b82f6;
+}
+
+.congrats-svg-glow-ring {
+  fill: none;
+  stroke: #fbbf24;
+  stroke-width: 4;
+  stroke-dasharray: 6,3;
+}
+
+.congrats-svg-gold-circle {
+  fill: url(#goldGradient);
+  stroke: #f59e0b;
+  stroke-width: 1.5;
+}
+
+.congrats-svg-inner-circle {
+  fill: none;
+  stroke: #d97706;
+  stroke-width: 1;
+  opacity: 0.3;
+}
+
+.congrats-svg-star {
+  fill: #fff;
+}
+
+.congrats-stop-1 {
+  stop-color: #fef08a;
+}
+
+.congrats-stop-2 {
+  stop-color: #f59e0b;
+}
+
+.congrats-stop-3 {
+  stop-color: #b45309;
+}
+
+.congrats-upgrade-btn {
+  width: 100%;
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+  border: none;
+  border-radius: 12px;
+  padding: 0.85rem;
+  font-size: 1rem;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+}
+
+.congrats-later-btn {
+  width: 100%;
+  background: var(--bg-card-active);
+  border: 1px solid var(--border-card);
+  border-radius: 12px;
+  padding: 0.75rem;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.congrats-title {
+  margin: 0 0 0.5rem 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.congrats-desc-primary {
+  margin: 0 0 0.25rem 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.congrats-desc-secondary {
+  margin: 0 0 1.5rem 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.congrats-actions {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.congrats-inline-banner {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(168, 85, 247, 0.12));
+  border: 1px solid var(--border-card);
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 1.2rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.congrats-banner-btn {
+  margin-top: 0.5rem;
+  padding: 0.5rem 1.5rem;
+  font-size: 0.88rem;
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);
+}

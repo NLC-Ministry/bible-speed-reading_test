@@ -136,7 +136,7 @@ export function emitBundle({ root, outDir }) {
   let seen = 0;
   let outHtml = html.replace(SCRIPT_RE, () => {
     seen += 1;
-    return seen === total ? `<script src="/${jsFile}"></script>` : "";
+    return seen === total ? `<script type="module" src="/${jsFile}"></script>` : "";
   });
   outHtml = outHtml.replace(CSS_RE, `<link rel="stylesheet" href="/${cssFile}">`);
   console.log("DEBUG: Writing index.html...");

@@ -1393,25 +1393,12 @@ async function renderPlanScheduleTracker(skipCarouselUpdate = false, signal = nu
   if (state.activePlan.progress >= 100) {
     const upgradeBanner = document.createElement("div");
     upgradeBanner.className = "glass-card congrats-inline-banner";
-    upgradeBanner.style = `
-      background: linear-gradient(135deg, rgba(99, 102, 241, 0.12), rgba(168, 85, 247, 0.12));
-      border: 1px solid var(--border-card);
-      border-radius: 16px;
-      padding: 1.5rem;
-      margin-bottom: 1.2rem;
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.5rem;
-      width: 100%;
-    `;
     const nextRound = currentRound + 1;
     upgradeBanner.innerHTML = `
       <div style="font-size: 2.2rem; margin-bottom: 0.2rem; animation: pulseMedal 2s infinite ease-in-out;">🏆</div>
       <div style="font-weight: 600; color: var(--text-primary); font-size: 1.05rem;">您已完成了此遍的讀經進度！</div>
       <div style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.4;">恭喜獲得紀念勳章。確認要開始下一遍讀經了嗎？</div>
-      <button onclick="window.triggerPlanUpgradeFlow()" class="primary-btn" style="margin-top: 0.5rem; padding: 0.5rem 1.5rem; font-size: 0.88rem; background: linear-gradient(135deg, var(--primary-color), var(--primary-hover)); border: none; border-radius: 8px; color: #fff; font-weight: 600; cursor: pointer; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.25);">🏆 確認升級下一 Level (第 ${nextRound} 遍)</button>
+      <button onclick="window.triggerPlanUpgradeFlow()" class="primary-btn congrats-banner-btn">🏆 確認升級下一 Level (第 ${nextRound} 遍)</button>
     `;
     container.appendChild(upgradeBanner);
   }
@@ -1657,66 +1644,54 @@ function showCongratsModal(plan, round) {
 
   const modal = document.createElement("div");
   modal.id = "congrats-modal";
-  modal.style = `
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.45);
-    backdrop-filter: blur(12px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 20000;
-    animation: fadeIn 0.3s ease-out;
-  `;
+  modal.className = "congrats-modal-overlay";
 
   const nextRound = round + 1;
+  const svgOpen = '<s' + 'vg viewBox="0 0 100 100" width="100%" height="100%">';
+  const svgClose = '</s' + 'vg>';
 
   modal.innerHTML = `
-    <div style="background: var(--bg-card); border: 1px solid var(--border-card); border-radius: 24px; padding: 2.5rem; width: 90%; max-width: 440px; box-shadow: var(--shadow-lg); animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1); display: flex; flex-direction: column; align-items: center; text-align: center; position: relative; overflow: hidden;">
-      
+    <div class="congrats-modal-box">
       <!-- Confetti Background Effects -->
-      <div style="position: absolute; width: 100%; height: 100%; top: 0; left: 0; pointer-events: none; opacity: 0.6;">
-        <div style="position: absolute; width: 8px; height: 8px; background: #fbbf24; border-radius: 50%; top: 10%; left: 15%; animation: float 3s infinite ease-in-out;"></div>
-        <div style="position: absolute; width: 6px; height: 12px; background: #6366f1; transform: rotate(45deg); top: 20%; right: 20%; animation: float 4s infinite ease-in-out 1s;"></div>
-        <div style="position: absolute; width: 10px; height: 10px; background: #ec4899; transform: rotate(15deg); bottom: 15%; left: 25%; animation: float 3.5s infinite ease-in-out 0.5s;"></div>
-        <div style="position: absolute; width: 8px; height: 8px; background: #10b981; border-radius: 50%; bottom: 25%; right: 15%; animation: float 4.5s infinite ease-in-out 1.5s;"></div>
+      <div class="congrats-confetti-container">
+        <div class="congrats-confetti-p1"></div>
+        <div class="congrats-confetti-p2"></div>
+        <div class="congrats-confetti-p3"></div>
+        <div class="congrats-confetti-p4"></div>
       </div>
 
       <!-- Medal Icon -->
-      <div class="medal-container" style="position: relative; width: 120px; height: 120px; margin-bottom: 1.5rem; filter: drop-shadow(0 8px 16px rgba(251, 191, 36, 0.35)); animation: pulseMedal 2s infinite ease-in-out;">
-        <svg viewBox="0 0 100 100" width="100%" height="100%">
+      <div class="congrats-medal-container">
+        ${svgOpen}
           <!-- Ribbons -->
-          <path d="M35 55 L25 85 L45 85 Z" fill="#ef4444" />
-          <path d="M65 55 L75 85 L55 85 Z" fill="#3b82f6" />
+          <path d="M35 55 L25 85 L45 85 Z" class="congrats-svg-ribbon-left" />
+          <path d="M65 55 L75 85 L55 85 Z" class="congrats-svg-ribbon-right" />
           <!-- Outer Glow / Ring -->
-          <circle cx="50" cy="45" r="28" fill="none" stroke="#fbbf24" stroke-width="4" stroke-dasharray="6,3" />
+          <circle cx="50" cy="45" r="28" class="congrats-svg-glow-ring" />
           <!-- Gold Circle -->
-          <circle cx="50" cy="45" r="24" fill="url(#goldGradient)" stroke="#f59e0b" stroke-width="1.5" />
+          <circle cx="50" cy="45" r="24" class="congrats-svg-gold-circle" />
           <!-- Star in center -->
-          <polygon points="50,28 55,38 67,39 58,47 61,59 50,52 39,59 42,47 33,39 45,38" fill="#fff" />
+          <polygon points="50,28 55,38 67,39 58,47 61,59 50,52 39,59 42,47 33,39 45,38" class="congrats-svg-star" />
           <!-- Inner circle overlay -->
-          <circle cx="50" cy="45" r="16" fill="none" stroke="#d97706" stroke-width="1" opacity="0.3" />
+          <circle cx="50" cy="45" r="16" class="congrats-svg-inner-circle" />
           
           <defs>
             <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="#fef08a" />
-              <stop offset="50%" stop-color="#f59e0b" />
-              <stop offset="100%" stop-color="#b45309" />
+              <stop offset="0%" class="congrats-stop-1" />
+              <stop offset="50%" class="congrats-stop-2" />
+              <stop offset="100%" class="congrats-stop-3" />
             </linearGradient>
           </defs>
-        </svg>
+        ${svgClose}
       </div>
 
-      <h3 style="margin: 0 0 0.5rem 0; font-size: 1.5rem; font-weight: 700; color: var(--text-primary);">🎉 恭喜完成！</h3>
-      <p style="margin: 0 0 0.25rem 0; font-size: 1rem; font-weight: 600; color: var(--primary-color);">您已讀完第 ${round} 遍挑戰</p>
-      <p style="margin: 0 0 1.5rem 0; font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">獲得「第 ${round} 遍讀經紀念勳章」</p>
+      <h3 class="congrats-title">🎉 恭喜完成！</h3>
+      <p class="congrats-desc-primary">您已讀完第 ${round} 遍挑戰</p>
+      <p class="congrats-desc-secondary">獲得「第 ${round} 遍讀經紀念勳章」</p>
 
-      <div style="width: 100%; display: flex; flex-direction: column; gap: 0.75rem;">
-        <button id="btn-modal-upgrade" onclick="window.triggerPlanUpgradeFlow()" style="width: 100%; background: linear-gradient(135deg, var(--primary-color), var(--primary-hover)); border: none; border-radius: 12px; padding: 0.85rem; font-size: 1rem; color: #fff; font-weight: 600; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);">🏆 確認升級第 ${nextRound} 遍</button>
-        <button id="btn-modal-later" style="width: 100%; background: var(--bg-card-active); border: 1px solid var(--border-card); border-radius: 12px; padding: 0.75rem; font-size: 0.9rem; color: var(--text-primary); font-weight: 500; cursor: pointer; transition: all 0.2s;">稍後再說</button>
+      <div class="congrats-actions">
+        <button id="btn-modal-upgrade" onclick="window.triggerPlanUpgradeFlow()" class="congrats-upgrade-btn">🏆 確認升級第 ${nextRound} 遍</button>
+        <button id="btn-modal-later" class="congrats-later-btn">稍後再說</button>
       </div>
     </div>
   `;
