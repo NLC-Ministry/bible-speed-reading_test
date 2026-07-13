@@ -779,9 +779,12 @@ function renderPresetPlansList() {
 
   if (state.globalPlans && state.globalPlans.length > 0) {
     state.globalPlans.forEach(gp => {
-      const exists = monthlyPlans.some(mp => mp.presetKey === gp.presetKey || mp.name === gp.name);
-      if (!exists && !gp.isHidden) {
-        monthlyPlans.push(gp);
+      const isMonthly = (gp.presetKey && gp.presetKey.startsWith("m_")) || /^\d{4}年\d{1,2}月：/.test(gp.name);
+      if (isMonthly) {
+        const exists = monthlyPlans.some(mp => mp.presetKey === gp.presetKey || mp.name === gp.name);
+        if (!exists && !gp.isHidden) {
+          monthlyPlans.push(gp);
+        }
       }
     });
   }

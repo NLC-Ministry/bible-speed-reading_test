@@ -1902,6 +1902,12 @@ const db = {
         const month = parseInt(parts[2]);
         const catKey = parts[3];
 
+        // 2026年8月限定只能選擇「摩西五經」
+        if (year === 2026 && month === 8 && catKey !== "cat1") {
+          showToast("2026年8月限定只能選擇「摩西五經」。");
+          return;
+        }
+
         const getMonthSeason = (y, m) => {
           if (y === 2026 && (m === 8 || m === 9 || m === 10)) return 1;
           if ((y === 2026 && m === 11) || (y === 2026 && m === 12) || (y === 2027 && m === 1)) return 2;
