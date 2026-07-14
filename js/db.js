@@ -1971,9 +1971,29 @@ const db = {
     loader.show("加入挑戰計畫中...");
 
     const planName = preset.name;
-    const startDate = preset.startDate;
-    const endDate = preset.endDate;
+    let startDate = preset.startDate;
+    let endDate = preset.endDate;
     const selectedBooks = preset.books;
+
+    if (key && !key.startsWith("m_")) {
+      const getLocalDateString = (d) => {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+      };
+
+      const origStart = new Date(preset.startDate);
+      const origEnd = new Date(preset.endDate);
+      const durationDays = Math.max(1, Math.ceil((origEnd - origStart) / (1000 * 60 * 60 * 24)) + 1);
+
+      const today = new Date();
+      startDate = getLocalDateString(today);
+
+      const end = new Date(today);
+      end.setDate(today.getDate() + durationDays - 1);
+      endDate = getLocalDateString(end);
+    }
 
     let newPlanObj = null;
 

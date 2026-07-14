@@ -791,7 +791,17 @@ function renderPresetPlansList() {
     return null;
   };
 
-  // Find the first month (starting from current month) in SEASON_MONTHS that doesn't have a plan
+  // Helper to calculate duration text
+  const getDurationLabel = (sStr, eStr) => {
+    if (!sStr || !eStr) return "時間：未設定";
+    const start = new Date(sStr);
+    const end = new Date(eStr);
+    const diffDays = Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1);
+    if (diffDays >= 28 && diffDays <= 31) return `時間：1 個月 (${diffDays} 天)`;
+    if (diffDays >= 88 && diffDays <= 92) return `時間：3 個月 (${diffDays} 天)`;
+    return `時間：${diffDays} 天`;
+  };
+
   let targetMonth = null;
   for (const mSpec of window.SEASON_MONTHS || []) {
     const monthsDiff = (mSpec.year - currentYear) * 12 + (mSpec.month - currentMonth);
@@ -811,132 +821,232 @@ function renderPresetPlansList() {
     }
   }
 
-  // If no target month is found, it means the user has active plans for all remaining months
-  if (!targetMonth) {
-    container.innerHTML = `
-      <div style="text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.95rem;">
-        🎉 恭喜！您已選擇並啟動了所有月份的讀經計畫！
-      </div>
-    `;
-    return;
-  }
+  let monthlySectionRendered = false;
 
-  // Find categories that have already been chosen
-  const joinedCategories = new Set(
-    (state.activePlans || [])
-      .map(getPlanCategoryKey)
-      .filter(Boolean)
-  );
+  if (targetMonth) {
+    // Find categories that have already been chosen
+    const joinedCategories = new Set(
+      (state.activePlans || [])
+        .map(getPlanCategoryKey)
+        .filter(Boolean)
+    );
 
-  // Filter unselected categories from BIBLE_CATEGORIES
-  let availableCategories = Object.entries(window.BIBLE_CATEGORIES || {})
-    .filter(([catKey]) => !joinedCategories.has(catKey));
+    // Filter unselected categories from BIBLE_CATEGORIES
+    let availableCategories = Object.entries(window.BIBLE_CATEGORIES || {})
+      .filter(([catKey]) => !joinedCategories.has(catKey));
 
-  // Special constraint: 2026年8月 only allows cat1
-  if (targetMonth.year === 2026 && targetMonth.month === 8) {
-    availableCategories = availableCategories.filter(([catKey]) => catKey === "cat1");
-  }
-
-  if (availableCategories.length === 0) {
-    container.innerHTML = `
-      <div style="text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.95rem;">
-        🎉 恭喜！您已加入了所有 9 大類讀經計畫挑戰！
-      </div>
-    `;
-    return;
-  }
-
-  // Determine if the target month is open
-  const monthsDiff = (targetMonth.year - currentYear) * 12 + (targetMonth.month - currentMonth);
-  const isOpen = (monthsDiff === 0) || (monthsDiff === 1 && currentDay >= 25);
-
-  // Render the target month section
-  const section = document.createElement("div");
-  section.style = "display: flex; flex-direction: column; gap: 0.75rem; width: 100%; margin-bottom: 1.5rem;";
-
-  const header = document.createElement("div");
-  header.style = `
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    border-left: 4px solid var(--primary-color);
-    padding-left: 0.6rem;
-    margin-bottom: 0.25rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  `;
-  header.innerHTML = `
-    <span class="nlc-icon" data-icon="calendar" aria-hidden="true" style="color: var(--primary-color);"></span>
-    <span>${targetMonth.label}</span>
-  `;
-  section.appendChild(header);
-
-  const grid = document.createElement("div");
-  grid.style = `
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1rem;
-    width: 100%;
-  `;
-
-  const lastDay = new Date(targetMonth.year, targetMonth.month, 0).getDate();
-  const startDateStr = `${targetMonth.year}-${String(targetMonth.month).padStart(2, '0')}-01`;
-  const endDateStr = `${targetMonth.year}-${String(targetMonth.month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-
-  availableCategories.forEach(([catKey, catSpec]) => {
-    const presetKey = `m_${targetMonth.year}_${String(targetMonth.month).padStart(2, '0')}_${catKey}`;
-
-    const card = document.createElement("div");
-    card.className = "joined-plan-item-card";
-    card.style = `
-      background: var(--bg-card);
-      border: 1px solid var(--border-card);
-      border-radius: 16px;
-      padding: 1rem;
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      cursor: ${isOpen ? 'pointer' : 'not-allowed'};
-      transition: all 0.2s ease;
-      opacity: ${isOpen ? '1' : '0.65'};
-    `;
-
-    card.onclick = async () => {
-      if (!isOpen) {
-        showToast(`下月份 (${targetMonth.month}月) 的讀經計畫將於每月 25 號開放選擇。`);
-        return;
-      }
-      if (confirm(`確定要加入 ${catSpec.name} 讀經計畫挑戰嗎？`)) {
-        await db.joinPresetPlan(presetKey);
-      }
-    };
-
-    let statusLabel = `+ 點擊加入 ${targetMonth.month} 月份挑戰`;
-    if (!isOpen) {
-      statusLabel = `🔒 尚未開放選取 (每月 25 號開放)`;
+    // Special constraint: 2026年8月 only allows cat1
+    if (targetMonth.year === 2026 && targetMonth.month === 8) {
+      availableCategories = availableCategories.filter(([catKey]) => catKey === "cat1");
     }
 
-    card.innerHTML = `
-      ${getPlanCoverHtml({ presetKey })}
-      <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 0.25rem; min-width: 0;">
-        <h4 style="margin: 0; font-size: 1.05rem; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${catSpec.name}</h4>
-        <div style="font-size: 0.78rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.3rem;">
-          <span class="nlc-icon" data-icon="calendarThirty" aria-hidden="true"></span> <span>${startDateStr} ~ ${endDateStr}</span>
-        </div>
-        <div style="font-size: 0.76rem; font-weight: 500; color: ${isOpen ? 'var(--primary-color)' : 'var(--text-muted)'}; margin-top: 0.2rem; display: flex; align-items: center; gap: 0.25rem;">
-          ${statusLabel}
-        </div>
-      </div>
-    `;
-    grid.appendChild(card);
+    if (availableCategories.length > 0) {
+      monthlySectionRendered = true;
+
+      // Determine if the target month is open
+      const monthsDiff = (targetMonth.year - currentYear) * 12 + (targetMonth.month - currentMonth);
+      const isOpen = (monthsDiff === 0) || (monthsDiff === 1 && currentDay >= 25);
+
+      // Render the target month section
+      const section = document.createElement("div");
+      section.style = "display: flex; flex-direction: column; gap: 0.75rem; width: 100%; margin-bottom: 2rem;";
+
+      const header = document.createElement("div");
+      header.style = `
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        border-left: 4px solid var(--primary-color);
+        padding-left: 0.6rem;
+        margin-bottom: 0.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      `;
+      header.innerHTML = `
+        <span class="nlc-icon" data-icon="calendar" aria-hidden="true" style="color: var(--primary-color);"></span>
+        <span>月度計畫挑戰 (${targetMonth.label})</span>
+      `;
+      section.appendChild(header);
+
+      const grid = document.createElement("div");
+      grid.style = `
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1rem;
+        width: 100%;
+      `;
+
+      const lastDay = new Date(targetMonth.year, targetMonth.month, 0).getDate();
+      const startDateStr = `${targetMonth.year}-${String(targetMonth.month).padStart(2, '0')}-01`;
+      const endDateStr = `${targetMonth.year}-${String(targetMonth.month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+      const durationText = getDurationLabel(startDateStr, endDateStr);
+
+      availableCategories.forEach(([catKey, catSpec]) => {
+        const presetKey = `m_${targetMonth.year}_${String(targetMonth.month).padStart(2, '0')}_${catKey}`;
+
+        const card = document.createElement("div");
+        card.className = "joined-plan-item-card";
+        card.style = `
+          background: var(--bg-card);
+          border: 1px solid var(--border-card);
+          border-radius: 16px;
+          padding: 1rem;
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          cursor: ${isOpen ? 'pointer' : 'not-allowed'};
+          transition: all 0.2s ease;
+          opacity: ${isOpen ? '1' : '0.65'};
+        `;
+
+        card.onclick = async () => {
+          if (!isOpen) {
+            showToast(`下月份 (${targetMonth.month}月) 的讀經計畫將於每月 25 號開放選擇。`);
+            return;
+          }
+          if (confirm(`確定要加入 ${catSpec.name} 讀經計畫挑戰嗎？\n系統將自動設定為 ${targetMonth.month} 月份完整區間。`)) {
+            await db.joinPresetPlan(presetKey);
+          }
+        };
+
+        let statusLabel = `+ 點擊加入 ${targetMonth.month} 月份挑戰`;
+        if (!isOpen) {
+          statusLabel = `🔒 尚未開放選取 (每月 25 號開放)`;
+        }
+
+        card.innerHTML = `
+          ${getPlanCoverHtml({ presetKey })}
+          <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 0.25rem; min-width: 0;">
+            <h4 style="margin: 0; font-size: 1.05rem; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${catSpec.name}</h4>
+            <div style="font-size: 0.78rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.3rem;">
+              <span class="nlc-icon" data-icon="calendarThirty" aria-hidden="true"></span> <span>${durationText}</span>
+            </div>
+            <div style="font-size: 0.76rem; font-weight: 500; color: ${isOpen ? 'var(--primary-color)' : 'var(--text-muted)'}; margin-top: 0.2rem; display: flex; align-items: center; gap: 0.25rem;">
+              ${statusLabel}
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+
+      section.appendChild(grid);
+      container.appendChild(section);
+      if (typeof hydrateIcons === "function") hydrateIcons(section);
+    }
+  }
+
+  // --- PART 3: Render Quarterly / Other Plans Section ---
+  const otherPresets = Object.entries(CHURCH_PLAN_PRESETS).filter(([key]) => !key.startsWith("m_"));
+  const otherPlans = [];
+
+  otherPresets.forEach(([key, p]) => {
+    const isJoined = (state.activePlans || []).some(ap => ap.presetKey === key || ap.id === key);
+    if (!isJoined) {
+      otherPlans.push({
+        id: key,
+        name: p.name,
+        startDate: p.startDate,
+        endDate: p.endDate,
+        books: p.books,
+        presetKey: key
+      });
+    }
   });
 
-  section.appendChild(grid);
-  container.appendChild(section);
+  if (state.globalPlans && state.globalPlans.length > 0) {
+    state.globalPlans.forEach(gp => {
+      const isMonthly = (gp.presetKey && gp.presetKey.startsWith("m_")) || /^\d{4}年\d{1,2}月：/.test(gp.name);
+      if (!isMonthly) {
+        const isJoined = (state.activePlans || []).some(ap => ap.presetKey === gp.presetKey || ap.id === gp.id);
+        const alreadyListed = otherPlans.some(op => op.id === gp.id || op.presetKey === gp.presetKey);
+        if (!isJoined && !alreadyListed && !gp.isHidden) {
+          otherPlans.push(gp);
+        }
+      }
+    });
+  }
 
-  if (typeof hydrateIcons === "function") {
-    hydrateIcons(section);
+  if (otherPlans.length > 0) {
+    const section = document.createElement("div");
+    section.style = "display: flex; flex-direction: column; gap: 0.75rem; width: 100%; margin-bottom: 2rem;";
+
+    const header = document.createElement("div");
+    header.style = `
+      font-size: 1.15rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      border-left: 4px solid var(--primary-color);
+      padding-left: 0.6rem;
+      margin-bottom: 0.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    `;
+    header.innerHTML = `
+      <span class="nlc-icon" data-icon="star" aria-hidden="true" style="color: var(--primary-color);"></span>
+      <span>季度與經典計畫挑戰</span>
+    `;
+    section.appendChild(header);
+
+    const grid = document.createElement("div");
+    grid.style = `
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
+      width: 100%;
+    `;
+
+    otherPlans.forEach(plan => {
+      const key = plan.presetKey || plan.id;
+      const durationText = getDurationLabel(plan.startDate, plan.endDate);
+
+      const card = document.createElement("div");
+      card.className = "joined-plan-item-card";
+      card.style = `
+        background: var(--bg-card);
+        border: 1px solid var(--border-card);
+        border-radius: 16px;
+        padding: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      `;
+
+      card.onclick = async () => {
+        if (confirm(`確定要加入 ${plan.name} 讀經計畫挑戰嗎？\n系統將自動設定為從今天開始的完整讀經區段。`)) {
+          await db.joinPresetPlan(key);
+        }
+      };
+
+      card.innerHTML = `
+        ${getPlanCoverHtml({ presetKey: key })}
+        <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 0.25rem; min-width: 0;">
+          <h4 style="margin: 0; font-size: 1.05rem; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${plan.name}</h4>
+          <div style="font-size: 0.78rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.3rem;">
+            <span class="nlc-icon" data-icon="calendarThirty" aria-hidden="true"></span> <span>${durationText}</span>
+          </div>
+          <div style="font-size: 0.76rem; font-weight: 500; color: var(--primary-color); margin-top: 0.2rem; display: flex; align-items: center; gap: 0.25rem;">
+            + 點擊加入計畫挑戰
+          </div>
+        </div>
+      `;
+      grid.appendChild(card);
+    });
+
+    section.appendChild(grid);
+    container.appendChild(section);
+    if (typeof hydrateIcons === "function") hydrateIcons(section);
+  }
+
+  if (!monthlySectionRendered && otherPlans.length === 0) {
+    container.innerHTML = `
+      <div style="text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.95rem;">
+        🎉 恭喜！您已啟動了所有可選的讀經計畫！
+      </div>
+    `;
   }
 }
 

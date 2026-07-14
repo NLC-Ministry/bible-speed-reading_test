@@ -1327,10 +1327,21 @@ function generatePlanObject(name, startDate, endDate, selectedBooks, presetKey =
       }
     });
 
+    const planStart = parseLocalDate(startDate || preset.startDate);
+    days.forEach((day, index) => {
+      const dayDate = new Date(planStart);
+      dayDate.setDate(planStart.getDate() + index);
+      const mm = String(dayDate.getMonth() + 1).padStart(2, '0');
+      const dd = String(dayDate.getDate()).padStart(2, '0');
+      day.date = `${mm}/${dd}`;
+      day.year = dayDate.getFullYear();
+      day.month = dayDate.getMonth() + 1;
+    });
+
     return {
       name: preset.name,
-      startDate: preset.startDate,
-      endDate: preset.endDate,
+      startDate: startDate || preset.startDate,
+      endDate: endDate || preset.endDate,
       totalDays: days.length,
       totalChapters: totalChaptersCount,
       completedChapters: 0,
@@ -1338,6 +1349,7 @@ function generatePlanObject(name, startDate, endDate, selectedBooks, presetKey =
       days,
       presetKey,
       target_books: selectedBooks,
+      targetBooks: selectedBooks,
       level,
       currentRound: 1,
       wasDowngraded: false
