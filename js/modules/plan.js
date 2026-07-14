@@ -553,16 +553,7 @@ function initPlanControls() {
         if (joinedContainer) joinedContainer.classList.remove("hidden");
         if (presetContainer) presetContainer.classList.add("hidden");
         if (sidebarCard) sidebarCard.classList.add("hidden");
-
-        const joinedList = document.getElementById("joined-plans-list");
-        if (joinedList) {
-          joinedList.innerHTML = `
-            <div class="empty-state" style="text-align: center; padding: 3rem 0; width: 100%;">
-              <p style="color: var(--text-secondary); margin-bottom: 1rem; font-weight: 500;">目前沒有已完成的計畫</p>
-              <p style="font-size: 0.82rem; color: var(--text-muted);">${(window.APP_COPY && window.APP_COPY.plan.goFindPlans) || "前往「找計畫」加入新挑戰吧！"}</p>
-            </div>
-          `;
-        }
+        renderJoinedPlansList();
       }
     });
   });
@@ -711,17 +702,46 @@ function renderJoinedPlansList() {
 
     container.innerHTML = "";
 
-    if (!state.activePlans || state.activePlans.length === 0) {
-      container.innerHTML = `
-        <div class="empty-state" style="text-align: center; padding: 3rem 0;">
-          <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-weight: 500;">您目前沒有加入任何讀經計畫。</p>
-          <p style="font-size: 0.88rem; color: var(--text-muted);">${(window.APP_COPY && window.APP_COPY.plan.clickFindPlans) || "請點擊頂部「找計畫」瀏覽並加入！"}</p>
-        </div>
-      `;
+    const activePill = document.querySelector("#plan-list-status-pills .pill-btn.active");
+    const filter = activePill ? activePill.getAttribute("data-filter") : "mine";
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const isExpired = (plan) => {
+      if (!plan || !plan.endDate) return false;
+      const end = new Date(plan.endDate);
+      end.setHours(0, 0, 0, 0);
+      return today > end;
+    };
+
+    let plansToRender = [];
+    if (filter === "mine") {
+      plansToRender = (state.activePlans || []).filter(p => !isExpired(p));
+    } else if (filter === "completed") {
+      plansToRender = (state.activePlans || []).filter(p => isExpired(p));
+    }
+
+    if (plansToRender.length === 0) {
+      if (filter === "mine") {
+        container.innerHTML = `
+          <div class="empty-state" style="text-align: center; padding: 3rem 0;">
+            <p style="color: var(--text-secondary); margin-bottom: 1.5rem; font-weight: 500;">您目前沒有加入任何讀經計畫。</p>
+            <p style="font-size: 0.88rem; color: var(--text-muted);">${(window.APP_COPY && window.APP_COPY.plan.clickFindPlans) || "請點擊頂部「找計畫」瀏覽並加入！"}</p>
+          </div>
+        `;
+      } else {
+        container.innerHTML = `
+          <div class="empty-state" style="text-align: center; padding: 3rem 0; width: 100%;">
+            <p style="color: var(--text-secondary); margin-bottom: 1rem; font-weight: 500;">目前沒有已過期的計畫</p>
+            <p style="font-size: 0.82rem; color: var(--text-muted);">前往「找計畫」加入新挑戰吧！</p>
+          </div>
+        `;
+      }
       return;
     }
 
-    state.activePlans.forEach(plan => {
+    plansToRender.forEach(plan => {
       const card = document.createElement("div");
       card.className = "joined-plan-item-card";
       card.style = `
@@ -752,25 +772,48 @@ function renderJoinedPlansList() {
 
       const progress = plan.progress || 0;
       const currentRound = plan.currentRound || 1;
-      const progressText = currentRound > 1
-        ? `已完成第 ${currentRound - 1} 遍 👑<br>第 ${currentRound} 遍：已讀 ${progress}% (${plan.completedChapters} / ${plan.currentRoundTotalChapters || plan.totalChapters} 章)`
-        : `已讀 ${progress}% (${plan.completedChapters} / ${plan.currentRoundTotalChapters || plan.totalChapters} 章)`;
 
-      card.innerHTML = `
-        ${getPlanCoverHtml(plan)}
-        <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 0.25rem; min-width: 0;">
-          <h4 style="margin: 0; font-size: 1.05rem; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${plan.name}</h4>
-          <div style="font-size: 0.78rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.3rem;">
-            <span class="nlc-icon" data-icon="calendarThirty" aria-hidden="true"></span> <span>${plan.startDate} ~ ${plan.endDate}</span>
+      if (filter === "completed") {
+        // Expired plan: show status label instead of progress bar
+        const isCompleted = (currentRound > 1) || (progress === 100);
+        const statusText = isCompleted ? "已完成" : "未完成";
+        const statusColor = isCompleted ? "var(--color-success-foreground)" : "var(--color-danger)";
+
+        card.innerHTML = `
+          ${getPlanCoverHtml(plan)}
+          <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 0.25rem; min-width: 0;">
+            <h4 style="margin: 0; font-size: 1.05rem; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${plan.name}</h4>
+            <div style="font-size: 0.78rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.3rem;">
+              <span class="nlc-icon" data-icon="calendarThirty" aria-hidden="true"></span> <span>${plan.startDate} ~ ${plan.endDate}</span>
+            </div>
+            <div style="font-size: 0.82rem; font-weight: 600; color: ${statusColor}; margin-top: 0.25rem; display: flex; align-items: center; gap: 0.25rem;">
+              狀態：${statusText}
+            </div>
           </div>
-          <div class="plan-progress-wrapper plan-progress-wrapper--compact">
-            <div class="plan-progress-bar" style="width: ${progress}%;"></div>
+        `;
+      } else {
+        // Normal active plan: show progress bar
+        const progressText = currentRound > 1
+          ? `已完成第 ${currentRound - 1} 遍 👑<br>第 ${currentRound} 遍：已讀 ${progress}% (${plan.completedChapters} / ${plan.currentRoundTotalChapters || plan.totalChapters} 章)`
+          : `已讀 ${progress}% (${plan.completedChapters} / ${plan.currentRoundTotalChapters || plan.totalChapters} 章)`;
+
+        card.innerHTML = `
+          ${getPlanCoverHtml(plan)}
+          <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 0.25rem; min-width: 0;">
+            <h4 style="margin: 0; font-size: 1.05rem; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${plan.name}</h4>
+            <div style="font-size: 0.78rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.3rem;">
+              <span class="nlc-icon" data-icon="calendarThirty" aria-hidden="true"></span> <span>${plan.startDate} ~ ${plan.endDate}</span>
+            </div>
+            <div class="plan-progress-wrapper plan-progress-wrapper--compact">
+              <div class="plan-progress-bar" style="width: ${progress}%;"></div>
+            </div>
+            <div style="font-size: 0.76rem; font-weight: 500; color: var(--text-secondary); margin-top: 0.1rem; line-height: 1.35;">
+              ${progressText}
+            </div>
           </div>
-          <div style="font-size: 0.76rem; font-weight: 500; color: var(--text-secondary); margin-top: 0.1rem; line-height: 1.35;">
-            ${progressText}
-          </div>
-        </div>
-      `;
+        `;
+      }
+
       container.appendChild(card);
     });
   } catch (err) {
