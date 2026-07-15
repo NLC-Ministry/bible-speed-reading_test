@@ -7,11 +7,31 @@
  */
 function getPresetKeyByName(name) {
   if (!name) return null;
+  // 1. Exact match
   for (const [key, preset] of Object.entries(CHURCH_PLAN_PRESETS)) {
     if (preset.name === name) return key;
   }
+  // 2. Clean/robust match for quarterly/other presets (matching first part before "：")
+  const clean = (s) => (s && s.includes("：")) ? s.split("：")[0].trim() : (s || "").trim();
+  const targetClean = clean(name);
+  for (const [key, preset] of Object.entries(CHURCH_PLAN_PRESETS)) {
+    if (!key.startsWith("m_") && clean(preset.name) === targetClean) {
+      return key;
+    }
+  }
+  // 3. Clean/robust match for monthly presets (matching second part before/after "：")
+  for (const [key, preset] of Object.entries(CHURCH_PLAN_PRESETS)) {
+    if (key.startsWith("m_")) {
+      const parts = preset.name.split("：");
+      if (parts.length >= 2) {
+        const catName = parts[1].trim();
+        if (catName === name || catName === targetClean) return key;
+      }
+    }
+  }
   return null;
 }
+
 
 
 function getPlanStorageKey(plan) {

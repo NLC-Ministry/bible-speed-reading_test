@@ -1054,7 +1054,12 @@ function renderPresetPlansList() {
   const otherPlans = [];
 
   otherPresets.forEach(([key, p]) => {
-    const isJoined = (state.activePlans || []).some(ap => ap.presetKey === key || ap.id === key);
+    const isJoined = (state.activePlans || []).some(ap => {
+      if (ap.presetKey === key || ap.id === key) return true;
+      const apClean = getCleanDisplayName(ap);
+      const pClean = getCleanDisplayName({ name: p.name, presetKey: key });
+      return apClean && pClean && apClean === pClean;
+    });
     if (!isJoined) {
       otherPlans.push({
         id: key,
@@ -1071,7 +1076,12 @@ function renderPresetPlansList() {
     state.globalPlans.forEach(gp => {
       const isMonthly = isCategoryPlan(gp);
       if (!isMonthly) {
-        const isJoined = (state.activePlans || []).some(ap => ap.presetKey === gp.presetKey || ap.id === gp.id);
+        const isJoined = (state.activePlans || []).some(ap => {
+          if (ap.presetKey === gp.presetKey || ap.id === gp.id) return true;
+          const apClean = getCleanDisplayName(ap);
+          const gpClean = getCleanDisplayName(gp);
+          return apClean && gpClean && apClean === gpClean;
+        });
         const alreadyListed = otherPlans.some(op => 
           op.id === gp.id || 
           op.presetKey === gp.presetKey ||
