@@ -3949,6 +3949,45 @@ async function renderGroupParticipantsRankingTable() {
   const myPlanReadCount = uniquePlanLogs(state.readingLogs || []);
   const personalStreak = myPlanReadCount > 0 ? (state.currentUser.streak || 0) : 0;
 
+  const calculateCatchUpDays = (userLogs, planLevel) => {
+    if (!state.activePlan || !state.activePlan.days) return 0;
+    const statsStart = new Date(state.activePlan.startDate);
+    statsStart.setHours(0, 0, 0, 0);
+    const targetRoundsVal = getPlanLevelRounds(planLevel || "normal");
+    let catchUpDaysVal = 0;
+    for (let r = 1; r <= targetRoundsVal; r++) {
+      const roundLogs = (userLogs || []).filter(l => (l.round || 1) === r);
+      state.activePlan.days.forEach((day, index) => {
+        const d = index + 1;
+        const scheduledDate = new Date(statsStart);
+        scheduledDate.setDate(statsStart.getDate() + (d - 1));
+        const scheduledDateStr = scheduledDate.toISOString().substring(0, 10);
+
+        let allChaptersCompleted = true;
+        let maxReadDateStr = "";
+
+        for (const ch of day.chapters) {
+          const log = roundLogs.find(l => l.book === ch.book && l.chapter === ch.chapter);
+          if (!log) {
+            allChaptersCompleted = false;
+            break;
+          }
+          const logDateStr = log.read_at.substring(0, 10);
+          if (!maxReadDateStr || logDateStr > maxReadDateStr) {
+            maxReadDateStr = logDateStr;
+          }
+        }
+
+        if (allChaptersCompleted && maxReadDateStr) {
+          if (maxReadDateStr > scheduledDateStr) {
+            catchUpDaysVal++;
+          }
+        }
+      });
+    }
+    return catchUpDaysVal;
+  };
+
   // Calculate completedDaysCount (讀完一遍後直接顯示總天數，避免進入二三遍計算落後/超前不準確)
   const isCompletedOnce = state.activePlan.isPlanCompleted || (state.activePlan.currentRound || 1) > 1;
   const completedDaysCount = isCompletedOnce
@@ -4133,12 +4172,16 @@ async function renderGroupParticipantsRankingTable() {
       if (hasAnyPlanRead) {
         if (isMe) {
           completed = completedDaysCount;
-          makeup = Math.max(0, expectedDaysCount - completedDaysCount);
+          const myUserLogs = (state.readingLogs || []).filter(l =>
+            l.plan_id === state.activePlan.id || l.presetKey === state.activePlan.presetKey
+          );
+          makeup = calculateCatchUpDays(myUserLogs, state.activePlan.level);
           diff = completed - expectedDaysCount;
         } else {
           completed = Math.round(((u.plan_progress || 0) / 100) * state.activePlan.days.length);
           completed = Math.min(completed, state.activePlan.days.length);
-          makeup = Math.max(0, expectedDaysCount - completed);
+          const otherUserLogs = (state.allLogsCache || []).filter(l => l.user_id === u.id);
+          makeup = calculateCatchUpDays(otherUserLogs, u.level || 'normal');
           diff = completed - expectedDaysCount;
         }
       }
