@@ -4107,7 +4107,7 @@ async function renderGroupParticipantsRankingTable() {
         statusStr = `超前 ${diff}天`;
         statusColor = "var(--color-success-foreground)";
       } else if (hasAnyPlanRead && diff < 0) {
-        statusStr = `落後 ${Math.abs(diff)}天`;
+        statusStr = diff === -1 ? "今日未完成" : `落後 ${Math.abs(diff)}天`;
         statusColor = "var(--color-danger)";
       }
 

@@ -75,6 +75,9 @@ export function getPlanProgressStatus(plan, deps = {}) {
     return { label: "超前 " + diff + "天", badgeClass: "stat-badge--success", diff };
   }
   if (diff < 0) {
+    if (diff === -1) {
+      return { label: "今日未完成", badgeClass: "stat-badge--danger", diff };
+    }
     return { label: "落後 " + Math.abs(diff) + "天", badgeClass: "stat-badge--danger", diff };
   }
   return { label: "進度一致", badgeClass: "stat-badge--brand", diff: 0 };

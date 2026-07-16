@@ -106,6 +106,15 @@ describe("getPlanProgressStatus labels", () => {
     });
     expect(status.label).toMatch(/^落後/);
   });
+
+  it("labels 1 day behind schedule as 今日未完成", () => {
+    const plan = makePlan();
+    const status = getPlanProgressStatus(plan, {
+      getExpected: () => 5,
+      getNextDay: () => plan.days[4],
+    });
+    expect(status.label).toBe("今日未完成");
+  });
 });
 
 describe("static markup audit", () => {
