@@ -3928,9 +3928,21 @@ async function renderGroupParticipantsRankingTable() {
   const currentPresetKeyForStats = state.activePlan.presetKey;
   const uniquePlanLogs = (logs) => {
     const unique = new Set();
+    const planChapters = new Set();
+    if (state.activePlan && state.activePlan.days) {
+      state.activePlan.days.forEach(d => {
+        if (d.chapters) {
+          d.chapters.forEach(ch => {
+            planChapters.add(`${ch.book}_${ch.chapter}`);
+          });
+        }
+      });
+    }
     (logs || []).forEach(log => {
       if (!logMatchesPlan(log, currentPlanIdForStats, currentPresetKeyForStats)) return;
-      unique.add(`${log.book}_${log.chapter}_${log.round || 1}`);
+      if (planChapters.has(`${log.book}_${log.chapter}`)) {
+        unique.add(`${log.book}_${log.chapter}_${log.round || 1}`);
+      }
     });
     return unique.size;
   };
@@ -4403,13 +4415,23 @@ window.showPlanStatsModal = function () {
   const currentPlanId = plan.id;
   const currentPresetKey = plan.presetKey;
   const uniqueKeys = new Set();
+  const planChapters = new Set();
+  if (plan && plan.days) {
+    plan.days.forEach(d => {
+      if (d.chapters) {
+        d.chapters.forEach(ch => {
+          planChapters.add(`${ch.book}_${ch.chapter}`);
+        });
+      }
+    });
+  }
   if (state.readingLogs) {
     state.readingLogs.forEach(l => {
       const logMatchesPlan =
         (currentPlanId && l.plan_id && l.plan_id === currentPlanId) ||
         (currentPresetKey && l.presetKey && l.presetKey === currentPresetKey) ||
         (!l.plan_id && !l.presetKey);
-      if (logMatchesPlan) {
+      if (logMatchesPlan && planChapters.has(`${l.book}_${l.chapter}`)) {
         const r = l.round || 1;
         uniqueKeys.add(`${l.book}_${l.chapter}_${r}`);
       }

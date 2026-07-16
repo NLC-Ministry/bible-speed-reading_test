@@ -461,7 +461,8 @@ function renderBadgeWall(containerId) {
 
   const unlocked = JSON.parse(localStorage.getItem("unlocked_badges") || "[]");
   if (container.id === "badges-grid") {
-    updateBadgeWallSummary(unlocked.length, ACHIEVEMENTS_LIST.length);
+    const actualUnlockedCount = ACHIEVEMENTS_LIST.filter(badge => unlocked.includes(badge.id)).length;
+    updateBadgeWallSummary(actualUnlockedCount, ACHIEVEMENTS_LIST.length);
   }
 
   const getBadgeClasses = typeof getHonorBadgeItemClasses === "function"
