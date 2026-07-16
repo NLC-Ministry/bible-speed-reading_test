@@ -69,7 +69,7 @@ function initSmartFloatingReaderNav() {
   const scrollSurface = readerView.querySelector(".reader-reading-surface") || document.querySelector(".main-content");
   if (scrollSurface) {
     scrollSurface.addEventListener("scroll", hideFloatingNavDuringScroll, { passive: true });
-    scrollSurface.addEventListener("scroll", handleReaderScroll, { passive: true });
+    // scrollSurface.addEventListener("scroll", handleReaderScroll, { passive: true }); // Removed to prevent screen shifting and bottom action bar flashes
   }
 
   readerView.addEventListener("pointerdown", (event) => {
@@ -592,6 +592,95 @@ export function updateReaderFontSize() {
 
 export function navigateToChapter(direction) {
   const currentBook = BIBLE_BOOKS.find(b => b.id === state.readerState.bookId);
+
+  if (direction > 0 && state.readerState && state.readerState.fromPlan && state.activePlan) {
+    const plan = state.activePlan;
+    const planDay = state.readerState.planDayNum || 1;
+    const selectedDay = plan.days.find(d => d.dayNum === planDay);
+    const dayChapters = (selectedDay && selectedDay.chapters) || [];
+    const currentChIndex = dayChapters.findIndex(ch =>
+      ch.book === currentBook.name && Number(ch.chapter) === Number(state.readerState.chapter)
+    );
+    const isLastChapterOfDay = currentChIndex === dayChapters.length - 1 || currentChIndex === -1;
+
+    if (isLastChapterOfDay) {
+      if (isTodayScheduleCompleted()) {
+        const start = new Date(plan.startDate);
+        start.setHours(0, 0, 0, 0);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const elapsedDay = Math.max(1, Math.ceil((today - start) / (1000 * 60 * 60 * 24)) + 1);
+        const readAheadDayNum = Math.max(elapsedDay + 1, planDay + 1);
+
+        const onCatchUp = () => {
+          const currentRound = plan.currentRound || 1;
+          const nextUncompletedDay = plan.days.find(d => {
+            return d.chapters.some(ch => {
+              const r = ch.round || currentRound;
+              if (r === 1) return !Boolean(ch.isReadR1 || ch.isRead);
+              if (r === 2) return !Boolean(ch.isReadR2);
+              if (r >= 3) return !Boolean(ch.isReadR3);
+              return !Boolean(ch.isRead);
+            });
+          });
+
+          if (nextUncompletedDay && nextUncompletedDay.chapters.length > 0) {
+            const firstCh = nextUncompletedDay.chapters[0];
+            const book = BIBLE_BOOKS.find(b => b.name === firstCh.book || b.eng === firstCh.book);
+            if (book) {
+              state.readerState.bookId = book.id;
+              state.readerState.chapter = Number(firstCh.chapter);
+              state.readerState.planDayNum = nextUncompletedDay.dayNum;
+              renderReaderText();
+            }
+          } else {
+            showToast("您已完成目前所有的計畫天數！");
+          }
+        };
+
+        const onReadAhead = () => {
+          const nextDay = plan.days.find(d => d.dayNum === readAheadDayNum);
+          if (nextDay && nextDay.chapters.length > 0) {
+            const firstCh = nextDay.chapters[0];
+            const book = BIBLE_BOOKS.find(b => b.name === firstCh.book || b.eng === firstCh.book);
+            if (book) {
+              state.readerState.bookId = book.id;
+              state.readerState.chapter = Number(firstCh.chapter);
+              state.readerState.planDayNum = nextDay.dayNum;
+              renderReaderText();
+            }
+          } else {
+            showToast("您已到達計畫的最後一天！");
+          }
+        };
+
+        showPlanNavigationPrompt(onCatchUp, onReadAhead, readAheadDayNum);
+        return;
+      } else {
+        const nextChInfo = getNextPlanChapterInfo(plan, planDay, currentChIndex, dayChapters);
+        if (nextChInfo) {
+          const nextBook = BIBLE_BOOKS.find(b => b.name === nextChInfo.book || b.eng === nextChInfo.book);
+          if (nextBook) {
+            state.readerState.bookId = nextBook.id;
+            state.readerState.chapter = Number(nextChInfo.chapter);
+            state.readerState.planDayNum = nextChInfo.dayNum;
+            renderReaderText();
+            return;
+          }
+        }
+      }
+    } else {
+      const nextCh = dayChapters[currentChIndex + 1];
+      const nextBook = BIBLE_BOOKS.find(b => b.name === nextCh.book || b.eng === nextCh.book);
+      if (nextBook) {
+        state.readerState.bookId = nextBook.id;
+        state.readerState.chapter = Number(nextCh.chapter);
+        renderReaderText();
+        return;
+      }
+    }
+  }
+
   let newChapter = state.readerState.chapter + direction;
   
   if (newChapter < 1) {
@@ -1488,6 +1577,107 @@ function handleReaderScroll(event) {
       bar.classList.add("hidden");
     }
   }
+}
+
+function isTodayScheduleCompleted() {
+  if (!state.activePlan) return false;
+  const now = new Date();
+  const todayYear = now.getFullYear();
+  const todayMonth = now.getMonth() + 1;
+  const todayDay = now.getDate();
+  const todayDayObj = state.activePlan.days.find(d => {
+    if (Number(d.year) !== todayYear || Number(d.month) !== todayMonth) return false;
+    const parts = d.date.split('/');
+    return parts.length === 2 && Number(parts[1]) === todayDay;
+  });
+
+  if (!todayDayObj || !todayDayObj.chapters || todayDayObj.chapters.length === 0) return false;
+
+  const currentRound = state.activePlan.currentRound || 1;
+  return todayDayObj.chapters.every(ch => {
+    const r = ch.round || currentRound;
+    if (r === 1) return Boolean(ch.isReadR1 || ch.isRead);
+    if (r === 2) return Boolean(ch.isReadR2);
+    if (r >= 3) return Boolean(ch.isReadR3);
+    return Boolean(ch.isRead);
+  });
+}
+
+function showPlanNavigationPrompt(onCatchUp, onReadAhead, readAheadDayNum) {
+  // Remove existing dialog if any
+  const existing = document.getElementById("plan-nav-prompt-overlay");
+  if (existing) existing.remove();
+
+  const overlay = document.createElement("div");
+  overlay.id = "plan-nav-prompt-overlay";
+  overlay.style.cssText = `
+    position: fixed; inset: 0; z-index: 9999;
+    background: rgba(0,0,0,0.55); backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 1rem;
+    animation: fadeIn 0.2s ease;
+  `;
+
+  overlay.innerHTML = `
+    <div id="plan-nav-prompt-dialog" style="
+      background: var(--bg-card, white);
+      border-radius: 16px;
+      padding: 1.5rem;
+      width: 100%; max-width: 400px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+      animation: slideUp 0.25s cubic-bezier(0.34,1.56,0.64,1);
+      text-align: center;
+    ">
+      <div style="display:flex; flex-direction:column; align-items:center; gap:0.6rem; margin-bottom:1.2rem;">
+        <span style="font-size: 2.2rem; display: block; margin-bottom: 0.4rem;">🎉</span>
+        <h3 style="margin:0; font-size:1.15rem; font-weight:700; color:var(--text-primary);">恭喜完成今日進度！</h3>
+        <p style="margin:0.5rem 0 0; font-size:0.88rem; color:var(--text-secondary); line-height: 1.5;">
+          您已讀完今日計畫的所有章節。接下來，您想要繼續做什麼？
+        </p>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:0.75rem; width:100%;">
+        <button id="plan-nav-catchup-btn" type="button" style="
+          padding: 0.75rem; border-radius: var(--radius-md, 12px); font-size: 0.9rem; font-weight: 500;
+          border: none; background: var(--color-brand); color: white; cursor: pointer;
+        ">繼續補讀未完進度</button>
+
+        <button id="plan-nav-readahead-btn" type="button" style="
+          padding: 0.75rem; border-radius: var(--radius-md, 12px); font-size: 0.9rem; font-weight: 500;
+          border: 1.5px solid var(--color-brand); background: var(--bg-input); color: var(--color-brand); cursor: pointer;
+        ">超前閱讀第 ${readAheadDayNum} 天進度</button>
+
+        <button id="plan-nav-cancel-btn" type="button" style="
+          padding: 0.6rem; border-radius: var(--radius-md, 12px); font-size: 0.85rem; font-weight: 500;
+          border: none; background: transparent; color: var(--text-muted); cursor: pointer;
+        ">取消</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+
+  // Bind actions
+  overlay.querySelector("#plan-nav-catchup-btn").onclick = () => {
+    overlay.remove();
+    if (typeof onCatchUp === "function") onCatchUp();
+  };
+
+  overlay.querySelector("#plan-nav-readahead-btn").onclick = () => {
+    overlay.remove();
+    if (typeof onReadAhead === "function") onReadAhead();
+  };
+
+  overlay.querySelector("#plan-nav-cancel-btn").onclick = () => {
+    overlay.remove();
+  };
+
+  // Close when clicking overlay backdrop
+  overlay.onclick = (e) => {
+    if (e.target === overlay) {
+      overlay.remove();
+    }
+  };
 }
 
 export function init() {
