@@ -45,12 +45,16 @@ function getPlanProgressStatusFromDesignSystem(plan) {
   }
 
   const currentRound = plan.currentRound || 1;
-  if (currentRound > 1 || plan.isPlanCompleted) {
+  if (currentRound > 1) {
+    const roundProgress = Math.max(0, Math.min(100, Math.round(Number(plan.progress) || 0)));
     return {
-      label: "第" + currentRound + "遍",
-      badgeClass: currentRound === 2 ? "stat-badge--brand" : "stat-badge--warning",
+      label: "超前第" + currentRound + "遍完成" + roundProgress + "%",
+      badgeClass: "stat-badge--success",
       diff: 0,
     };
+  }
+  if (plan.isPlanCompleted) {
+    return { label: "第一遍完成100%", badgeClass: "stat-badge--success", diff: 0 };
   }
 
   const nextDay = getNextReadingPlanDayPure(plan);

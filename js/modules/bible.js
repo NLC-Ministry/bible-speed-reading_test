@@ -387,6 +387,11 @@ export function initReaderControls() {
         return;
       }
 
+      if (state.activePlan && isPlanExpired(state.activePlan)) {
+        showToast("此計畫已過期，無法再修改打卡紀錄。");
+        return;
+      }
+
       markReadBtn.classList.toggle("checked", isChecked);
 
       let planDayChKey = null;

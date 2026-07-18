@@ -1838,6 +1838,10 @@ function renderDailyVerse() {
 window.openActivePlanFromDashboard = function (event) {
   console.log('📅 [Debug] 已點選讀經計畫，正在跳轉至計畫頁');
   if (!state.activePlan) return;
+  if (typeof isPlanExpired === "function" && isPlanExpired(state.activePlan)) {
+    showToast("此計畫已過期，無法再進入進度閱讀。");
+    return;
+  }
   state.planDetailOpen = true;
   state.selectedPlanDay = null;
   localStorage.setItem("selected_plan_key", state.activePlan.presetKey || state.activePlan.id || "");
@@ -1846,6 +1850,10 @@ window.openActivePlanFromDashboard = function (event) {
 
 window.startReadingCurrentChapter = function () {
   console.log('📖 [Debug] 已點選章節，進入全滿版沉浸閱讀模式');
+  if (state.activePlan && typeof isPlanExpired === "function" && isPlanExpired(state.activePlan)) {
+    showToast("此計畫已過期，無法再進入進度閱讀。");
+    return;
+  }
   if (!state.activePlan) {
     appRouter.switchTab('reader-view');
     return;

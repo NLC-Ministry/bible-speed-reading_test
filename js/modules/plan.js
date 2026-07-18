@@ -756,6 +756,10 @@ function renderJoinedPlansList() {
         transition: all 0.2s ease;
       `;
       card.onclick = async () => {
+        if (isPlanExpired(plan)) {
+          showToast("此計畫已過期，無法再進入進度閱讀。");
+          return;
+        }
         state.activePlan = plan;
         state.planDetailOpen = true;
         state.planActiveSubTab = "today";
@@ -1748,6 +1752,14 @@ window.toggleYouVersionChapter = function (checkboxEl, book, chapter, taskRound 
     return;
   }
 
+  if (state.activePlan && isPlanExpired(state.activePlan)) {
+    showToast("此計畫已過期，無法再修改打卡紀錄。");
+    if (checkboxEl) {
+      checkboxEl.checked = isCurrentlyRead;
+    }
+    return;
+  }
+
   const selectedDay = state.activePlan && state.activePlan.days
     ? state.activePlan.days.find(d => d.dayNum === state.selectedPlanDay)
     : null;
@@ -2318,6 +2330,10 @@ async function renderAdminPlanManagement() {
 
 
 window.openPlanChapterInReader = function (bookName, chapter, dayNum, round = null) {
+  if (state.activePlan && isPlanExpired(state.activePlan)) {
+    showToast("此計畫已過期，無法再進入進度閱讀。");
+    return;
+  }
   console.log('📖 [Debug] 已點選章節，進入全滿版沉浸閱讀模式');
   const book = BIBLE_BOOKS.find(b => b.name === bookName || b.eng === bookName);
   if (!book) {
@@ -2354,6 +2370,10 @@ state.inlineReader = {
 };
 
 window.openPlanInlineReader = function (bookName, chapter, dayNum, round = null) {
+  if (state.activePlan && isPlanExpired(state.activePlan)) {
+    showToast("此計畫已過期，無法再進入進度閱讀。");
+    return;
+  }
   if (!state.activePlan) return;
   const day = state.activePlan.days.find(d => d.dayNum === dayNum);
   if (!day || !day.chapters || day.chapters.length === 0) return;
@@ -2892,7 +2912,8 @@ async function renderPlanStatsView() {
     statsStart.setHours(0, 0, 0, 0);
     const targetRoundsVal = getPlanLevelRounds(state.activePlan.level || "normal");
     let catchUpDaysVal = 0;
-    for (let r = 1; r <= targetRoundsVal; r++) {
+    // 補讀是相對原始日程的概念，只計第一遍，數值不會超過計畫天數。
+    for (let r = 1; r <= 1; r++) {
       state.activePlan.days.forEach((day, index) => {
         const d = index + 1;
         const scheduledDate = new Date(statsStart);
@@ -3168,7 +3189,11 @@ function renderGroupProgressDistribution() {
     const currentRound = u.current_round !== undefined
       ? u.current_round
       : (u.chapters_read > 850 ? 3 : u.chapters_read > 500 ? 2 : 1);
-    if (currentRound >= 2) rereadCount++;
+    if (currentRound >= 2) {
+      rereadCount++;
+      aheadCount++;
+      return;
+    }
 
     if (u.plan_progress === 0) behindCount++;
     else if (u.plan_progress > expectedPct + 5) aheadCount++;
@@ -3864,13 +3889,13 @@ async function renderGroupParticipantsRankingTable() {
   const myPlanReadCount = uniquePlanLogs(state.readingLogs || []);
   const personalStreak = myPlanReadCount > 0 ? (state.currentUser.streak || 0) : 0;
 
-  const calculateCatchUpDays = (userLogs, planLevel) => {
+  const calculateCatchUpDays = (userLogs) => {
     if (!state.activePlan || !state.activePlan.days) return 0;
     const statsStart = new Date(state.activePlan.startDate);
     statsStart.setHours(0, 0, 0, 0);
-    const targetRoundsVal = getPlanLevelRounds(planLevel || "normal");
     let catchUpDaysVal = 0;
-    for (let r = 1; r <= targetRoundsVal; r++) {
+    // 第二遍起屬於超前閱讀，不重複算成補讀。
+    for (let r = 1; r <= 1; r++) {
       const roundLogs = (userLogs || []).filter(l => (l.round || 1) === r);
       state.activePlan.days.forEach((day, index) => {
         const d = index + 1;
@@ -4090,20 +4115,27 @@ async function renderGroupParticipantsRankingTable() {
           const myUserLogs = (state.readingLogs || []).filter(l =>
             l.plan_id === state.activePlan.id || l.presetKey === state.activePlan.presetKey
           );
-          makeup = calculateCatchUpDays(myUserLogs, state.activePlan.level);
+          makeup = calculateCatchUpDays(myUserLogs);
           diff = completed - expectedDaysCount;
         } else {
           completed = Math.round(((u.plan_progress || 0) / 100) * state.activePlan.days.length);
           completed = Math.min(completed, state.activePlan.days.length);
           const otherUserLogs = (state.allLogsCache || []).filter(l => l.user_id === u.id);
-          makeup = calculateCatchUpDays(otherUserLogs, u.level || 'normal');
+          makeup = calculateCatchUpDays(otherUserLogs);
           diff = completed - expectedDaysCount;
         }
       }
 
+      const memberRound = Number(isMe ? state.activePlan.currentRound : u.current_round) || 1;
+      const memberProgress = Math.max(0, Math.min(100, Math.round(Number(
+        isMe ? state.activePlan.progress : u.plan_progress
+      ) || 0)));
       let statusStr = hasAnyPlanRead ? "在進度上" : "未開始";
       let statusColor = "var(--text-muted)";
-      if (hasAnyPlanRead && diff > 0) {
+      if (hasAnyPlanRead && memberRound > 1) {
+        statusStr = `超前第${memberRound}遍完成${memberProgress}%`;
+        statusColor = "var(--color-success-foreground)";
+      } else if (hasAnyPlanRead && diff > 0) {
         statusStr = `超前 ${diff}天`;
         statusColor = "var(--color-success-foreground)";
       } else if (hasAnyPlanRead && diff < 0) {
@@ -4334,7 +4366,8 @@ window.showPlanStatsModal = function () {
   const targetRounds = getPlanLevelRounds(plan.level || "normal");
 
   let catchUpDays = 0;
-  for (let r = 1; r <= targetRounds; r++) {
+  // 補讀只屬於第一遍；重讀進度不應疊加到補讀天數。
+  for (let r = 1; r <= 1; r++) {
     plan.days.forEach((day, index) => {
       const d = index + 1;
       const scheduledDate = new Date(start);
@@ -5369,6 +5402,8 @@ function renderTeamStatsAnalysisDashboard(unfilteredAllUsers, mockUser) {
 
     if (round >= 2) {
       round2PlusCount++;
+      aheadCount++;
+      return;
     }
 
     if (u.plan_progress === 0) {
@@ -5534,7 +5569,8 @@ function calculateProfileStats(plan) {
 
   // 5. Calculate makeup days
   let makeupDays = 0;
-  for (let r = 1; r <= targetRounds; r++) {
+  // 超過第一遍後都是超前，不再累加補讀天數。
+  for (let r = 1; r <= 1; r++) {
     plan.days.forEach((day, index) => {
       const d = index + 1;
 
@@ -5856,6 +5892,14 @@ async function setPlanState(newState) {
   ensurePlanRouteShell();
 
   const normalized = String(newState || "").toUpperCase();
+  if (normalized === PLAN_ROUTE.DETAIL || normalized === "DETAIL" || normalized === PLAN_ROUTE.GROUP || normalized === "GROUP") {
+    if (state.activePlan && isPlanExpired(state.activePlan)) {
+      showToast("此計畫已過期，無法再進入進度閱讀。");
+      await enterPlanListState();
+      return;
+    }
+  }
+
   if (normalized === PLAN_ROUTE.LIST || normalized === "LIST") {
     await enterPlanListState();
   } else if (normalized === PLAN_ROUTE.DETAIL || normalized === "DETAIL") {

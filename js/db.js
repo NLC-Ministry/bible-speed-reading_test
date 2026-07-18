@@ -34,6 +34,61 @@ function getPresetKeyByName(name) {
 
 
 
+function isUuid(value) {
+  return /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(String(value || ""));
+}
+
+function quotePostgrestValue(value) {
+  return `"${String(value).replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
+}
+
+/**
+ * A plan can be referenced by a global UUID, a legacy preset key (for example
+ * q1), or its display name. Keep all aliases together so older enrollments are
+ * included in the same church-wide statistics as newer enrollments.
+ */
+function getPlanFilterAliases(filterValue) {
+  if (!filterValue) return [];
+
+  const aliases = new Set([String(filterValue)]);
+  const activePlan = state.activePlan || null;
+  const activeIdentifiers = activePlan
+    ? [activePlan.id, activePlan.globalPlanId, activePlan.presetKey, activePlan.name].filter(Boolean).map(String)
+    : [];
+
+  const presetKey = CHURCH_PLAN_PRESETS[filterValue]
+    ? String(filterValue)
+    : getPresetKeyByName(filterValue);
+
+  const activePresetKey = activePlan
+    ? (CHURCH_PLAN_PRESETS[activePlan.presetKey] ? activePlan.presetKey : getPresetKeyByName(activePlan.name))
+    : null;
+  const matchesActivePlan = activeIdentifiers.includes(String(filterValue))
+    || (presetKey && activePresetKey === presetKey);
+
+  if (matchesActivePlan) {
+    activeIdentifiers.forEach(value => aliases.add(value));
+  }
+
+  const resolvedPresetKey = presetKey || (matchesActivePlan ? activePresetKey : null);
+  if (resolvedPresetKey && CHURCH_PLAN_PRESETS[resolvedPresetKey]) {
+    aliases.add(resolvedPresetKey);
+    aliases.add(CHURCH_PLAN_PRESETS[resolvedPresetKey].name);
+  }
+
+  (state.globalPlans || []).forEach(plan => {
+    const planIdentifiers = [plan.id, plan.globalPlanId, plan.presetKey, plan.name].filter(Boolean).map(String);
+    const planPresetKey = plan.presetKey && CHURCH_PLAN_PRESETS[plan.presetKey]
+      ? plan.presetKey
+      : getPresetKeyByName(plan.name);
+    if (planIdentifiers.some(value => aliases.has(value)) || (resolvedPresetKey && planPresetKey === resolvedPresetKey)) {
+      planIdentifiers.forEach(value => aliases.add(value));
+    }
+  });
+
+  return Array.from(aliases);
+}
+
 function getPlanStorageKey(plan) {
   return String((plan && (plan.id || plan.presetKey || plan.globalPlanId || plan.name)) || "");
 }
@@ -1311,6 +1366,8 @@ const db = {
   },
 
   async _executeFetchMergedUsersList(filterPresetKey) {
+    const planFilterAliases = getPlanFilterAliases(filterPresetKey);
+    const planFilterAliasSet = new Set(planFilterAliases);
     const currentPlanId = state.activePlan ? state.activePlan.id : null;
     const currentPresetKey = state.activePlan ? state.activePlan.presetKey : null;
     const currentPlanLogMap = new Map();
@@ -1350,7 +1407,17 @@ const db = {
         
         let plansQuery = state.supabase.from("reading_plans").select("id, user_id, name, preset_key, global_plan_id, target_books, current_round, level");
         if (filterPresetKey) {
-          plansQuery = plansQuery.or(`preset_key.eq."${filterPresetKey}",global_plan_id.eq."${filterPresetKey}",name.eq."${filterPresetKey}"`);
+          const textConditions = planFilterAliases.flatMap(alias => [
+            `preset_key.eq.${quotePostgrestValue(alias)}`,
+            `name.eq.${quotePostgrestValue(alias)}`
+          ]);
+          const uuidConditions = planFilterAliases
+            .filter(isUuid)
+            .flatMap(alias => [
+              `global_plan_id.eq.${quotePostgrestValue(alias)}`,
+              `id.eq.${quotePostgrestValue(alias)}`
+            ]);
+          plansQuery = plansQuery.or([...textConditions, ...uuidConditions].join(","));
         }
         const { data: allPlans, error: plansError } = await plansQuery;
         console.log(`🔍 [AdminDebug] reading_plans 查詢結果: ${allPlans ? allPlans.length : 0} 筆`, plansError ? `錯誤: ${plansError.message}` : '');
@@ -1383,6 +1450,9 @@ const db = {
             if (p.user_id && p.name) {
               window.userPlanIdCache[p.user_id + '_' + p.name] = p.id;
             }
+            if (p.user_id && p.global_plan_id) {
+              window.userPlanIdCache[p.user_id + '_' + p.global_plan_id] = p.id;
+            }
           });
         }
 
@@ -1412,7 +1482,7 @@ const db = {
           return usersProfiles.map(profile => {
             const userPlans = plansByUser[profile.id] || [];
             const uPlan = filterPresetKey
-              ? userPlans.find(p => p.preset_key === filterPresetKey || p.global_plan_id === filterPresetKey || p.name === filterPresetKey || p.id === filterPresetKey)
+              ? userPlans.find(p => [p.preset_key, p.global_plan_id, p.name, p.id].some(value => value && planFilterAliasSet.has(String(value))))
               : userPlans[0] || null;
 
             if (filterPresetKey && !uPlan) return null;

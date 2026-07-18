@@ -53,9 +53,9 @@ describe("getPlanProgressBadgeClass", () => {
     expect(badgeClass).toBe("stat-badge--brand");
   });
 
-  it("returns warning for round 3", () => {
+  it("returns success for every round after the first", () => {
     const plan = makePlan({ currentRound: 3 });
-    expect(getPlanProgressBadgeClass(plan)).toBe("stat-badge--warning");
+    expect(getPlanProgressBadgeClass(plan)).toBe("stat-badge--success");
   });
 });
 
@@ -114,6 +114,15 @@ describe("getPlanProgressStatus labels", () => {
       getNextDay: () => plan.days[4],
     });
     expect(status.label).toBe("今日未完成");
+  });
+
+  it("shows the current round and its completion percentage after round one", () => {
+    const plan = makePlan({ currentRound: 2, progress: 38 });
+    const status = getPlanProgressStatus(plan);
+    expect(status).toMatchObject({
+      label: "超前第2遍完成38%",
+      badgeClass: "stat-badge--success",
+    });
   });
 });
 
