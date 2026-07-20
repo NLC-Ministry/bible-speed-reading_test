@@ -202,12 +202,17 @@ function calculatePlanDayDelta(plan, completedChapters) {
   const today = new Date();
   start.setHours(0, 0, 0, 0);
   today.setHours(0, 0, 0, 0);
-  const elapsedDays = Math.max(0, Math.min(plan.days.length, Math.floor((today - start) / 86400000) + 1));
+  const elapsedCalendarDays = Math.max(0, Math.min(plan.days.length, Math.floor((today - start) / 86400000) + 1));
+  const elapsedDays = plan.days
+    .slice(0, elapsedCalendarDays)
+    .filter(day => Array.isArray(day.chapters) && day.chapters.length > 0)
+    .length;
 
   let equivalentDay = 0;
   let scheduledChapters = 0;
-  for (let i = 0; i < plan.days.length; i++) {
-    scheduledChapters += (plan.days[i].chapters || []).length;
+  const readingDays = plan.days.filter(day => Array.isArray(day.chapters) && day.chapters.length > 0);
+  for (let i = 0; i < readingDays.length; i++) {
+    scheduledChapters += readingDays[i].chapters.length;
     if (completedChapters >= scheduledChapters) equivalentDay = i + 1;
     else break;
   }

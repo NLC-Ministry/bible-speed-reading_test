@@ -1228,6 +1228,22 @@ function distributeChaptersAcrossDays(chapters, readingDays) {
   return dailyChapters;
 }
 
+function normalizePlanScheduleSettings(isFixed, readingDaysPerWeek = 7, restWeekdays = []) {
+  if (isFixed) return { readingDaysPerWeek: 7, restWeekdays: [] };
+
+  const normalizedRestDays = Array.from(new Set((Array.isArray(restWeekdays) ? restWeekdays : [])
+    .map(Number)
+    .filter(day => Number.isInteger(day) && day >= 0 && day <= 6)))
+    .sort((a, b) => a - b);
+  const requestedDays = Math.max(1, Math.min(7, Number(readingDaysPerWeek) || 7));
+
+  if (normalizedRestDays.length !== 7 - requestedDays) {
+    return { readingDaysPerWeek: 7 - normalizedRestDays.length, restWeekdays: normalizedRestDays };
+  }
+
+  return { readingDaysPerWeek: requestedDays, restWeekdays: normalizedRestDays };
+}
+
 function rebuildPlanScheduleForLevel(plan, level) {
   if (!plan) return plan;
   const rebuilt = generatePlanObject(
@@ -1237,7 +1253,11 @@ function rebuildPlanScheduleForLevel(plan, level) {
     plan.target_books || plan.targetBooks || [],
     plan.presetKey,
     level,
-    plan.isFixed !== false
+    plan.isFixed !== false && plan.is_fixed !== false,
+    {
+      readingDaysPerWeek: plan.readingDaysPerWeek || plan.reading_days_per_week,
+      restWeekdays: plan.restWeekdays || plan.rest_weekdays
+    }
   );
   Object.assign(plan, {
     totalDays: rebuilt.totalDays,
@@ -1247,13 +1267,84 @@ function rebuildPlanScheduleForLevel(plan, level) {
     currentRound: getPlanLevelOrder(level),
     target_books: plan.target_books || rebuilt.target_books,
     targetBooks: plan.targetBooks || rebuilt.targetBooks,
-    isFixed: plan.isFixed !== false,
-    is_fixed: plan.isFixed !== false
+    isFixed: rebuilt.isFixed,
+    is_fixed: rebuilt.is_fixed,
+    readingDaysPerWeek: rebuilt.readingDaysPerWeek,
+    reading_days_per_week: rebuilt.reading_days_per_week,
+    restWeekdays: rebuilt.restWeekdays,
+    rest_weekdays: rebuilt.rest_weekdays
   });
   return plan;
 }
-function generatePlanObject(name, startDate, endDate, selectedBooks, presetKey = null, level = "normal", isFixed = true) {
+function resolveChurchCampaignDefinition(presetKey, name) {
+  const globalPlan = (state.globalPlans || []).find(plan =>
+    plan.id === presetKey
+    || plan.presetKey === presetKey
+    || (plan.planKind === "church_campaign" && plan.name === name)
+  );
+  if (globalPlan && globalPlan.planKind === "church_campaign") {
+    return window.cloneChurchCampaign(globalPlan.campaignDefinition || window.CHURCH_CAMPAIGN);
+  }
+  if (presetKey === window.CHURCH_CAMPAIGN_PRESET_KEY || presetKey === window.CHURCH_CAMPAIGN_ID) {
+    return window.cloneChurchCampaign();
+  }
+  return null;
+}
+
+function generateChurchCampaignPlanObject(definition, presetKey) {
+  const days = window.buildChurchCampaignDays(definition, BIBLE_BOOKS);
+  days.forEach(day => {
+    day.chapters.forEach(chapter => {
+      chapter.key = chapter.book + "_" + chapter.chapter + "_" + (chapter.round || 1);
+    });
+  });
+  const targetBooks = Array.from(new Set(definition.segments.flatMap(segment =>
+    segment.readings.map(reading => reading.book)
+  )));
+  const totalChapters = days.reduce((sum, day) => sum + day.chapters.length, 0);
+  return {
+    name: definition.name,
+    description: definition.description || "",
+    startDate: definition.startDate,
+    endDate: definition.endDate,
+    totalDays: days.length,
+    totalChapters,
+    currentRoundTotalChapters: totalChapters,
+    completedChapters: 0,
+    progress: 0,
+    days,
+    presetKey,
+    target_books: targetBooks,
+    targetBooks,
+    level: "normal",
+    currentRound: 1,
+    wasDowngraded: false,
+    isFixed: true,
+    is_fixed: true,
+    planKind: "church_campaign",
+    campaignDefinition: window.cloneChurchCampaign(definition),
+    campaignStages: definition.stages,
+    campaignRules: definition.rules,
+    ruleVersion: Number(definition.version || 1),
+    readingDaysPerWeek: 7,
+    reading_days_per_week: 7,
+    restWeekdays: [],
+    rest_weekdays: []
+  };
+}
+
+function generatePlanObject(name, startDate, endDate, selectedBooks, presetKey = null, level = "normal", isFixed = true, scheduleSettings = null) {
   const preset = presetKey ? CHURCH_PLAN_PRESETS[presetKey] : null;
+  const campaignDefinition = resolveChurchCampaignDefinition(presetKey, name);
+  if (isFixed && campaignDefinition) {
+    return generateChurchCampaignPlanObject(campaignDefinition, presetKey || window.CHURCH_CAMPAIGN_PRESET_KEY);
+  }
+  const weeklySchedule = normalizePlanScheduleSettings(
+    isFixed,
+    scheduleSettings && scheduleSettings.readingDaysPerWeek,
+    scheduleSettings && scheduleSettings.restWeekdays
+  );
+  const restWeekdaySet = new Set(weeklySchedule.restWeekdays);
 
   // 1. Calculate parseLocalDate
   const parseLocalDate = (dateStr) => {
@@ -1272,7 +1363,7 @@ function generatePlanObject(name, startDate, endDate, selectedBooks, presetKey =
   const totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
 
   // 2. If level is normal AND it is a preset plan, use the original month-by-month calendar grid
-  if (level === "normal" && preset && preset.months) {
+  if (isFixed && level === "normal" && preset && preset.months) {
     const days = [];
     let dayNumCounter = 1;
     let totalChaptersCount = 0;
@@ -1358,7 +1449,11 @@ function generatePlanObject(name, startDate, endDate, selectedBooks, presetKey =
       currentRound: 1,
       wasDowngraded: false,
       isFixed,
-      is_fixed: isFixed
+      is_fixed: isFixed,
+      readingDaysPerWeek: weeklySchedule.readingDaysPerWeek,
+      reading_days_per_week: weeklySchedule.readingDaysPerWeek,
+      restWeekdays: weeklySchedule.restWeekdays,
+      rest_weekdays: weeklySchedule.restWeekdays
     };
   }
 
@@ -1408,17 +1503,29 @@ function generatePlanObject(name, startDate, endDate, selectedBooks, presetKey =
   }
 
   let dailyChapters = Array.from({ length: totalDays }, () => []);
+  const allEligibleOffsets = Array.from({ length: totalDays }, (_, index) => index)
+    .filter(dayOffset => {
+      const date = new Date(start);
+      date.setDate(start.getDate() + dayOffset);
+      return !restWeekdaySet.has(date.getDay());
+    });
 
   for (let r = 1; r <= maxRounds; r++) {
     const roundChapters = allChapters.map(ch => ({ ...ch, round: r }));
     const roundStartDay = r > 1 ? roundCompletionDays[r - 2] : 0;
     const roundEndDay = r < maxRounds ? roundCompletionDays[r - 1] : totalDays;
-    const roundDays = roundEndDay - roundStartDay;
+    const calendarOffsets = Array.from(
+      { length: Math.max(0, roundEndDay - roundStartDay) },
+      (_, index) => roundStartDay + index
+    );
+    const eligibleOffsets = calendarOffsets.filter(dayOffset => allEligibleOffsets.includes(dayOffset));
+    const readingOffsets = eligibleOffsets.length > 0 ? eligibleOffsets : allEligibleOffsets;
 
-    if (roundDays > 0) {
-      const rDaily = distributeChaptersAcrossDays(roundChapters, roundDays);
-      for (let i = 0; i < roundDays; i++) {
-        dailyChapters[roundStartDay + i] = dailyChapters[roundStartDay + i].concat(rDaily[i]);
+    if (readingOffsets.length > 0) {
+      const rDaily = distributeChaptersAcrossDays(roundChapters, readingOffsets.length);
+      for (let i = 0; i < readingOffsets.length; i++) {
+        const dayOffset = readingOffsets[i];
+        dailyChapters[dayOffset] = dailyChapters[dayOffset].concat(rDaily[i]);
       }
     }
   }
@@ -1435,6 +1542,7 @@ function generatePlanObject(name, startDate, endDate, selectedBooks, presetKey =
       date: dateStr,
       year: dayDate.getFullYear(),
       month: dayDate.getMonth() + 1,
+      isRestDay: restWeekdaySet.has(dayDate.getDay()),
       chapters: chapters.map(ch => ({
         book: ch.book,
         chapter: ch.chapter,
@@ -1459,7 +1567,11 @@ function generatePlanObject(name, startDate, endDate, selectedBooks, presetKey =
     currentRound: getPlanLevelRounds(level),
     wasDowngraded: false,
     isFixed,
-    is_fixed: isFixed
+    is_fixed: isFixed,
+    readingDaysPerWeek: weeklySchedule.readingDaysPerWeek,
+    reading_days_per_week: weeklySchedule.readingDaysPerWeek,
+    restWeekdays: weeklySchedule.restWeekdays,
+    rest_weekdays: weeklySchedule.restWeekdays
   };
 }
 
@@ -1681,6 +1793,7 @@ window.expandChaptersForLevel = expandChaptersForLevel;
 window.distributeChaptersAcrossDays = distributeChaptersAcrossDays;
 window.rebuildPlanScheduleForLevel = rebuildPlanScheduleForLevel;
 window.generatePlanObject = generatePlanObject;
+window.normalizePlanScheduleSettings = normalizePlanScheduleSettings;
 window.calculatePlanProgress = calculatePlanProgress;
 window.isPlanStarted = isPlanStarted;
 window.isPlanExpired = isPlanExpired;

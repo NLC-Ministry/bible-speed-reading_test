@@ -7,32 +7,12 @@
  */
 function getPresetKeyByName(name) {
   if (!name) return null;
-  // 1. Exact match
-  for (const [key, preset] of Object.entries(CHURCH_PLAN_PRESETS)) {
-    if (preset.name === name) return key;
-  }
-  // 2. Clean/robust match for quarterly/other presets (matching first part before "：")
-  const clean = (s) => (s && s.includes("：")) ? s.split("：")[0].trim() : (s || "").trim();
-  const targetClean = clean(name);
-  for (const [key, preset] of Object.entries(CHURCH_PLAN_PRESETS)) {
-    if (!key.startsWith("m_") && clean(preset.name) === targetClean) {
-      return key;
-    }
-  }
-  // 3. Clean/robust match for monthly presets (matching second part before/after "：")
-  for (const [key, preset] of Object.entries(CHURCH_PLAN_PRESETS)) {
-    if (key.startsWith("m_")) {
-      const parts = preset.name.split("：");
-      if (parts.length >= 2) {
-        const catName = parts[1].trim();
-        if (catName === name || catName === targetClean) return key;
-      }
-    }
-  }
-  return null;
+  const target = String(name).trim();
+  const match = Object.entries(CHURCH_PLAN_PRESETS).find(([, preset]) =>
+    String(preset.name || "").trim() === target
+  );
+  return match ? match[0] : null;
 }
-
-
 
 function isUuid(value) {
   return /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(String(value || ""));
@@ -87,6 +67,37 @@ function getPlanFilterAliases(filterValue) {
   });
 
   return Array.from(aliases);
+}
+
+function mapGlobalPlanRecord(dbPlan) {
+  const isCampaign = dbPlan.plan_kind === "church_campaign"
+    || dbPlan.id === window.CHURCH_CAMPAIGN_ID;
+  let campaignDefinition = null;
+  if (isCampaign) {
+    const stored = dbPlan.rules && Array.isArray(dbPlan.rules.stages) && Array.isArray(dbPlan.rules.segments)
+      ? dbPlan.rules
+      : window.CHURCH_CAMPAIGN;
+    campaignDefinition = window.cloneChurchCampaign(stored);
+  }
+  const campaignBooks = campaignDefinition
+    ? Array.from(new Set(campaignDefinition.segments.flatMap(segment => segment.readings.map(reading => reading.book))))
+    : [];
+  return {
+    id: dbPlan.id,
+    name: campaignDefinition ? campaignDefinition.name : dbPlan.name,
+    description: campaignDefinition ? campaignDefinition.description : dbPlan.description,
+    startDate: campaignDefinition ? campaignDefinition.startDate : dbPlan.start_date,
+    endDate: campaignDefinition ? campaignDefinition.endDate : dbPlan.end_date,
+    books: Array.isArray(dbPlan.target_books) && dbPlan.target_books.length > 0 ? dbPlan.target_books : campaignBooks,
+    presetKey: dbPlan.id,
+    isHidden: Boolean(dbPlan.is_hidden),
+    isFixed: dbPlan.is_fixed !== false,
+    is_fixed: dbPlan.is_fixed !== false,
+    planKind: isCampaign ? "church_campaign" : (dbPlan.plan_kind || "standard"),
+    ruleVersion: Number(dbPlan.rule_version || 1),
+    publishedAt: dbPlan.published_at || null,
+    campaignDefinition
+  };
 }
 
 function getPlanStorageKey(plan) {
@@ -675,15 +686,7 @@ const db = {
 
         // 處理 global_plans
         if (globalPlansResult.data) {
-          state.globalPlans = globalPlansResult.data.map(dbPlan => ({
-            id: dbPlan.id,
-            name: dbPlan.name,
-            startDate: dbPlan.start_date,
-            endDate: dbPlan.end_date,
-            books: dbPlan.target_books,
-            presetKey: dbPlan.id,
-            isHidden: Boolean(dbPlan.is_hidden)
-          }));
+          state.globalPlans = globalPlansResult.data.map(mapGlobalPlanRecord);
         } else {
           state.globalPlans = [];
         }
@@ -746,7 +749,10 @@ const db = {
                 || getPresetKeyByName(dbPlan.name);
 
               const isFixed = dbPlan.is_fixed !== false;
-              const planObj = generatePlanObject(dbPlan.name, dbPlan.start_date, dbPlan.end_date, dbPlan.target_books, key, dbPlan.level || 'normal', isFixed);
+              const planObj = generatePlanObject(dbPlan.name, dbPlan.start_date, dbPlan.end_date, dbPlan.target_books, key, dbPlan.level || 'normal', isFixed, {
+                readingDaysPerWeek: dbPlan.reading_days_per_week,
+                restWeekdays: dbPlan.rest_weekdays
+              });
               planObj.id = dbPlan.id;
               planObj.globalPlanId = globalPlanId;  // ⚠️ UUID 關聯
               planObj.isFixed = isFixed;
@@ -907,7 +913,7 @@ const db = {
       localStorage.setItem("user_profile", JSON.stringify(state.currentUser));
       state.realRole = "admin";
 
-      state.activePlan = generatePlanObject(CHURCH_PLAN_PRESETS.q1.name, CHURCH_PLAN_PRESETS.q1.startDate, CHURCH_PLAN_PRESETS.q1.endDate, CHURCH_PLAN_PRESETS.q1.books, "q1");
+      state.activePlan = generatePlanObject(CHURCH_PLAN_PRESETS[window.CHURCH_CAMPAIGN_PRESET_KEY].name, CHURCH_PLAN_PRESETS[window.CHURCH_CAMPAIGN_PRESET_KEY].startDate, CHURCH_PLAN_PRESETS[window.CHURCH_CAMPAIGN_PRESET_KEY].endDate, CHURCH_PLAN_PRESETS[window.CHURCH_CAMPAIGN_PRESET_KEY].books, window.CHURCH_CAMPAIGN_PRESET_KEY);
       state.activePlan.progress = 72;
       state.activePlan.completedChapters = Math.round((state.activePlan.totalChapters * 72) / 100);
       state.activePlans = [state.activePlan];
@@ -1756,7 +1762,7 @@ const db = {
     };
 
     // Setup mock active plan to match their plan_progress
-    state.activePlan = generatePlanObject(CHURCH_PLAN_PRESETS.q1.name, CHURCH_PLAN_PRESETS.q1.startDate, CHURCH_PLAN_PRESETS.q1.endDate, CHURCH_PLAN_PRESETS.q1.books, "q1");
+    state.activePlan = generatePlanObject(CHURCH_PLAN_PRESETS[window.CHURCH_CAMPAIGN_PRESET_KEY].name, CHURCH_PLAN_PRESETS[window.CHURCH_CAMPAIGN_PRESET_KEY].startDate, CHURCH_PLAN_PRESETS[window.CHURCH_CAMPAIGN_PRESET_KEY].endDate, CHURCH_PLAN_PRESETS[window.CHURCH_CAMPAIGN_PRESET_KEY].books, window.CHURCH_CAMPAIGN_PRESET_KEY);
     state.activePlan.progress = mockUser.plan_progress;
     state.activePlan.completedChapters = Math.round((state.activePlan.totalChapters * mockUser.plan_progress) / 100);
     state.activePlans = [state.activePlan];
@@ -1979,100 +1985,16 @@ const db = {
     }
   },
 
-  async joinPresetPlan(key) {
+  async joinPresetPlan(key, scheduleSettings = null) {
     let preset = (state.globalPlans || []).find(p => p.presetKey === key || p.id === key);
     if (!preset) {
       preset = CHURCH_PLAN_PRESETS[key];
     }
     if (!preset) return;
 
-    // Monthly single-choice & seasonal category-uniqueness validations
-    if (key && key.startsWith("m_")) {
-      const parts = key.split("_");
-      if (parts.length >= 4) {
-        const year = parseInt(parts[1]);
-        const month = parseInt(parts[2]);
-        const catKey = parts[3];
-        // 2026年8月限定只能選擇「摩西五經」
-        if (year === 2026 && month === 8 && catKey !== "cat1") {
-          showToast("2026年8月限定只能選擇「摩西五經」。");
-          return;
-        }
+        loader.show("加入挑戰計畫中...");
 
-        // 限制只能選擇當月，或每月 25 號（含）之後開放選擇的下個月份計畫
-        const today = new Date();
-        const todayYear = today.getFullYear();
-        const todayMonth = today.getMonth() + 1;
-        const todayDay = today.getDate();
-        const monthsDiff = (year - todayYear) * 12 + (month - todayMonth);
-
-        if (monthsDiff < 0) {
-          showToast("此讀經計畫已過期，無法加入。");
-          return;
-        }
-        if (monthsDiff > 1 || (monthsDiff === 1 && todayDay < 25)) {
-          showToast("下月份的讀經計畫將於每月 25 號開放選擇。");
-          return;
-        }
-
-        const getMonthSeason = (y, m) => {
-          if (y === 2026 && (m === 8 || m === 9 || m === 10)) return 1;
-          if ((y === 2026 && m === 11) || (y === 2026 && m === 12) || (y === 2027 && m === 1)) return 2;
-          if (y === 2027 && (m === 2 || m === 3 || m === 4)) return 3;
-          return null;
-        };
-
-        const targetSeason = getMonthSeason(year, month);
-
-        // 1. Check if user already joined a plan in this exact month
-        const hasPlanInMonth = (state.activePlans || []).some(p => {
-          const pk = p.presetKey;
-          if (!pk || !pk.startsWith("m_")) return false;
-          const pParts = pk.split("_");
-          return pParts.length >= 4 && parseInt(pParts[1]) === year && parseInt(pParts[2]) === month;
-        });
-
-        if (hasPlanInMonth) {
-          showToast("您已加入了該月份的讀經計畫，每個月只能選擇一類。");
-          return;
-        }
-
-        // 2. Check if user already joined a plan with the same category in the same season
-        if (targetSeason !== null) {
-          const hasSameCatInSeason = (state.activePlans || []).some(p => {
-            const pk = p.presetKey;
-            if (!pk || !pk.startsWith("m_")) return false;
-            const pParts = pk.split("_");
-            if (pParts.length < 4) return false;
-            const pYear = parseInt(pParts[1]);
-            const pMonth = parseInt(pParts[2]);
-            const pCatKey = pParts[3];
-            return getMonthSeason(pYear, pMonth) === targetSeason && pCatKey === catKey;
-          });
-
-          if (hasSameCatInSeason) {
-            const catName = (window.BIBLE_CATEGORIES && window.BIBLE_CATEGORIES[catKey] ? window.BIBLE_CATEGORIES[catKey].name : catKey);
-            showToast(`在此季度中您已選擇過「${catName}」，請選擇其他類別。`);
-            return;
-          }
-        }
-      }
-    }
-
-    loader.show("加入挑戰計畫中...");
-
-    const getCleanDisplayName = (name, presetKey) => {
-      if (!name) return "";
-      const isMonthly = (presetKey && presetKey.startsWith("m_")) ||
-        ["摩西五經", "歷史書", "詩歌智慧書", "大先知書", "小先知書", "福音書+使徒行傳", "福音書+徒", "保羅書信一", "保羅書信二", "普通書信+啟示錄", "普通書信+啟"].includes(name) ||
-        ["摩西五經", "歷史書", "詩歌", "大先知", "小先知", "福音", "保羅", "普通"].some(c => name.includes(c) && !name.includes("季"));
-      
-      if (name.includes("：")) {
-        const parts = name.split("：");
-        return isMonthly ? parts[1].trim() : parts[0].trim();
-      }
-      return name;
-    };
+    const getCleanDisplayName = (name) => String(name || "").trim();
 
     const planName = getCleanDisplayName(preset.name, key);
     let startDate = preset.startDate;
@@ -2082,6 +2004,11 @@ const db = {
     // 優先用 globalPlan 查詢，並確定是否為固定時間計畫
     const globalPlan = (state.globalPlans || []).find(gp => gp.id === key || gp.presetKey === key);
     const isFixed = globalPlan ? globalPlan.isFixed !== false : true;
+    const weeklySchedule = normalizePlanScheduleSettings(
+      isFixed,
+      scheduleSettings && scheduleSettings.readingDaysPerWeek,
+      scheduleSettings && scheduleSettings.restWeekdays
+    );
 
     if (!isFixed) {
       const getLocalDateString = (d) => {
@@ -2125,20 +2052,13 @@ const db = {
             was_downgraded: false,
             downgrade_locked_until: null,
             upgrade_prompt_handled: false,
-            is_fixed: isFixed
+            is_fixed: isFixed,
+            reading_days_per_week: weeklySchedule.readingDaysPerWeek,
+            rest_weekdays: weeklySchedule.restWeekdays
           };
 
           // 若是來自月度預設計畫，自動關聯到 global_plans 中的 9 大分類模板 UUID
-          if (key && key.startsWith("m_")) {
-            const keyParts = key.split("_");
-            if (keyParts.length >= 4) {
-              const catKey = keyParts[3]; // e.g. cat2
-              const catIdx = parseInt(catKey.replace("cat", ""));
-              if (catIdx >= 1 && catIdx <= 9) {
-                insertPayload.global_plan_id = `00000000-0000-0000-a000-00000000000${catIdx}`;
-              }
-            }
-          } else if (isGlobalPlanUUID) {
+          if (isGlobalPlanUUID) {
             insertPayload.global_plan_id = key;
           }
 
@@ -2154,7 +2074,10 @@ const db = {
 
           if (existingPlan) {
             const existingIsFixed = existingPlan.is_fixed !== false;
-            newPlanObj = generatePlanObject(planName, existingPlan.start_date, existingPlan.end_date, selectedBooks, key, 'normal', existingIsFixed);
+            newPlanObj = generatePlanObject(planName, existingPlan.start_date, existingPlan.end_date, selectedBooks, key, 'normal', existingIsFixed, {
+              readingDaysPerWeek: existingPlan.reading_days_per_week,
+              restWeekdays: existingPlan.rest_weekdays
+            });
             newPlanObj.id = existingPlan.id;
             newPlanObj.globalPlanId = existingPlan.global_plan_id || null;
             newPlanObj.level = existingPlan.level || newPlanObj.level || "normal";
@@ -2182,7 +2105,10 @@ const db = {
             if (!dbPlan) throw new Error("No plan returned after insert.");
 
             const dbIsFixed = dbPlan.is_fixed !== false;
-            newPlanObj = generatePlanObject(planName, dbPlan.start_date, dbPlan.end_date, selectedBooks, key, 'normal', dbIsFixed);
+            newPlanObj = generatePlanObject(planName, dbPlan.start_date, dbPlan.end_date, selectedBooks, key, 'normal', dbIsFixed, {
+              readingDaysPerWeek: dbPlan.reading_days_per_week,
+              restWeekdays: dbPlan.rest_weekdays
+            });
             newPlanObj.id = dbPlan.id;
             newPlanObj.globalPlanId = dbPlan.global_plan_id || null;
             newPlanObj.isFixed = dbIsFixed;
@@ -2200,7 +2126,7 @@ const db = {
         return null;
       }
     } else {
-      newPlanObj = generatePlanObject(planName, startDate, endDate, selectedBooks, key, 'normal', isFixed);
+      newPlanObj = generatePlanObject(planName, startDate, endDate, selectedBooks, key, 'normal', isFixed, weeklySchedule);
       newPlanObj.isFixed = isFixed;
       newPlanObj.is_fixed = isFixed;
       if (!state.activePlans) state.activePlans = [];
@@ -2233,8 +2159,8 @@ const db = {
     }
   },
 
-  async joinPlan(name, startDate, endDate, books, key) {
-    return this.joinPresetPlan(key);
+  async joinPlan(name, startDate, endDate, books, key, scheduleSettings = null) {
+    return this.joinPresetPlan(key, scheduleSettings);
   },
 
   async leavePlan(planId, presetKey) {
@@ -2318,17 +2244,7 @@ const db = {
         if (error) {
           console.error("Failed to load global plans from Supabase:", error);
         } else {
-          state.globalPlans = (data || []).map(dbPlan => ({
-            id: dbPlan.id,
-            name: dbPlan.name,
-            startDate: dbPlan.start_date,
-            endDate: dbPlan.end_date,
-            books: dbPlan.target_books,
-            presetKey: dbPlan.id,
-            isHidden: Boolean(dbPlan.is_hidden),
-            isFixed: dbPlan.is_fixed !== false,
-            is_fixed: dbPlan.is_fixed !== false
-          }));
+          state.globalPlans = (data || []).map(mapGlobalPlanRecord);
           return;
         }
       } catch (e) {
@@ -2337,9 +2253,21 @@ const db = {
     }
 
     // ── localStorage / Demo 模式：從本機讀取，並補上硬寫的四季預設計畫 ──
+    const localCampaignOverride = (() => {
+      try {
+        const value = JSON.parse(localStorage.getItem("church_campaign_override") || "null");
+        return value && Array.isArray(value.stages) && Array.isArray(value.segments) ? value : null;
+      } catch (error) {
+        return null;
+      }
+    })();
     const mergeWithPresets = (loadedList) => {
       const presetKeys = Object.keys(CHURCH_PLAN_PRESETS);
-      const presetPlans = Object.entries(CHURCH_PLAN_PRESETS).map(([key, p]) => ({
+      const presetPlans = Object.entries(CHURCH_PLAN_PRESETS).map(([key, originalPreset]) => {
+        const p = originalPreset.planKind === "church_campaign" && localCampaignOverride
+          ? { ...originalPreset, name: localCampaignOverride.name, description: localCampaignOverride.description, startDate: localCampaignOverride.startDate, endDate: localCampaignOverride.endDate, campaignDefinition: localCampaignOverride, ruleVersion: localCampaignOverride.version }
+          : originalPreset;
+        return ({
         id: key,
         name: p.name,
         startDate: p.startDate,
@@ -2348,8 +2276,13 @@ const db = {
         presetKey: key,
         isHidden: Boolean(p.isHidden || p.is_hidden),
         isFixed: p.isFixed !== false,
-        is_fixed: p.isFixed !== false
-      }));
+        is_fixed: p.isFixed !== false,
+        planKind: p.planKind || "standard",
+        ruleVersion: Number(p.ruleVersion || 1),
+        description: p.description || "",
+        campaignDefinition: p.campaignDefinition ? window.cloneChurchCampaign(p.campaignDefinition) : null
+      });
+      });
       // 自訂計畫：排除掉 presetKey 為 q1~q4 的項目避免重複
       const customPlans = loadedList.filter(p => !presetKeys.includes(p.presetKey) && !presetKeys.includes(p.id));
       return [...presetPlans, ...customPlans].map(plan => ({
@@ -2368,6 +2301,52 @@ const db = {
       state.globalPlans = mergeWithPresets([]);
       localStorage.setItem("global_plans_presets", JSON.stringify(state.globalPlans));
     }
+  },
+
+  async publishCampaignRules(plan, definition) {
+    const validation = window.validateChurchCampaign(definition, BIBLE_BOOKS);
+    if (!validation.valid) {
+      showToast(validation.errors[0] || "計畫規則不完整。");
+      return { success: false, validation };
+    }
+
+    const nextDefinition = window.cloneChurchCampaign(definition);
+    nextDefinition.id = plan.id || window.CHURCH_CAMPAIGN_ID;
+    nextDefinition.presetKey = window.CHURCH_CAMPAIGN_PRESET_KEY;
+    nextDefinition.planKind = "church_campaign";
+
+    if (state.isSupabaseMode && state.supabase && !(state.currentUser && state.currentUser.is_demo)) {
+      const { data, error } = await state.supabase.rpc("publish_global_plan_rules", {
+        p_plan_id: plan.id,
+        p_expected_version: Number(plan.ruleVersion || 1),
+        p_definition: nextDefinition
+      });
+      if (error) {
+        console.error("Failed to publish campaign rules:", error);
+        showToast(error.message && error.message.includes("version_conflict")
+          ? "計畫已被其他管理員更新，請重新載入後再修改。"
+          : "發布失敗：" + (error.message || error));
+        return { success: false, validation, error };
+      }
+      nextDefinition.version = Number(data || plan.ruleVersion + 1);
+    } else {
+      nextDefinition.version = Number(plan.ruleVersion || 1) + 1;
+      localStorage.setItem("church_campaign_override", JSON.stringify(nextDefinition));
+      window.CHURCH_CAMPAIGN = window.cloneChurchCampaign(nextDefinition);
+      const preset = CHURCH_PLAN_PRESETS[window.CHURCH_CAMPAIGN_PRESET_KEY];
+      Object.assign(preset, {
+        name: nextDefinition.name,
+        description: nextDefinition.description,
+        startDate: nextDefinition.startDate,
+        endDate: nextDefinition.endDate,
+        books: Array.from(new Set(nextDefinition.segments.flatMap(segment => segment.readings.map(reading => reading.book)))),
+        campaignDefinition: window.cloneChurchCampaign(nextDefinition)
+      });
+    }
+
+    this._userDataPromise = null;
+    await this.loadGlobalPlans();
+    return { success: true, validation, version: nextDefinition.version };
   },
 
   async saveGlobalPlan(plan) {

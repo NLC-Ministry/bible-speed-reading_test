@@ -29,7 +29,7 @@ const READ_TABLES = new Set([
 const USER_TABLES = new Set(["reading_plans", "reading_logs", "devotional_notes"]);
 const ADMIN_WRITE_TABLES = new Set(["great_regions", "pastoral_zones", "small_groups", "global_plans", "church_announcements", "profiles"]);
 const OWN_WRITE_TABLES = new Set(["reading_plans", "reading_logs", "devotional_notes", "devotional_likes", "devotional_comments", "care_reminders"]);
-const RPC_FUNCTIONS = new Set(["increment_likes", "decrement_likes"]);
+const RPC_FUNCTIONS = new Set(["increment_likes", "decrement_likes", "publish_global_plan_rules"]);
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: corsHeaders });
@@ -161,14 +161,41 @@ function applyFilters(query: any, filters: any[] = []) {
   return query;
 }
 
-function applyForcedScope(query: any, table: string, action: string, profile: any) {
+function valuesOverlap(left: unknown, right: unknown) {
+  const leftValues = String(left || "").split(",").map(value => value.trim()).filter(Boolean);
+  const rightValues = String(right || "").split(",").map(value => value.trim()).filter(Boolean);
+  return leftValues.some(value => rightValues.includes(value));
+}
+
+async function getVisibleProfileIds(supabaseAdmin: any, profile: any) {
+  if (isAdmin(profile)) return null;
+  const { data: profiles, error } = await supabaseAdmin
+    .from("profiles")
+    .select("id, great_region, pastoral_zone, small_group");
+  if (error) throw error;
+  return (profiles || []).filter((candidate: any) => {
+    if (candidate.id === profile.id) return true;
+    if (profile.role === "great_zone_leader") return valuesOverlap(candidate.great_region, profile.great_region);
+    if (profile.role === "zone_leader") return valuesOverlap(candidate.pastoral_zone, profile.pastoral_zone);
+    return valuesOverlap(candidate.pastoral_zone, profile.pastoral_zone)
+      && valuesOverlap(candidate.small_group, profile.small_group);
+  }).map((candidate: any) => candidate.id);
+}
+
+async function applyForcedScope(query: any, table: string, action: string, profile: any, supabaseAdmin: any) {
   if (action === "insert" || action === "upsert") return query;
-  if (USER_TABLES.has(table)) return query.eq("user_id", profile.id);
-  if (table === "profiles" && !isAdmin(profile)) return query.eq("id", profile.id);
+  if (USER_TABLES.has(table)) {
+    if (action !== "select") return query.eq("user_id", profile.id);
+    const visibleIds = await getVisibleProfileIds(supabaseAdmin, profile);
+    return visibleIds === null ? query : query.in("user_id", visibleIds.length ? visibleIds : [profile.id]);
+  }
+  if (table === "profiles" && !isAdmin(profile)) {
+    const visibleIds = await getVisibleProfileIds(supabaseAdmin, profile);
+    return query.in("id", visibleIds && visibleIds.length ? visibleIds : [profile.id]);
+  }
   if (table === "user_identities") return query.eq("profile_id", profile.id);
   if (table === "global_plans" && action === "select" && !isAdmin(profile)) return query.eq("is_hidden", false);
   if (table === "church_announcements" && action === "select" && !isAdmin(profile)) return query.eq("is_published", true);
-  // care_reminders: SELECT scoped to recipient, UPDATE scoped to recipient (mark as read)
   if (table === "care_reminders" && action === "select") return query.eq("recipient_id", profile.id);
   if (table === "care_reminders" && action === "update") return query.eq("recipient_id", profile.id);
   return query;
@@ -210,7 +237,14 @@ Deno.serve(async (req: Request) => {
     if (action === "rpc") {
       const functionName = typeof body.function === "string" ? body.function : "";
       if (!RPC_FUNCTIONS.has(functionName)) return jsonResponse({ error: "forbidden_rpc" }, 403);
-      const { data, error } = await supabaseAdmin.rpc(functionName, body.args || {});
+      if (functionName === "publish_global_plan_rules" && !isAdmin(profile)) {
+        return jsonResponse({ error: "forbidden_rpc" }, 403);
+      }
+      const rpcName = functionName;
+      const rpcArgs = functionName === "publish_global_plan_rules"
+        ? { ...(body.args || {}), p_actor_id: profile.id }
+        : (body.args || {});
+      const { data, error } = await supabaseAdmin.rpc(rpcName, rpcArgs);
       if (error) return jsonResponse({ error: error.message, details: error }, 400);
       return jsonResponse({ data, profile });
     }
@@ -298,7 +332,7 @@ Deno.serve(async (req: Request) => {
 
     query = applyFilters(query, body.filters || []);
     if (body.or) query = query.or(body.or);
-    query = applyForcedScope(query, table, action, profile);
+    query = await applyForcedScope(query, table, action, profile, supabaseAdmin);
     if (["insert", "update", "upsert"].includes(action) && body.select) query = query.select(body.select);
     if (body.order?.column) query = query.order(body.order.column, { ascending: body.order.ascending !== false });
     if (body.limit) query = query.limit(body.limit);

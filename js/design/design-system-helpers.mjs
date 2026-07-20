@@ -21,10 +21,8 @@ export function isPlanDayCompletedForRound(day, round) {
 export function getNextReadingPlanDay(plan) {
   if (!plan || !plan.days || plan.days.length === 0) return null;
   const currentRound = plan.currentRound || 1;
-  return (
-    plan.days.find(day => !isPlanDayCompletedForRound(day, currentRound)) ||
-    plan.days[plan.days.length - 1]
-  );
+  const nextDay = plan.days.find(day => day.chapters && day.chapters.length > 0 && !isPlanDayCompletedForRound(day, currentRound));
+  return nextDay || [...plan.days].reverse().find(day => day.chapters && day.chapters.length > 0) || null;
 }
 
 export function getExpectedPlanDayCount(plan, now = new Date()) {
@@ -35,7 +33,8 @@ export function getExpectedPlanDayCount(plan, now = new Date()) {
   const today = new Date(now);
   today.setHours(0, 0, 0, 0);
   const elapsedDays = Math.floor((today - planStart) / (1000 * 60 * 60 * 24)) + 1;
-  return Math.max(0, Math.min(plan.days.length, elapsedDays));
+  const elapsedPlanDays = plan.days.slice(0, Math.max(0, Math.min(plan.days.length, elapsedDays)));
+  return elapsedPlanDays.filter(day => day.chapters && day.chapters.length > 0).length;
 }
 
 export function getPlanProgressBadgeClass(plan, deps = {}) {
@@ -71,7 +70,7 @@ export function getPlanProgressStatus(plan, deps = {}) {
 
   const nextDay = getNextDay(plan);
   const nextDayNum = nextDay ? Number(nextDay.dayNum || 1) : 1;
-  const completedBeforeNext = Math.max(0, nextDayNum - 1);
+  const completedBeforeNext = plan.days.filter(day => day.chapters && day.chapters.length > 0 && Number(day.dayNum) < nextDayNum).length;
   const expectedDays = getExpected(plan);
   const diff = completedBeforeNext - expectedDays;
 

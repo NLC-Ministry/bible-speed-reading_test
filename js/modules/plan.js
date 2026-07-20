@@ -641,53 +641,26 @@ async function renderPlanView() {
 
 function getResolvedPresetKey(plan) {
   if (!plan) return null;
-  if (plan.presetKey) return plan.presetKey;
-  const name = plan.name || "";
-  if (name.includes("第一季")) return "q1";
-  if (name.includes("第二季")) return "q2";
-  if (name.includes("第三季")) return "q3";
-  if (name.includes("第四季")) return "q4";
-  return null;
+  return plan.presetKey || plan.globalPlanId || plan.id || plan.name || null;
 }
 
 function getPlanCoverColor(plan) {
   const covers = window.NLC_PLAN_COVERS || ["#B8E8F5", "#C8F5D8", "#FFE4CC", "#D4E4F7", "#E8E0F5", "#F7D4E4", "#F4F7D4", "#E4D4F7", "#D4F7F2"];
-  const resolvedKey = getResolvedPresetKey(plan);
-  if (plan && plan.presetKey && plan.presetKey.startsWith("m_")) {
-    const parts = plan.presetKey.split("_");
-    if (parts.length >= 4) {
-      const catNum = parseInt(parts[3].replace("cat", "")) || 1;
-      return covers[(catNum - 1) % covers.length];
-    }
-  }
-  const presetMap = { q1: 1, q2: 2, q3: 3, q4: 4 };
-  const idx = presetMap[resolvedKey] ?? 0;
-  return covers[idx] || covers[0];
+  const key = String(getResolvedPresetKey(plan) || "");
+  let hash = 0;
+  for (let i = 0; i < key.length; i++) hash = ((hash << 5) - hash + key.charCodeAt(i)) | 0;
+  return covers[Math.abs(hash) % covers.length] || covers[0];
 }
 
 function getPlanCoverHtml(plan) {
   const bg = getPlanCoverColor(plan);
-  const resolvedKey = getResolvedPresetKey(plan);
-  let text = "速讀";
-  if (resolvedKey === "q1") text = "第一季";
-  else if (resolvedKey === "q2") text = "第二季";
-  else if (resolvedKey === "q3") text = "第三季";
-  else if (resolvedKey === "q4") text = "第四季";
-  else if (plan.presetKey && plan.presetKey.startsWith("m_")) {
-    const parts = plan.presetKey.split("_");
-    if (parts.length >= 4) {
-      const month = parseInt(parts[2]);
-      const catKey = parts[3];
-      const abbrevs = {
-        cat1: "五經", cat2: "歷史", cat3: "詩歌", cat4: "大先", cat5: "小先",
-        cat6: "福音", cat7: "保羅一", cat8: "保羅二", cat9: "普通"
-      };
-      const catAbbrev = abbrevs[catKey] || "速讀";
-      text = `<div style="font-size: 0.8rem; line-height: 1.2; text-align: center;">${month}月<br><span style="font-weight: 700; font-size: 0.95rem;">${catAbbrev}</span></div>`;
-      return `<div class="plan-cover-thumbnail" style="width: 72px; height: 72px; border-radius: 12px; background: ${bg}; display: flex; align-items: center; justify-content: center; color: var(--color-black); font-weight: 500; flex-shrink: 0; box-shadow: var(--shadow-sm);">${text}</div>`;
-    }
-  }
-  return `<div class="plan-cover-thumbnail" style="width: 72px; height: 72px; border-radius: 12px; background: ${bg}; display: flex; align-items: center; justify-content: center; color: var(--color-black); font-weight: 500; font-size: 0.95rem; flex-shrink: 0; box-shadow: var(--shadow-sm);">${text}</div>`;
+  const isCampaign = plan && (
+    plan.planKind === "church_campaign"
+    || plan.id === window.CHURCH_CAMPAIGN_ID
+    || plan.globalPlanId === window.CHURCH_CAMPAIGN_ID
+  );
+  const label = isCampaign ? "66卷" : escapeHTML(String(plan && plan.name || "讀經").slice(0, 2));
+  return `<div class="plan-cover-thumbnail" style="width: 72px; height: 72px; border-radius: 12px; background: ${bg}; display: flex; align-items: center; justify-content: center; color: var(--color-black); font-weight: 500; font-size: 0.95rem; flex-shrink: 0; box-shadow: var(--shadow-sm);">${label}</div>`;
 }
 
 function renderJoinedPlansList() {
@@ -825,360 +798,216 @@ function renderJoinedPlansList() {
   }
 }
 
+function openFlexibleScheduleDialog(plan) {
+  return new Promise(resolve => {
+    const existing = document.getElementById("flexible-schedule-dialog");
+    if (existing) existing.remove();
+
+    const weekdayLabels = ["\u9031\u65e5", "\u9031\u4e00", "\u9031\u4e8c", "\u9031\u4e09", "\u9031\u56db", "\u9031\u4e94", "\u9031\u516d"];
+    const overlay = document.createElement("div");
+    overlay.id = "flexible-schedule-dialog";
+    overlay.className = "modal-overlay";
+    overlay.style.cssText = "position:fixed;inset:0;z-index:10000;background:rgba(15,23,42,.58);display:flex;align-items:center;justify-content:center;padding:1rem;";
+    overlay.innerHTML = `
+      <div class="glass-card" role="dialog" aria-modal="true" aria-labelledby="flexible-schedule-title"
+        style="width:min(420px,100%);height:auto!important;padding:1.5rem;background:var(--bg-card);border:1px solid var(--border-card);box-shadow:var(--shadow-lg);">
+        <h3 id="flexible-schedule-title" style="margin:0 0 .35rem;font-size:1.15rem;font-weight:500;color:var(--text-primary);">\u8a2d\u5b9a\u6bcf\u9031\u8b80\u7d93\u5b89\u6392</h3>
+        <p style="margin:0 0 1.25rem;font-size:.82rem;line-height:1.55;color:var(--text-secondary);">
+          ${escapeHTML((plan && plan.name) || "\u975e\u56fa\u5b9a\u65e5\u671f\u8a08\u756b")}\u6703\u5f9e\u4eca\u5929\u958b\u59cb\uff0c\u7ae0\u7bc0\u53ea\u6703\u5206\u914d\u5728\u60a8\u9078\u64c7\u7684\u8b80\u7d93\u65e5\u3002
+        </p>
+        <label for="flexible-reading-days" style="display:block;margin-bottom:.45rem;font-size:.85rem;font-weight:500;color:var(--text-primary);">\u4e00\u9031\u60f3\u8b80\u7d93\u5e7e\u5929</label>
+        <select id="flexible-reading-days" class="form-control" style="width:100%;margin-bottom:1.1rem;">
+          ${[1, 2, 3, 4, 5, 6, 7].map(days => `<option value="${days}" ${days === 5 ? "selected" : ""}>\u6bcf\u9031 ${days} \u5929</option>`).join("")}
+        </select>
+        <fieldset style="border:0;padding:0;margin:0;">
+          <legend style="margin-bottom:.55rem;font-size:.85rem;font-weight:500;color:var(--text-primary);">\u56fa\u5b9a\u4f11\u606f\u661f\u671f</legend>
+          <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.5rem;">
+            ${weekdayLabels.map((label, day) => `
+              <label style="display:flex;align-items:center;gap:.35rem;padding:.55rem .45rem;border:1px solid var(--border-card);border-radius:10px;cursor:pointer;font-size:.78rem;color:var(--text-primary);">
+                <input class="schedule-weekday-checkbox" type="checkbox" value="${day}" ${day === 0 || day === 6 ? "checked" : ""}>
+                <span>${label}</span>
+              </label>
+            `).join("")}
+          </div>
+        </fieldset>
+        <p id="flexible-schedule-summary" style="margin:.85rem 0 0;font-size:.78rem;color:var(--text-muted);"></p>
+        <p id="flexible-schedule-error" role="alert" style="display:none;margin:.55rem 0 0;font-size:.78rem;color:var(--color-danger);"></p>
+        <div style="display:flex;justify-content:flex-end;gap:.65rem;margin-top:1.25rem;">
+          <button type="button" id="flexible-schedule-cancel" class="btn-secondary">\u53d6\u6d88</button>
+          <button type="button" id="flexible-schedule-confirm" class="btn-primary">\u52a0\u5165\u8a08\u756b</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    const daysSelect = overlay.querySelector("#flexible-reading-days");
+    const checkboxes = Array.from(overlay.querySelectorAll(".schedule-weekday-checkbox"));
+    const summary = overlay.querySelector("#flexible-schedule-summary");
+    const error = overlay.querySelector("#flexible-schedule-error");
+    const preferredRestOrder = [0, 6, 5, 4, 3, 2, 1];
+
+    const updateSummary = () => {
+      const restDays = checkboxes.filter(input => input.checked).map(input => weekdayLabels[Number(input.value)]);
+      summary.textContent = restDays.length > 0
+        ? `\u6bcf\u9031\u8b80 ${daysSelect.value} \u5929\uff1b${restDays.join("\u3001")}\u56fa\u5b9a\u4f11\u606f\u3002`
+        : "\u6bcf\u9031 7 \u5929\u90fd\u5b89\u6392\u8b80\u7d93\u3002";
+      error.style.display = "none";
+    };
+
+    const syncRestDays = () => {
+      const targetRestCount = 7 - Number(daysSelect.value);
+      const selected = checkboxes.filter(input => input.checked).map(input => Number(input.value));
+      const nextRestDays = selected.slice(0, targetRestCount);
+      preferredRestOrder.forEach(day => {
+        if (nextRestDays.length < targetRestCount && !nextRestDays.includes(day)) nextRestDays.push(day);
+      });
+      checkboxes.forEach(input => { input.checked = nextRestDays.includes(Number(input.value)); });
+      updateSummary();
+    };
+
+    daysSelect.addEventListener("change", syncRestDays);
+    checkboxes.forEach(input => input.addEventListener("change", () => {
+      const restCount = checkboxes.filter(item => item.checked).length;
+      if (restCount >= 7) {
+        input.checked = false;
+        error.textContent = "\u4e00\u9031\u81f3\u5c11\u9700\u8981\u4fdd\u7559 1 \u5929\u8b80\u7d93\u3002";
+        error.style.display = "block";
+        return;
+      }
+      daysSelect.value = String(7 - checkboxes.filter(item => item.checked).length);
+      updateSummary();
+    }));
+
+    const close = value => {
+      overlay.remove();
+      resolve(value);
+    };
+    overlay.querySelector("#flexible-schedule-cancel").addEventListener("click", () => close(null));
+    overlay.querySelector("#flexible-schedule-confirm").addEventListener("click", () => {
+      const restWeekdays = checkboxes.filter(input => input.checked).map(input => Number(input.value)).sort((a, b) => a - b);
+      const templateStart = new Date(plan.startDate);
+      const templateEnd = new Date(plan.endDate);
+      const durationDays = Math.max(1, Math.ceil((templateEnd - templateStart) / 86400000) + 1);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const hasReadingDay = Array.from({ length: durationDays }, (_, offset) => {
+        const date = new Date(today);
+        date.setDate(today.getDate() + offset);
+        return date;
+      }).some(date => !restWeekdays.includes(date.getDay()));
+
+      if (!hasReadingDay) {
+        error.textContent = "\u9019\u500b\u8a08\u756b\u671f\u9593\u5167\u6c92\u6709\u53ef\u7528\u7684\u8b80\u7d93\u65e5\uff0c\u8acb\u8abf\u6574\u4f11\u606f\u661f\u671f\u3002";
+        error.style.display = "block";
+        return;
+      }
+      close({ readingDaysPerWeek: 7 - restWeekdays.length, restWeekdays });
+    });
+    overlay.addEventListener("click", event => {
+      if (event.target === overlay) close(null);
+    });
+    updateSummary();
+    daysSelect.focus();
+  });
+}
+
 function renderPresetPlansList() {
   const container = document.getElementById("preset-plans-list");
   if (!container) return;
-
   container.innerHTML = "";
 
-  const today = new Date();
-  const currentYear = today.getFullYear();
-  const currentMonth = today.getMonth() + 1;
-  const currentDay = today.getDate();
+  const legacyCategoryIdPrefix = "00000000-0000-0000-a000-";
+  const isLegacyChoicePlan = plan =>
+    String(plan && (plan.id || plan.globalPlanId || "")).startsWith(legacyCategoryIdPrefix)
+    || String(plan && plan.presetKey || "").startsWith("m_")
+    || ["q1", "q2", "q3", "q4"].includes(String(plan && plan.presetKey || ""));
 
-  // Helper to extract category key (cat1 ~ cat9) from a plan
-  const getPlanCategoryKey = (p) => {
-    if (!p) return null;
-    if (p.presetKey && p.presetKey.startsWith("m_")) {
-      const parts = p.presetKey.split("_");
-      if (parts.length >= 4) return parts[3];
-    }
-    if (p.globalPlanId && p.globalPlanId.startsWith("00000000-0000-0000-a000-")) {
-      const suffix = p.globalPlanId.split("-").pop();
-      const idx = parseInt(suffix);
-      if (idx >= 1 && idx <= 9) return `cat${idx}`;
-    }
-    return null;
-  };
-
-  // Helper to check if a plan is a monthly category plan
-  const isCategoryPlan = (p) => {
-    if (!p) return false;
-    if (p.presetKey && p.presetKey.startsWith("m_")) return true;
-    const name = p.name || "";
-    const categoryNames = [
-      "摩西五經", "歷史書", "詩歌智慧書", "大先知書", "小先知書", 
-      "福音書+使徒行傳", "福音書+徒", "保羅書信一", "保羅書信二", 
-      "普通書信+啟示錄", "普通書信+啟"
-    ];
-    if (categoryNames.includes(name)) return true;
-    if (categoryNames.some(cName => name.includes(cName) && !name.includes("季"))) return true;
-    return false;
-  };
-
-  // Helper to clean display name (strip dates after colon)
-  const getCleanDisplayName = (plan) => {
-    if (!plan || !plan.name) return "";
-    const isMonthly = isCategoryPlan(plan);
-    if (plan.name.includes("：")) {
-      const parts = plan.name.split("：");
-      return isMonthly ? parts[1].trim() : parts[0].trim();
-    }
-    return plan.name;
-  };
-
-  // Helper to calculate duration text
-  const getDurationLabel = (sStr, eStr) => {
-    if (!sStr || !eStr) return "時間：未設定";
-    const start = new Date(sStr);
-    const end = new Date(eStr);
-    const diffDays = Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1);
-    if (diffDays >= 28 && diffDays <= 31) return `時間：1 個月 (${diffDays} 天)`;
-    if (diffDays >= 88 && diffDays <= 92) return `時間：3 個月 (${diffDays} 天)`;
-    return `時間：${diffDays} 天`;
-  };
-
-  let targetMonth = null;
-  for (const mSpec of window.SEASON_MONTHS || []) {
-    const monthsDiff = (mSpec.year - currentYear) * 12 + (mSpec.month - currentMonth);
-    if (monthsDiff < 0) continue; // Skip past months
-
-    const hasPlanForMonth = (state.activePlans || []).some(ap => {
-      if (!ap.startDate) return false;
-      const apParts = ap.startDate.split("-");
-      const apYear = parseInt(apParts[0]);
-      const apMonth = parseInt(apParts[1]);
-      return apYear === mSpec.year && apMonth === mSpec.month;
-    });
-
-    targetMonth = mSpec;
-
-    if (!hasPlanForMonth) {
-      break;
-    }
-
-    // Stop at this month if today is still before the 25th of this month (so September isn't open yet)
-    const mSpecDateLimit = new Date(mSpec.year, mSpec.month - 1, 25);
-    if (today < mSpecDateLimit) {
-      break;
-    }
-  }
-
-  let monthlySectionRendered = false;
-
-  if (targetMonth) {
-    // Find categories that have already been chosen
-    const joinedCategories = new Set(
-      (state.activePlans || [])
-        .map(getPlanCategoryKey)
-        .filter(Boolean)
-    );
-
-    // Filter unselected categories from BIBLE_CATEGORIES
-    let availableCategories = Object.entries(window.BIBLE_CATEGORIES || {})
-      .filter(([catKey]) => !joinedCategories.has(catKey));
-
-    if (availableCategories.length > 0) {
-      monthlySectionRendered = true;
-
-      // Check if user already has a plan joined for this target month
-      const targetMonthPlan = (state.activePlans || []).find(ap => {
-        if (!ap.startDate) return false;
-        const apParts = ap.startDate.split("-");
-        const apYear = parseInt(apParts[0]);
-        const apMonth = parseInt(apParts[1]);
-        return apYear === targetMonth.year && apMonth === targetMonth.month;
-      });
-
-      const alreadyHasPlan = !!targetMonthPlan;
-      const targetMonthPlanName = targetMonthPlan ? getCleanDisplayName(targetMonthPlan) : "";
-
-      // Determine if the target month is open (if not already joined)
-      const monthsDiff = (targetMonth.year - currentYear) * 12 + (targetMonth.month - currentMonth);
-      const isDateOpen = (monthsDiff === 0) || (monthsDiff === 1 && currentDay >= 25);
-      const isOpen = !alreadyHasPlan && isDateOpen;
-
-      // Render the target month section
-      const section = document.createElement("div");
-      section.style = "display: flex; flex-direction: column; gap: 0.75rem; width: 100%; margin-bottom: 2rem;";
-
-      const header = document.createElement("div");
-      header.style = `
-        font-size: 1.15rem;
-        font-weight: 600;
-        color: var(--text-primary);
-        border-left: 4px solid var(--primary-color);
-        padding-left: 0.6rem;
-        margin-bottom: 0.25rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-      `;
-      header.innerHTML = `
-        <span class="nlc-icon" data-icon="calendar" aria-hidden="true" style="color: var(--primary-color);"></span>
-        <span>教會特別計畫</span>
-      `;
-      section.appendChild(header);
-
-      const grid = document.createElement("div");
-      grid.style = `
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 1rem;
-        width: 100%;
-      `;
-
-      const lastDay = new Date(targetMonth.year, targetMonth.month, 0).getDate();
-      const startDateStr = `${targetMonth.year}-${String(targetMonth.month).padStart(2, '0')}-01`;
-      const endDateStr = `${targetMonth.year}-${String(targetMonth.month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
-      const durationText = getDurationLabel(startDateStr, endDateStr);
-
-      availableCategories.forEach(([catKey, catSpec]) => {
-        const presetKey = `m_${targetMonth.year}_${String(targetMonth.month).padStart(2, '0')}_${catKey}`;
-
-        // Check if this card is locked because of August 2026 constraint
-        const isAugustConstraint = (targetMonth.year === 2026 && targetMonth.month === 8 && catKey !== "cat1");
-        const cardIsOpen = isOpen && !isAugustConstraint;
-
-        const card = document.createElement("div");
-        card.className = "joined-plan-item-card";
-        card.style = `
-          background: var(--bg-card);
-          border: 1px solid var(--border-card);
-          border-radius: 16px;
-          padding: 1rem;
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-          cursor: ${cardIsOpen ? 'pointer' : 'not-allowed'};
-          transition: all 0.2s ease;
-          opacity: ${cardIsOpen ? '1' : '0.65'};
-        `;
-
-        card.onclick = async () => {
-          if (alreadyHasPlan) {
-            showToast(`您此月份已加入「${targetMonthPlanName}」特別計畫，無法選取其他類別。`);
-            return;
-          }
-          if (isAugustConstraint) {
-            showToast("2026年8月限定只能選擇「摩西五經」。");
-            return;
-          }
-          if (!isDateOpen) {
-            showToast(`下月份 (${targetMonth.month}月) 的讀經計畫將於每月 25 號開放選擇。`);
-            return;
-          }
-          if (confirm(`確定要加入 ${catSpec.name} 讀經計畫挑戰嗎？\n系統將自動設定為 ${targetMonth.month} 月份完整區間。`)) {
-            await db.joinPresetPlan(presetKey);
-          }
-        };
-
-        let statusLabel = `+ 點擊加入 ${targetMonth.month} 月份挑戰`;
-        if (alreadyHasPlan) {
-          statusLabel = `🔒 此月已選擇「${targetMonthPlanName}」`;
-        } else if (isAugustConstraint) {
-          statusLabel = `🔒 8月份僅開放選取摩西五經`;
-        } else if (!isDateOpen) {
-          statusLabel = `🔒 尚未開放選取 (每月 25 號開放)`;
-        }
-
-        card.innerHTML = `
-          ${getPlanCoverHtml({ presetKey })}
-          <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 0.25rem; min-width: 0;">
-            <h4 style="margin: 0; font-size: 1.05rem; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${getCleanDisplayName({ name: catSpec.name, presetKey })}</h4>
-            <div style="font-size: 0.78rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.3rem;">
-              <span class="nlc-icon" data-icon="calendarThirty" aria-hidden="true"></span> <span>${durationText}</span>
-            </div>
-            <div style="font-size: 0.76rem; font-weight: 500; color: ${cardIsOpen ? 'var(--primary-color)' : 'var(--text-muted)'}; margin-top: 0.2rem; display: flex; align-items: center; gap: 0.25rem;">
-              ${statusLabel}
-            </div>
-          </div>
-        `;
-        grid.appendChild(card);
-      });
-
-      section.appendChild(grid);
-      container.appendChild(section);
-      if (typeof hydrateIcons === "function") hydrateIcons(section);
-    }
-  }
-
-  // --- PART 3: Render Quarterly / Other Plans Section ---
-  const otherPresets = Object.entries(CHURCH_PLAN_PRESETS).filter(([key]) => !key.startsWith("m_"));
-  const otherPlans = [];
-
-  otherPresets.forEach(([key, p]) => {
-    const isJoined = (state.activePlans || []).some(ap => {
-      if (ap.presetKey === key || ap.id === key) return true;
-      const apClean = getCleanDisplayName(ap);
-      const pClean = getCleanDisplayName({ name: p.name, presetKey: key });
-      return apClean && pClean && apClean === pClean;
-    });
-    if (!isJoined) {
-      otherPlans.push({
-        id: key,
-        name: p.name,
-        startDate: p.startDate,
-        endDate: p.endDate,
-        books: p.books,
+  const sourcePlans = state.globalPlans && state.globalPlans.length > 0
+    ? state.globalPlans
+    : Object.entries(CHURCH_PLAN_PRESETS).map(([key, plan]) => ({
+        ...plan,
+        id: plan.id || key,
         presetKey: key
-      });
-    }
+      }));
+
+  const joinedKeys = new Set((state.activePlans || []).flatMap(plan => [
+    plan.id,
+    plan.globalPlanId,
+    plan.presetKey,
+    plan.name
+  ].filter(Boolean).map(String)));
+
+  const visiblePlans = sourcePlans.filter(plan => {
+    if (!plan || isLegacyChoicePlan(plan)) return false;
+    if (isPlanHidden(plan) && !canManageHiddenPlans()) return false;
+    return ![plan.id, plan.globalPlanId, plan.presetKey, plan.name]
+      .filter(Boolean)
+      .some(value => joinedKeys.has(String(value)));
   });
 
-  if (state.globalPlans && state.globalPlans.length > 0) {
-    state.globalPlans.forEach(gp => {
-      const isMonthly = isCategoryPlan(gp);
-      if (!isMonthly) {
-        const isJoined = (state.activePlans || []).some(ap => {
-          if (ap.presetKey === gp.presetKey || ap.id === gp.id) return true;
-          const apClean = getCleanDisplayName(ap);
-          const gpClean = getCleanDisplayName(gp);
-          return apClean && gpClean && apClean === gpClean;
-        });
-        const alreadyListed = otherPlans.some(op => 
-          op.id === gp.id || 
-          op.presetKey === gp.presetKey ||
-          getCleanDisplayName(op) === getCleanDisplayName(gp)
-        );
-        if (!isJoined && !alreadyListed && !gp.isHidden) {
-          otherPlans.push(gp);
-        }
-      }
-    });
-  }
-
-  if (otherPlans.length > 0) {
-    const section = document.createElement("div");
-    section.style = "display: flex; flex-direction: column; gap: 0.75rem; width: 100%; margin-bottom: 2rem;";
-
-    const header = document.createElement("div");
-    header.style = `
-      font-size: 1.15rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      border-left: 4px solid var(--primary-color);
-      padding-left: 0.6rem;
-      margin-bottom: 0.25rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    `;
-    header.innerHTML = `
-      <span class="nlc-icon" data-icon="star" aria-hidden="true" style="color: var(--primary-color);"></span>
-      <span>其他計畫</span>
-    `;
-    section.appendChild(header);
-
-    const grid = document.createElement("div");
-    grid.style = `
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 1rem;
-      width: 100%;
-    `;
-
-    otherPlans.forEach(plan => {
-      const key = plan.presetKey || plan.id;
-      const durationText = getDurationLabel(plan.startDate, plan.endDate);
-
-      const card = document.createElement("div");
-      card.className = "joined-plan-item-card";
-      card.style = `
-        background: var(--bg-card);
-        border: 1px solid var(--border-card);
-        border-radius: 16px;
-        padding: 1rem;
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        cursor: pointer;
-        transition: all 0.2s ease;
-      `;
-
-      card.onclick = async () => {
-        if (confirm(`確定要加入 ${getCleanDisplayName(plan)} 讀經計畫挑戰嗎？\n系統將自動設定為從今天開始的完整讀經區段。`)) {
-          await db.joinPresetPlan(key);
-        }
-      };
-
-      card.innerHTML = `
-        ${getPlanCoverHtml(plan)}
-        <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 0.25rem; min-width: 0;">
-          <h4 style="margin: 0; font-size: 1.05rem; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${getCleanDisplayName(plan)}</h4>
-          <div style="font-size: 0.78rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.3rem;">
-            <span class="nlc-icon" data-icon="calendarThirty" aria-hidden="true"></span> <span>${durationText}</span>
-          </div>
-          <div style="font-size: 0.76rem; font-weight: 500; color: var(--primary-color); margin-top: 0.2rem; display: flex; align-items: center; gap: 0.25rem;">
-            + 點擊加入計畫挑戰
-          </div>
-        </div>
-      `;
-      grid.appendChild(card);
-    });
-
-    section.appendChild(grid);
-    container.appendChild(section);
-    if (typeof hydrateIcons === "function") hydrateIcons(section);
-  }
-
-  if (!monthlySectionRendered && otherPlans.length === 0) {
+  if (visiblePlans.length === 0) {
     container.innerHTML = `
-      <div style="text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.95rem;">
-        🎉 恭喜！您已啟動了所有可選的讀經計畫！
+      <div class="empty-state" style="text-align:center;padding:2.5rem 1rem;">
+        <p style="color:var(--text-secondary);margin:0;">目前沒有其他可加入的讀經計畫。</p>
       </div>
     `;
+    return;
   }
+
+  const getDurationLabel = (startDate, endDate) => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return "日期待管理員設定";
+    const days = Math.max(1, Math.ceil((end - start) / 86400000) + 1);
+    return days >= 365 ? `${startDate} ～ ${endDate}` : `共 ${days} 天`;
+  };
+
+  visiblePlans.forEach(plan => {
+    const key = plan.id || plan.presetKey;
+    const isCampaign = plan.planKind === "church_campaign"
+      || key === window.CHURCH_CAMPAIGN_ID
+      || key === window.CHURCH_CAMPAIGN_PRESET_KEY;
+    const isFixed = isCampaign || (plan.isFixed !== false && plan.is_fixed !== false);
+    const scheduleLabel = isCampaign
+      ? "全教會統一進度・八輪十階段"
+      : (isFixed ? getDurationLabel(plan.startDate, plan.endDate) : `彈性開始・${getDurationLabel(plan.startDate, plan.endDate)}`);
+    const description = isCampaign
+      ? "加入一次即可跟隨 2026 年 8 月至 2029 年 8 月的完整讀經進度；小組依會員基本資料自動分隊。"
+      : (plan.description || "");
+
+    const card = document.createElement("div");
+    card.className = "joined-plan-item-card";
+    card.style = "background:var(--bg-card);border:1px solid var(--border-card);border-radius:16px;padding:1rem;display:flex;align-items:center;gap:1rem;cursor:pointer;transition:all .2s ease;";
+    card.innerHTML = `
+      ${getPlanCoverHtml(plan)}
+      <div style="flex-grow:1;display:flex;flex-direction:column;gap:.3rem;min-width:0;">
+        <h4 style="margin:0;font-size:1.05rem;font-weight:500;color:var(--text-primary);">${escapeHTML(plan.name)}</h4>
+        <div style="font-size:.78rem;color:var(--text-muted);display:flex;align-items:center;gap:.3rem;">
+          <span class="nlc-icon" data-icon="calendarThirty" aria-hidden="true"></span>
+          <span>${escapeHTML(scheduleLabel)}</span>
+        </div>
+        ${description ? `<p style="margin:.15rem 0 0;font-size:.76rem;line-height:1.45;color:var(--text-secondary);">${escapeHTML(description)}</p>` : ""}
+        <div style="font-size:.76rem;font-weight:500;color:var(--primary-color);margin-top:.15rem;">+ 加入計畫</div>
+      </div>
+    `;
+
+    card.onclick = async () => {
+      if (!isFixed) {
+        const scheduleSettings = await openFlexibleScheduleDialog(plan);
+        if (!scheduleSettings) return;
+        await db.joinPresetPlan(key, scheduleSettings);
+        return;
+      }
+      const message = isCampaign
+        ? "確定加入全教會聖經速讀計畫嗎？加入後不需要每月重新選擇。"
+        : `確定加入「${plan.name}」嗎？`;
+      if (confirm(message)) await db.joinPresetPlan(key);
+    };
+
+    container.appendChild(card);
+  });
+
+  if (typeof hydrateIcons === "function") hydrateIcons(container);
 }
 
 function isChapterReadForRound(ch, round) {
@@ -1202,7 +1031,10 @@ function countCompletedPlanDaysForRound(plan, round) {
 function getNextReadingPlanDay(plan = state.activePlan) {
   if (!plan || !plan.days || plan.days.length === 0) return null;
   const currentRound = plan.currentRound || 1;
-  return plan.days.find(day => !isPlanDayCompletedForRound(day, currentRound)) || plan.days[plan.days.length - 1];
+  const readingDays = plan.days.filter(day => Array.isArray(day.chapters) && day.chapters.length > 0);
+  return readingDays.find(day => !isPlanDayCompletedForRound(day, currentRound))
+    || readingDays[readingDays.length - 1]
+    || plan.days[plan.days.length - 1];
 }
 
 function getExpectedPlanDayCount(plan = state.activePlan, now = new Date()) {
@@ -1213,7 +1045,9 @@ function getExpectedPlanDayCount(plan = state.activePlan, now = new Date()) {
   const today = new Date(now);
   today.setHours(0, 0, 0, 0);
   const elapsedDays = Math.floor((today - planStart) / (1000 * 60 * 60 * 24)) + 1;
-  return Math.max(0, Math.min(plan.days.length, elapsedDays));
+  const elapsedCalendarDays = Math.max(0, Math.min(plan.days.length, elapsedDays));
+  return plan.days.slice(0, elapsedCalendarDays)
+    .filter(day => Array.isArray(day.chapters) && day.chapters.length > 0)
 }
 
 function getPlanProgressStatus(plan = state.activePlan) {
@@ -2311,6 +2145,7 @@ async function renderAdminPlanManagement() {
       const bookCount = plan.books.length;
       const hidden = isPlanHidden(plan);
       const isFixed = plan.isFixed !== false && plan.is_fixed !== false;
+      const isCampaign = plan.planKind === "church_campaign" || plan.id === window.CHURCH_CAMPAIGN_ID;
 
       let timeColHtml = "";
       if (isFixed) {
@@ -2338,11 +2173,21 @@ async function renderAdminPlanManagement() {
         </td>
         <td style="text-align: center; vertical-align: middle;">
           <div style="display: flex; flex-direction: column; gap: 0.25rem; align-items: center; justify-content: center;">
+            <button class="primary-btn admin-campaign-rules-btn" style="font-size:0.68rem;padding:0.25rem 0.45rem;height:auto;">編輯規則</button>
             <button class="primary-btn admin-edit-plan-btn" style="font-size: 0.68rem; padding: 0.2rem 0.4rem; min-width: 42px; text-align: center; height: auto; cursor: pointer;">編輯</button>
             <button class="danger-btn admin-delete-plan-btn" style="font-size: 0.68rem; padding: 0.2rem 0.4rem; min-width: 42px; text-align: center; height: auto; cursor: pointer;">刪除</button>
           </div>
         </td>
       `;
+
+      const campaignRulesBtn = tr.querySelector(".admin-campaign-rules-btn");
+      if (isCampaign) {
+        campaignRulesBtn.onclick = () => window.openCampaignRuleEditor(plan);
+        tr.querySelector(".admin-edit-plan-btn").style.display = "none";
+        tr.querySelector(".admin-delete-plan-btn").style.display = "none";
+      } else {
+        campaignRulesBtn.remove();
+      }
 
       // Bind edit event
       tr.querySelector(".admin-edit-plan-btn").onclick = () => {

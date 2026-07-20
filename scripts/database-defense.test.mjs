@@ -34,7 +34,8 @@ describe("database defense migration", () => {
     const ownWriteLine = edge.match(/const OWN_WRITE_TABLES = new Set\(\[[^\n]+/)?.[0] || "";
     expect(ownWriteLine).not.toContain("profiles");
     expect(ownWriteLine).not.toContain("verse_likes");
-    expect(edge).toContain('const RPC_FUNCTIONS = new Set(["increment_likes", "decrement_likes"])');
+    expect(edge).toContain('"increment_likes"');
+    expect(edge).toContain('"decrement_likes"');
     expect(edge).toContain('if (action === "rpc")');
     expect(db).toContain('callEdge({ action: "rpc", function: functionName, args })');
   });

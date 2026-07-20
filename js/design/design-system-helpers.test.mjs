@@ -5,6 +5,8 @@ import { describe, expect, it } from "vitest";
 import {
   getHonorBadgeItemClasses,
   getMobileNavAriaState,
+  getExpectedPlanDayCount,
+  getNextReadingPlanDay,
   getPlanProgressBadgeClass,
   getPlanProgressStatus,
   getStatMetricConfig,
@@ -58,6 +60,32 @@ describe("getPlanProgressBadgeClass", () => {
     expect(getPlanProgressBadgeClass(plan)).toBe("stat-badge--success");
   });
 });
+
+describe("flexible schedule rest days", () => {
+  const flexiblePlan = makePlan({
+    startDate: "2026-01-04",
+    days: [
+      { dayNum: 1, chapters: [] },
+      { dayNum: 2, chapters: [{ book: "Gen", chapter: 1 }] },
+      { dayNum: 3, chapters: [] },
+      { dayNum: 4, chapters: [{ book: "Gen", chapter: 2 }] },
+    ],
+  });
+
+  it("skips rest days when finding the next reading day", () => {
+    expect(getNextReadingPlanDay(flexiblePlan).dayNum).toBe(2);
+  });
+
+  it("counts only scheduled reading days in expected progress", () => {
+    expect(getExpectedPlanDayCount(flexiblePlan, new Date(2026, 0, 6, 12))).toBe(1);
+  });
+
+  it("does not count a rest day before the next task as completed progress", () => {
+    const status = getPlanProgressStatus(flexiblePlan, { getExpected: () => 1 });
+    expect(status.diff).toBe(-1);
+  });
+});
+
 
 describe("getStatMetricConfig", () => {
   it("maps streak to fire icon and warning modifier", () => {
