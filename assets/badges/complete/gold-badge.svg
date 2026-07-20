@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 240" role="img" aria-label="黃金獎徽章外框">
+  <defs>
+    <linearGradient id="gold-metal" x1="24" y1="18" x2="176" y2="190" gradientUnits="userSpaceOnUse"><stop stop-color="#FFF6A0"/><stop offset=".2" stop-color="#FFD700"/><stop offset=".48" stop-color="#B8860B"/><stop offset=".72" stop-color="#FFE663"/><stop offset="1" stop-color="#714500"/></linearGradient>
+    <linearGradient id="gold-crown" x1="54" y1="4" x2="146" y2="66" gradientUnits="userSpaceOnUse"><stop stop-color="#FFF8A6"/><stop offset=".38" stop-color="#F5C400"/><stop offset="1" stop-color="#8F5C00"/></linearGradient>
+    <radialGradient id="gold-glow"><stop stop-color="#FFF7B0" stop-opacity=".8"/><stop offset=".5" stop-color="#FFD700" stop-opacity=".22"/><stop offset="1" stop-color="#FFD700" stop-opacity="0"/></radialGradient>
+    <filter id="gold-shadow" x="-35%" y="-35%" width="170%" height="180%"><feDropShadow dx="0" dy="8" stdDeviation="7" flood-color="#5E3900" flood-opacity=".7"/><feDropShadow dx="0" dy="0" stdDeviation="3.5" flood-color="#FFE45C" flood-opacity=".65"/></filter>
+
+    <linearGradient id="gold-plate" x1="58" y1="48" x2="142" y2="164" gradientUnits="userSpaceOnUse"><stop stop-color="#4D3500"/><stop offset=".52" stop-color="#171000"/><stop offset="1" stop-color="#050608"/></linearGradient>
+    <linearGradient id="gold-plate-rim" x1="65" y1="54" x2="136" y2="157" gradientUnits="userSpaceOnUse"><stop stop-color="#FFFFFF" stop-opacity=".72"/><stop offset=".42" stop-color="#FFFFFF" stop-opacity=".12"/><stop offset="1" stop-color="#000000" stop-opacity=".58"/></linearGradient>
+    <linearGradient id="gold-ribbon" x1="28" y1="190" x2="172" y2="232" gradientUnits="userSpaceOnUse"><stop stop-color="#FFF078"/><stop offset=".48" stop-color="#B77A00"/><stop offset=".72" stop-color="#FFF078"/><stop offset="1" stop-color="#B77A00"/></linearGradient>
+    <radialGradient id="gold-plate-glow"><stop stop-color="#FFFFFF" stop-opacity=".2"/><stop offset=".55" stop-color="#FFFFFF" stop-opacity=".04"/><stop offset="1" stop-color="#000000" stop-opacity=".22"/></radialGradient>
+    <filter id="gold-banner-shadow" x="-25%" y="-40%" width="150%" height="190%"><feDropShadow dx="0" dy="5" stdDeviation="4" flood-color="#000" flood-opacity=".62"/></filter>
+  </defs>
+  <g filter="url(#gold-shadow)" transform="translate(10 2) scale(.9)">
+    <ellipse cx="100" cy="102" rx="92" ry="86" fill="url(#gold-glow)"/>
+    <path d="M54 55 43 8l34 24L100 2l23 30 34-24-11 47Z" fill="url(#gold-crown)" stroke="#FFF275" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M54 49h92l-4 18H58Z" fill="#B8860B" stroke="#FFE566" stroke-width="3"/>
+    <g fill="#FFF5A5" stroke="#8A5600" stroke-width="2"><circle cx="50" cy="12" r="6"/><circle cx="100" cy="6" r="7"/><circle cx="150" cy="12" r="6"/></g>
+    <path d="M100 35 169 59l19 65-39 55-49 17-49-17-39-55 19-65Z M100 72 70 82l-10 37 20 28 20 7 20-7 20-28-10-37Z" fill="url(#gold-metal)" fill-rule="evenodd" stroke="#FFF18B" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M36 65 100 43l64 22M21 123l35-8m88 0 35 8M54 173l26-26m40 0 26 26" fill="none" stroke="#FFF8C7" stroke-opacity=".58" stroke-width="3"/>
+    <path d="M100 42 143 60l17 44-14 48-46 25-46-25-14-48 17-44Z" fill="url(#gold-plate)" stroke="url(#gold-plate-rim)" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M100 51 136 66l14 39-12 40-38 21-38-21-12-40 14-39Z" fill="url(#gold-plate-glow)" stroke="#FFF" stroke-opacity=".18" stroke-width="2"/>
+    <g stroke="#FFF6B8" stroke-linejoin="round"><path d="m100 69 11 23 26 4-19 18 5 26-23-12-23 12 5-26-19-18 26-4Z" fill="#E3AC08" fill-opacity=".72" stroke-width="5"/><path d="m100 81 7 15 17 2" fill="none" stroke-width="3" stroke-linecap="round"/></g>
+  </g>
+
+  <g filter="url(#gold-banner-shadow)">
+    <path d="M20 198 43 188h114l23 10-12 13 10 16-35-7H57l-35 7 10-16Z" fill="url(#gold-ribbon)" stroke="#FFF" stroke-opacity=".48" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M43 188 52 181h96l9 7-11 38H54Z" fill="url(#gold-ribbon)" stroke="#FFF" stroke-opacity=".68" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M57 191h86" stroke="#FFF" stroke-opacity=".5" stroke-width="2" stroke-linecap="round"/>
+    <text x="100" y="215" text-anchor="middle" font-family="Noto Sans TC, system-ui, sans-serif" font-size="19" font-weight="700" letter-spacing="1.5" fill="#392300" stroke="#000" stroke-opacity=".16" stroke-width=".7" paint-order="stroke">黃金</text>
+  </g>
+</svg>

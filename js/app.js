@@ -5,22 +5,22 @@ import '../config.js';
 import './data/bible_data.js';
 import './data/bible_verse_counts.js';
 import './copy/zh-Hant.js';
-import './data/church_campaign.js?v=20260720_fixed_medal_frames';
+import './data/church_campaign.js?v=20260720_complete_svg_badges';
 import './design/design-tokens.js';
 import './design/design-system-helpers.js';
 import './design/icon-registry.js';
 import './design/icons.js';
-import './state.js?v=20260720_fixed_medal_frames';
+import './state.js?v=20260720_complete_svg_badges';
 import './auth.js';
-import './db.js?v=20260720_fixed_medal_frames';
-import './utils.js?v=20260720_fixed_medal_frames';
-import './gamification.js?v=20260720_fixed_medal_frames';
+import './db.js?v=20260720_complete_svg_badges';
+import './utils.js?v=20260720_complete_svg_badges';
+import './gamification.js?v=20260720_complete_svg_badges';
 import './modules/campaign-rule-editor.js';
 import { initializePwa } from './pwa/PwaCoordinator.js';
 import { IndexedDbClient } from './pwa/IndexedDbClient.js';
 import { SupabaseRepository } from './pwa/SupabaseRepository.js';
 
-const buildVersion = "__BUILD_VERSION__" + "_fixed_medal_frames";
+const buildVersion = "__BUILD_VERSION__" + "_complete_svg_badges";
 const moduleCache = {};
 
 async function loadModule(name, path) {

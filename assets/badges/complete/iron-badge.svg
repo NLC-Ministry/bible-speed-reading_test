@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 240" role="img" aria-label="鐵獎徽章外框">
+  <defs>
+    <linearGradient id="iron-steel" x1="30" y1="12" x2="170" y2="188" gradientUnits="userSpaceOnUse"><stop stop-color="#D6D9DC"/><stop offset=".18" stop-color="#70777E"/><stop offset=".5" stop-color="#252A2F"/><stop offset=".74" stop-color="#858B91"/><stop offset="1" stop-color="#171A1D"/></linearGradient>
+    <linearGradient id="iron-rim" x1="43" y1="24" x2="150" y2="173" gradientUnits="userSpaceOnUse"><stop stop-color="#F5F7F8"/><stop offset=".45" stop-color="#8F969C"/><stop offset="1" stop-color="#353A3F"/></linearGradient>
+    <radialGradient id="iron-rivet" cx=".32" cy=".25" r=".76"><stop stop-color="#FFF"/><stop offset=".22" stop-color="#AEB4B9"/><stop offset=".65" stop-color="#4C5257"/><stop offset="1" stop-color="#171A1C"/></radialGradient>
+    <pattern id="iron-brush" width="7" height="7" patternUnits="userSpaceOnUse"><path d="M0 1h7M0 4h7" stroke="#FFF" stroke-opacity=".09" stroke-width=".8"/></pattern>
+    <filter id="iron-shadow" x="-30%" y="-25%" width="160%" height="170%"><feDropShadow dx="0" dy="7" stdDeviation="6" flood-color="#050607" flood-opacity=".78"/><feDropShadow dx="0" dy="0" stdDeviation="1.5" flood-color="#DDE2E5" flood-opacity=".45"/></filter>
+
+    <linearGradient id="iron-plate" x1="58" y1="48" x2="142" y2="164" gradientUnits="userSpaceOnUse"><stop stop-color="#343A40"/><stop offset=".52" stop-color="#11151A"/><stop offset="1" stop-color="#050608"/></linearGradient>
+    <linearGradient id="iron-plate-rim" x1="65" y1="54" x2="136" y2="157" gradientUnits="userSpaceOnUse"><stop stop-color="#FFFFFF" stop-opacity=".72"/><stop offset=".42" stop-color="#FFFFFF" stop-opacity=".12"/><stop offset="1" stop-color="#000000" stop-opacity=".58"/></linearGradient>
+    <linearGradient id="iron-ribbon" x1="28" y1="190" x2="172" y2="232" gradientUnits="userSpaceOnUse"><stop stop-color="#9CA3AA"/><stop offset=".48" stop-color="#30353A"/><stop offset=".72" stop-color="#9CA3AA"/><stop offset="1" stop-color="#30353A"/></linearGradient>
+    <radialGradient id="iron-plate-glow"><stop stop-color="#FFFFFF" stop-opacity=".2"/><stop offset=".55" stop-color="#FFFFFF" stop-opacity=".04"/><stop offset="1" stop-color="#000000" stop-opacity=".22"/></radialGradient>
+    <filter id="iron-banner-shadow" x="-25%" y="-40%" width="150%" height="190%"><feDropShadow dx="0" dy="5" stdDeviation="4" flood-color="#000" flood-opacity=".62"/></filter>
+  </defs>
+  <g filter="url(#iron-shadow)" transform="translate(10 2) scale(.9)">
+    <path d="M24 20h152l13 30-7 85c-2 25-35 45-82 61-47-16-80-36-82-61l-7-85Z M100 52 62 61l-5 61c0 12 17 24 43 34 26-10 43-22 43-34l-5-61Z" fill="url(#iron-steel)" fill-rule="evenodd" stroke="url(#iron-rim)" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M28 32h144l8 20-7 79c-1 17-27 34-73 51-46-17-72-34-73-51l-7-79Z" fill="url(#iron-brush)" stroke="#E6EAED" stroke-opacity=".28" stroke-width="2"/>
+    <path d="M38 45h124M100 24v28M34 132c8 22 33 36 66 48 33-12 58-26 66-48" fill="none" stroke="#F0F2F4" stroke-opacity=".28" stroke-width="3"/>
+    <g fill="url(#iron-rivet)" stroke="#111417" stroke-width="2"><circle cx="31" cy="50" r="7"/><circle cx="169" cy="50" r="7"/><circle cx="35" cy="126" r="7"/><circle cx="165" cy="126" r="7"/><circle cx="100" cy="181" r="7"/></g>
+    <path d="M100 42 143 60l17 44-14 48-46 25-46-25-14-48 17-44Z" fill="url(#iron-plate)" stroke="url(#iron-plate-rim)" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M100 51 136 66l14 39-12 40-38 21-38-21-12-40 14-39Z" fill="url(#iron-plate-glow)" stroke="#FFF" stroke-opacity=".18" stroke-width="2"/>
+    <g fill="none" stroke="#E8ECEF" stroke-linecap="round" stroke-linejoin="round"><circle cx="100" cy="84" r="12" stroke-width="5"/><path d="M100 96v38m0-14h16m-16 8H88" stroke-width="7"/><path d="M82 76h36M78 136h44" stroke-opacity=".38" stroke-width="3"/></g>
+  </g>
+
+  <g filter="url(#iron-banner-shadow)">
+    <path d="M20 198 43 188h114l23 10-12 13 10 16-35-7H57l-35 7 10-16Z" fill="url(#iron-ribbon)" stroke="#FFF" stroke-opacity=".48" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M43 188 52 181h96l9 7-11 38H54Z" fill="url(#iron-ribbon)" stroke="#FFF" stroke-opacity=".68" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M57 191h86" stroke="#FFF" stroke-opacity=".5" stroke-width="2" stroke-linecap="round"/>
+    <text x="100" y="215" text-anchor="middle" font-family="Noto Sans TC, system-ui, sans-serif" font-size="19" font-weight="700" letter-spacing="1.5" fill="#F8FAFC" stroke="#000" stroke-opacity=".16" stroke-width=".7" paint-order="stroke">鐵級</text>
+  </g>
+</svg>

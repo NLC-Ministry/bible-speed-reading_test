@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 240" role="img" aria-label="白銀獎徽章外框">
+  <defs>
+    <linearGradient id="silver-metal" x1="22" y1="14" x2="180" y2="188" gradientUnits="userSpaceOnUse"><stop stop-color="#FFFFFF"/><stop offset=".18" stop-color="#BFC7CF"/><stop offset=".38" stop-color="#717B86"/><stop offset=".58" stop-color="#F1F5F8"/><stop offset=".8" stop-color="#8A949E"/><stop offset="1" stop-color="#3F4851"/></linearGradient>
+    <linearGradient id="silver-facet" x1="40" y1="30" x2="160" y2="170" gradientUnits="userSpaceOnUse"><stop stop-color="#F8FCFF"/><stop offset=".5" stop-color="#7891A4"/><stop offset="1" stop-color="#D9E4EC"/></linearGradient>
+    <radialGradient id="silver-flash" cx=".34" cy=".2" r=".86"><stop stop-color="#FFF" stop-opacity=".95"/><stop offset=".32" stop-color="#BDE7FF" stop-opacity=".32"/><stop offset="1" stop-color="#6D8291" stop-opacity="0"/></radialGradient>
+    <filter id="silver-shadow" x="-30%" y="-30%" width="160%" height="170%"><feDropShadow dx="0" dy="7" stdDeviation="6" flood-color="#17212A" flood-opacity=".68"/><feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#DDF4FF" flood-opacity=".58"/></filter>
+
+    <linearGradient id="silver-plate" x1="58" y1="48" x2="142" y2="164" gradientUnits="userSpaceOnUse"><stop stop-color="#344452"/><stop offset=".52" stop-color="#111820"/><stop offset="1" stop-color="#050608"/></linearGradient>
+    <linearGradient id="silver-plate-rim" x1="65" y1="54" x2="136" y2="157" gradientUnits="userSpaceOnUse"><stop stop-color="#FFFFFF" stop-opacity=".72"/><stop offset=".42" stop-color="#FFFFFF" stop-opacity=".12"/><stop offset="1" stop-color="#000000" stop-opacity=".58"/></linearGradient>
+    <linearGradient id="silver-ribbon" x1="28" y1="190" x2="172" y2="232" gradientUnits="userSpaceOnUse"><stop stop-color="#F3F7FA"/><stop offset=".48" stop-color="#667481"/><stop offset=".72" stop-color="#F3F7FA"/><stop offset="1" stop-color="#667481"/></linearGradient>
+    <radialGradient id="silver-plate-glow"><stop stop-color="#FFFFFF" stop-opacity=".2"/><stop offset=".55" stop-color="#FFFFFF" stop-opacity=".04"/><stop offset="1" stop-color="#000000" stop-opacity=".22"/></radialGradient>
+    <filter id="silver-banner-shadow" x="-25%" y="-40%" width="150%" height="190%"><feDropShadow dx="0" dy="5" stdDeviation="4" flood-color="#000" flood-opacity=".62"/></filter>
+  </defs>
+  <g filter="url(#silver-shadow)" transform="translate(10 2) scale(.9)">
+    <path d="m100 4 66 25 30 65-27 70-69 32-69-32L4 94l30-65Z M100 49 68 62 52 96l14 36 34 17 34-17 14-36-16-34Z" fill="url(#silver-metal)" fill-rule="evenodd" stroke="#F7FBFE" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M100 4 68 62 34 29m132 0-34 33L100 4M4 94l48 2-21 68m138 0-21-68 48-2M100 196l-34-64 34 17 34-17Z" fill="url(#silver-facet)" fill-opacity=".72" stroke="#536879" stroke-width="2"/>
+    <path d="M38 34 100 10l62 24M12 93l43 1m90 0 43-1M36 159l31-30m66 0 31 30" fill="none" stroke="#FFFFFF" stroke-opacity=".72" stroke-width="3" stroke-linecap="round"/>
+    <path d="m100 4 32 58-32-13-32 13Z" fill="url(#silver-flash)"/>
+    <path d="M100 42 143 60l17 44-14 48-46 25-46-25-14-48 17-44Z" fill="url(#silver-plate)" stroke="url(#silver-plate-rim)" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M100 51 136 66l14 39-12 40-38 21-38-21-12-40 14-39Z" fill="url(#silver-plate-glow)" stroke="#FFF" stroke-opacity=".18" stroke-width="2"/>
+    <g stroke="#F8FCFF" stroke-linejoin="round"><path d="m100 69 32 30-13 38H81L68 99Z" fill="#91A4B4" fill-opacity=".34" stroke-width="5"/><path d="m100 69-11 30 11 38 11-38Zm-32 30h64M81 137l19-38 19 38" fill="none" stroke-width="3" stroke-opacity=".78"/></g>
+  </g>
+
+  <g filter="url(#silver-banner-shadow)">
+    <path d="M20 198 43 188h114l23 10-12 13 10 16-35-7H57l-35 7 10-16Z" fill="url(#silver-ribbon)" stroke="#FFF" stroke-opacity=".48" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M43 188 52 181h96l9 7-11 38H54Z" fill="url(#silver-ribbon)" stroke="#FFF" stroke-opacity=".68" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M57 191h86" stroke="#FFF" stroke-opacity=".5" stroke-width="2" stroke-linecap="round"/>
+    <text x="100" y="215" text-anchor="middle" font-family="Noto Sans TC, system-ui, sans-serif" font-size="19" font-weight="700" letter-spacing="1.5" fill="#17212A" stroke="#000" stroke-opacity=".16" stroke-width=".7" paint-order="stroke">白銀</text>
+  </g>
+</svg>

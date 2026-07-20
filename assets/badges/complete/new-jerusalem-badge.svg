@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 240" role="img" aria-label="新耶路撒冷獎徽章外框">
+  <defs>
+    <linearGradient id="city-gold" x1="22" y1="16" x2="180" y2="189" gradientUnits="userSpaceOnUse"><stop stop-color="#FFFDE7"/><stop offset=".2" stop-color="#FFE55C"/><stop offset=".43" stop-color="#C89B17"/><stop offset=".64" stop-color="#FFFFFF"/><stop offset=".82" stop-color="#E9C34C"/><stop offset="1" stop-color="#7C5A00"/></linearGradient>
+    <linearGradient id="city-rainbow" x1="20" y1="20" x2="180" y2="180" gradientUnits="userSpaceOnUse"><stop stop-color="#73E8FF"/><stop offset=".2" stop-color="#B6FFCF"/><stop offset=".4" stop-color="#FFF18A"/><stop offset=".6" stop-color="#FFB4D8"/><stop offset=".8" stop-color="#B5A8FF"/><stop offset="1" stop-color="#8BE7FF"/></linearGradient>
+    <radialGradient id="city-halo"><stop stop-color="#FFF" stop-opacity=".96"/><stop offset=".28" stop-color="#FFF5A5" stop-opacity=".48"/><stop offset=".66" stop-color="#A9DFFF" stop-opacity=".2"/><stop offset="1" stop-color="#FFF" stop-opacity="0"/></radialGradient>
+    <linearGradient id="gem-red" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFF"/><stop offset=".25" stop-color="#FF718D"/><stop offset="1" stop-color="#8E0030"/></linearGradient>
+    <linearGradient id="gem-blue" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFF"/><stop offset=".25" stop-color="#63D8FF"/><stop offset="1" stop-color="#1747A7"/></linearGradient>
+    <linearGradient id="gem-green" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FFF"/><stop offset=".25" stop-color="#62F3B0"/><stop offset="1" stop-color="#08754A"/></linearGradient>
+    <filter id="city-glow" x="-50%" y="-50%" width="200%" height="205%"><feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#493300" flood-opacity=".65"/><feDropShadow dx="0" dy="0" stdDeviation="7" flood-color="#FFF2A6" flood-opacity=".86"/></filter>
+
+    <linearGradient id="city-plate" x1="58" y1="48" x2="142" y2="164" gradientUnits="userSpaceOnUse"><stop stop-color="#312B69"/><stop offset=".52" stop-color="#0D0A26"/><stop offset="1" stop-color="#050608"/></linearGradient>
+    <linearGradient id="city-plate-rim" x1="65" y1="54" x2="136" y2="157" gradientUnits="userSpaceOnUse"><stop stop-color="#FFFFFF" stop-opacity=".72"/><stop offset=".42" stop-color="#FFFFFF" stop-opacity=".12"/><stop offset="1" stop-color="#000000" stop-opacity=".58"/></linearGradient>
+    <linearGradient id="city-ribbon" x1="28" y1="190" x2="172" y2="232" gradientUnits="userSpaceOnUse"><stop stop-color="#FFF6BC"/><stop offset=".48" stop-color="#9D83D8"/><stop offset=".72" stop-color="#FFF6BC"/><stop offset="1" stop-color="#9D83D8"/></linearGradient>
+    <radialGradient id="city-plate-glow"><stop stop-color="#FFFFFF" stop-opacity=".2"/><stop offset=".55" stop-color="#FFFFFF" stop-opacity=".04"/><stop offset="1" stop-color="#000000" stop-opacity=".22"/></radialGradient>
+    <filter id="city-banner-shadow" x="-25%" y="-40%" width="150%" height="190%"><feDropShadow dx="0" dy="5" stdDeviation="4" flood-color="#000" flood-opacity=".62"/></filter>
+  </defs>
+  <g filter="url(#city-glow)" transform="translate(10 2) scale(.9)">
+    <circle cx="100" cy="100" r="98" fill="url(#city-halo)"/>
+    <path d="M25 39 49 15l20 15L100 4l31 26 20-15 24 24 18 124-93 34-93-34Z M100 57 63 74l-9 57 46 18 46-18-9-57Z" fill="url(#city-gold)" fill-rule="evenodd" stroke="#FFFBD2" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M28 51h144M16 154h168M49 17v35M100 6v46M151 17v35M31 51l10 103m128-103-10 103" fill="none" stroke="url(#city-rainbow)" stroke-width="4" stroke-linecap="round"/>
+    <path d="M39 66h122M34 86h26m80 0h26M31 112h27m84 0h27M26 137h35m78 0h35" fill="none" stroke="#FFF" stroke-opacity=".66" stroke-width="2.5"/>
+    <g stroke="#FFF" stroke-width="1.7"><path d="m25 39 8 8-8 8-8-8Z" fill="url(#gem-red)"/><path d="m49 15 8 8-8 8-8-8Z" fill="url(#gem-blue)"/><path d="m100 4 9 9-9 9-9-9Z" fill="url(#gem-green)"/><path d="m151 15 8 8-8 8-8-8Z" fill="url(#gem-red)"/><path d="m175 39 8 8-8 8-8-8Z" fill="url(#gem-blue)"/><path d="m193 93 7 8-7 8-7-8Z" fill="url(#gem-green)"/><path d="m184 163 8 8-8 8-8-8Z" fill="url(#gem-red)"/><path d="m142 182 8 8-8 8-8-8Z" fill="url(#gem-blue)"/><path d="m58 182 8 8-8 8-8-8Z" fill="url(#gem-green)"/><path d="m16 163 8 8-8 8-8-8Z" fill="url(#gem-red)"/><path d="m7 93 7 8-7 8-7-8Z" fill="url(#gem-blue)"/><path d="m100 178 8 8-8 8-8-8Z" fill="url(#gem-green)"/></g>
+    <path d="M100 42 143 60l17 44-14 48-46 25-46-25-14-48 17-44Z" fill="url(#city-plate)" stroke="url(#city-plate-rim)" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M100 51 136 66l14 39-12 40-38 21-38-21-12-40 14-39Z" fill="url(#city-plate-glow)" stroke="#FFF" stroke-opacity=".18" stroke-width="2"/>
+    <g fill="none" stroke="#FFFBD2" stroke-linejoin="round"><path d="M70 135V83l15-12 15 12 15-12 15 12v52Z" fill="#4D3D86" fill-opacity=".42" stroke-width="5"/><path d="M70 94h60M84 135v-22h32v22M85 72v22m30-22v22" stroke-width="3"/><path d="M76 83h18m12 0h18" stroke="url(#city-rainbow)" stroke-width="4"/></g>
+  </g>
+
+  <g filter="url(#city-banner-shadow)">
+    <path d="M20 198 43 188h114l23 10-12 13 10 16-35-7H57l-35 7 10-16Z" fill="url(#city-ribbon)" stroke="#FFF" stroke-opacity=".48" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M43 188 52 181h96l9 7-11 38H54Z" fill="url(#city-ribbon)" stroke="#FFF" stroke-opacity=".68" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M57 191h86" stroke="#FFF" stroke-opacity=".5" stroke-width="2" stroke-linecap="round"/>
+    <text x="100" y="215" text-anchor="middle" font-family="Noto Sans TC, system-ui, sans-serif" font-size="16" font-weight="700" letter-spacing="1.5" fill="#2A1E57" stroke="#000" stroke-opacity=".16" stroke-width=".7" paint-order="stroke">新耶路撒冷</text>
+  </g>
+</svg>

@@ -247,6 +247,31 @@ describe("joined plan options menu", () => {
     expect(cssSource).toContain(".honor-badge-hex.campaign-medal-stage-10");
     expect(cssSource).toContain('.honor-badge-hex--locked[class*="campaign-medal-stage-"]');
     expect(utilsSource).toContain("const frameClass = getBadgeFrameClass(badge, badgeStarState.level)");
+    const badgeSpecs = [
+      ["rock-badge.svg", "磐石"], ["iron-badge.svg", "鐵級"], ["copper-badge.svg", "銅級"],
+      ["bronze-badge.svg", "青銅"], ["silver-badge.svg", "白銀"], ["gold-badge.svg", "黃金"],
+      ["adamantine-badge.svg", "精金"], ["ophir-gold-badge.svg", "俄斐金"],
+      ["fire-gold-badge.svg", "火煉金"], ["new-jerusalem-badge.svg", "新耶路撒冷"]
+    ];
+    badgeSpecs.forEach(([file, label]) => {
+      const frame = readFileSync(join(root, "assets", "badges", "complete", file), "utf8");
+      expect(frame).toContain("<" + "svg");
+      expect(frame).toContain('viewBox="0 0 200 240"');
+      expect(frame).toContain("<defs>");
+      expect(frame).toContain("<linearGradient");
+      expect(frame).toContain("<radialGradient");
+      expect(frame).toContain("<filter");
+      expect(frame).toContain("<feDropShadow");
+      expect(frame).toContain("<text");
+      expect(frame).toContain(`>${label}</text>`);
+      const ids = new Set([...frame.matchAll(/id="([^"]+)"/g)].map(match => match[1]));
+      const references = [...frame.matchAll(/url\(#([^\)]+)\)/g)].map(match => match[1]);
+      expect(ids.size).toBeGreaterThanOrEqual(8);
+      expect(references.length).toBeGreaterThan(0);
+      references.forEach(id => expect(ids.has(id), `Missing SVG definition #${id} in ${file}`).toBe(true));
+      expect(cssSource).toContain(`assets/badges/complete/${file}`);
+    });
+    expect(cssSource).toContain('filter: grayscale(1) saturate(0)');
 
   });
 });

@@ -9133,6 +9133,77 @@ body.dark-theme .plan-calendar .plan-day-cell.active .day-number, body.dark-them
 #badge-detail-hero .honor-badge-hex-shell:has(.tier-platinum)::before { background: #A5F3FC; }
 #badge-detail-hero .honor-badge-hex-shell:has(.tier-legendary)::before { background: #F0ABFC; }
 
+/* Each campaign award keeps a dedicated SVG frame; stars only track completed rounds. */
+.honor-badge-hex-shell:has(.campaign-medal-stage-1) { --campaign-medal-frame: url("assets/badges/complete/rock-badge.svg"); }
+.honor-badge-hex-shell:has(.campaign-medal-stage-2) { --campaign-medal-frame: url("assets/badges/complete/iron-badge.svg"); }
+.honor-badge-hex-shell:has(.campaign-medal-stage-3) { --campaign-medal-frame: url("assets/badges/complete/copper-badge.svg"); }
+.honor-badge-hex-shell:has(.campaign-medal-stage-4) { --campaign-medal-frame: url("assets/badges/complete/bronze-badge.svg"); }
+.honor-badge-hex-shell:has(.campaign-medal-stage-5) { --campaign-medal-frame: url("assets/badges/complete/silver-badge.svg"); }
+.honor-badge-hex-shell:has(.campaign-medal-stage-6) { --campaign-medal-frame: url("assets/badges/complete/gold-badge.svg"); }
+.honor-badge-hex-shell:has(.campaign-medal-stage-7) { --campaign-medal-frame: url("assets/badges/complete/adamantine-badge.svg"); }
+.honor-badge-hex-shell:has(.campaign-medal-stage-8) { --campaign-medal-frame: url("assets/badges/complete/ophir-gold-badge.svg"); }
+.honor-badge-hex-shell:has(.campaign-medal-stage-9) { --campaign-medal-frame: url("assets/badges/complete/fire-gold-badge.svg"); }
+.honor-badge-hex-shell:has(.campaign-medal-stage-10) { --campaign-medal-frame: url("assets/badges/complete/new-jerusalem-badge.svg"); }
+
+.honor-badge-hex-shell:has([class*="campaign-medal-stage-"]) {
+  aspect-ratio: 200 / 240;
+}
+
+.honor-badge-item--tile .honor-badge-hex-shell:has([class*="campaign-medal-stage-"]) {
+  width: 4.5rem;
+  margin-bottom: 0.2rem;
+}
+
+.badge-strip__item .honor-badge-hex-shell--sm:has([class*="campaign-medal-stage-"]) {
+  width: 3.15rem;
+}
+
+#badge-detail-hero .honor-badge-hex-shell--hero:has([class*="campaign-medal-stage-"]) {
+  width: 7.5rem;
+}
+
+.honor-badge-hex-shell:has([class*="campaign-medal-stage-"]) .honor-badge-hex {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.honor-badge-item:has([class*="campaign-medal-stage-"]) .honor-badge-item__title {
+  display: none;
+}
+
+.honor-badge-item:has([class*="campaign-medal-stage-"]) .badge-stars {
+  margin-top: 0.1rem;
+}
+
+.honor-badge-hex-shell:has([class*="campaign-medal-stage-"])::after {
+  content: "";
+  position: absolute;
+  inset: -13%;
+  z-index: 1;
+  pointer-events: none;
+  background: var(--campaign-medal-frame) center / contain no-repeat;
+  filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.28));
+  transition: filter 0.2s ease, opacity 0.2s ease;
+}
+
+.honor-badge-hex-shell:has([class*="campaign-medal-stage-"]) .honor-badge-hex {
+  z-index: 1;
+}
+
+.honor-badge-hex-shell:has(.honor-badge-hex--locked[class*="campaign-medal-stage-"])::after {
+  filter: grayscale(1) saturate(0) brightness(0.72) contrast(1.08);
+  opacity: 0.72;
+}
+
+.honor-badge-hex-shell--hero:has([class*="campaign-medal-stage-"])::after {
+  inset: -15%;
+  filter: drop-shadow(0 4px 8px rgb(0 0 0 / 0.3));
+}
+
+.honor-badge-hex-shell--hero:has(.honor-badge-hex--locked[class*="campaign-medal-stage-"])::after {
+  filter: grayscale(1) saturate(0) brightness(0.7) contrast(1.08);
+}
+
 /* Campaign medal material is fixed by the award configured for each stage. */
 .honor-badge-hex.campaign-medal-stage-1 {
   --badge-tone-top: #CBD5E1;

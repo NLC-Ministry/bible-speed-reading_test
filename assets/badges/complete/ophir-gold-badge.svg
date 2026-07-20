@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 240" role="img" aria-label="俄斐金獎徽章外框">
+  <defs>
+    <linearGradient id="ophir-metal" x1="18" y1="22" x2="182" y2="181" gradientUnits="userSpaceOnUse"><stop stop-color="#FFF1A8"/><stop offset=".21" stop-color="#D6A51D"/><stop offset=".48" stop-color="#7A4B00"/><stop offset=".73" stop-color="#F0C64C"/><stop offset="1" stop-color="#4F2B00"/></linearGradient>
+    <linearGradient id="ophir-filigree" x1="15" y1="45" x2="185" y2="155" gradientUnits="userSpaceOnUse"><stop stop-color="#FFF7C7"/><stop offset=".5" stop-color="#B77905"/><stop offset="1" stop-color="#FFE981"/></linearGradient>
+    <linearGradient id="ophir-ruby" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FF9A9A"/><stop offset=".45" stop-color="#D20A32"/><stop offset="1" stop-color="#650016"/></linearGradient>
+    <linearGradient id="ophir-sapphire" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#9FE9FF"/><stop offset=".45" stop-color="#1769D2"/><stop offset="1" stop-color="#082A70"/></linearGradient>
+    <radialGradient id="ophir-glow"><stop stop-color="#FFE98C" stop-opacity=".48"/><stop offset="1" stop-color="#7A4B00" stop-opacity="0"/></radialGradient>
+    <filter id="ophir-shadow" x="-40%" y="-35%" width="180%" height="185%"><feDropShadow dx="0" dy="8" stdDeviation="7" flood-color="#3E2500" flood-opacity=".74"/><feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#FFE477" flood-opacity=".58"/></filter>
+
+    <linearGradient id="ophir-plate" x1="58" y1="48" x2="142" y2="164" gradientUnits="userSpaceOnUse"><stop stop-color="#4A2D00"/><stop offset=".52" stop-color="#140D02"/><stop offset="1" stop-color="#050608"/></linearGradient>
+    <linearGradient id="ophir-plate-rim" x1="65" y1="54" x2="136" y2="157" gradientUnits="userSpaceOnUse"><stop stop-color="#FFFFFF" stop-opacity=".72"/><stop offset=".42" stop-color="#FFFFFF" stop-opacity=".12"/><stop offset="1" stop-color="#000000" stop-opacity=".58"/></linearGradient>
+    <linearGradient id="ophir-ribbon" x1="28" y1="190" x2="172" y2="232" gradientUnits="userSpaceOnUse"><stop stop-color="#FFE37A"/><stop offset=".48" stop-color="#9A6400"/><stop offset=".72" stop-color="#FFE37A"/><stop offset="1" stop-color="#9A6400"/></linearGradient>
+    <radialGradient id="ophir-plate-glow"><stop stop-color="#FFFFFF" stop-opacity=".2"/><stop offset=".55" stop-color="#FFFFFF" stop-opacity=".04"/><stop offset="1" stop-color="#000000" stop-opacity=".22"/></radialGradient>
+    <filter id="ophir-banner-shadow" x="-25%" y="-40%" width="150%" height="190%"><feDropShadow dx="0" dy="5" stdDeviation="4" flood-color="#000" flood-opacity=".62"/></filter>
+  </defs>
+  <g filter="url(#ophir-shadow)" transform="translate(10 2) scale(.9)">
+    <circle cx="100" cy="103" r="88" fill="url(#ophir-glow)"/>
+    <path d="M45 43C27 20 10 29 13 51c2 13 12 20 25 21-19 8-28 22-21 38 5 12 18 14 31 6-11 18-8 35 8 43 11 5 21 1 29-10M155 43c18-23 35-14 32 8-2 13-12 20-25 21 19 8 28 22 21 38-5 12-18 14-31 6 11 18 8 35-8 43-11 5-21 1-29-10" fill="none" stroke="url(#ophir-filigree)" stroke-width="8" stroke-linecap="round"/>
+    <path d="M100 7 154 33l31 54-12 66-73 41-73-41-12-66 31-54Z M100 54 72 68 57 96l7 32 36 20 36-20 7-32-15-28Z" fill="url(#ophir-metal)" fill-rule="evenodd" stroke="#FFF0A0" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M48 40 100 15l52 25M25 87l39 9m72 0 39-9M31 148l33-20m72 0 33 20M67 176l16-35m50 35-16-35" fill="none" stroke="#FFF6C4" stroke-opacity=".55" stroke-width="3"/>
+    <g stroke="#FFF" stroke-opacity=".75" stroke-width="1.5"><path d="m100 5 10 12-10 12-10-12Z" fill="url(#ophir-ruby)"/><path d="m16 83 12 11-12 11L5 94Z" fill="url(#ophir-sapphire)"/><path d="m184 83 11 11-11 11-12-11Z" fill="url(#ophir-ruby)"/><path d="m100 171 11 11-11 13-11-13Z" fill="url(#ophir-sapphire)"/></g>
+    <path d="M100 42 143 60l17 44-14 48-46 25-46-25-14-48 17-44Z" fill="url(#ophir-plate)" stroke="url(#ophir-plate-rim)" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M100 51 136 66l14 39-12 40-38 21-38-21-12-40 14-39Z" fill="url(#ophir-plate-glow)" stroke="#FFF" stroke-opacity=".18" stroke-width="2"/>
+    <g stroke="#FFF3B0"><circle cx="100" cy="106" r="11" fill="#D6A51D" stroke-width="3"/><circle cx="100" cy="82" r="8" fill="#D20A32" stroke-width="3"/><circle cx="124" cy="106" r="8" fill="#1769D2" stroke-width="3"/><circle cx="100" cy="130" r="8" fill="#B77905" stroke-width="3"/><circle cx="76" cy="106" r="8" fill="#1769D2" stroke-width="3"/><path d="M100 93v-3m13 16h3m-16 13v3m-13-16h-3" stroke-width="3"/></g>
+  </g>
+
+  <g filter="url(#ophir-banner-shadow)">
+    <path d="M20 198 43 188h114l23 10-12 13 10 16-35-7H57l-35 7 10-16Z" fill="url(#ophir-ribbon)" stroke="#FFF" stroke-opacity=".48" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M43 188 52 181h96l9 7-11 38H54Z" fill="url(#ophir-ribbon)" stroke="#FFF" stroke-opacity=".68" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M57 191h86" stroke="#FFF" stroke-opacity=".5" stroke-width="2" stroke-linecap="round"/>
+    <text x="100" y="215" text-anchor="middle" font-family="Noto Sans TC, system-ui, sans-serif" font-size="19" font-weight="700" letter-spacing="1.5" fill="#4B2B00" stroke="#000" stroke-opacity=".16" stroke-width=".7" paint-order="stroke">俄斐金</text>
+  </g>
+</svg>
