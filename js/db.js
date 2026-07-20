@@ -2163,6 +2163,63 @@ const db = {
     return this.joinPresetPlan(key, scheduleSettings);
   },
 
+
+  async updateFlexiblePlanSchedule(plan, scheduleSettings) {
+    if (!plan || (plan.isFixed !== false && plan.is_fixed !== false)) {
+      return { success: false, error: new Error("Only flexible plans can change weekly schedules.") };
+    }
+
+    const weeklySchedule = normalizePlanScheduleSettings(
+      false,
+      scheduleSettings && scheduleSettings.readingDaysPerWeek,
+      scheduleSettings && scheduleSettings.restWeekdays
+    );
+
+    if (state.isSupabaseMode && state.supabase && !(state.currentUser && state.currentUser.is_demo)) {
+      const { error } = await state.supabase
+        .from("reading_plans")
+        .update({
+          reading_days_per_week: weeklySchedule.readingDaysPerWeek,
+          rest_weekdays: weeklySchedule.restWeekdays
+        })
+        .eq("id", plan.id);
+      if (error) return { success: false, error };
+    }
+
+    const rebuilt = generatePlanObject(
+      plan.name,
+      plan.startDate,
+      plan.endDate,
+      plan.target_books || plan.targetBooks || [],
+      plan.presetKey || plan.globalPlanId,
+      plan.level || "normal",
+      false,
+      weeklySchedule
+    );
+    const preserved = {
+      id: plan.id,
+      globalPlanId: plan.globalPlanId || null,
+      presetKey: plan.presetKey,
+      currentRound: plan.currentRound || 1,
+      level: plan.level || "normal",
+      wasDowngraded: Boolean(plan.wasDowngraded)
+    };
+    Object.assign(plan, rebuilt, preserved);
+
+    if (typeof checkPlanSchedule === "function") {
+      await checkPlanSchedule(plan);
+    }
+    calculateAllPlansProgress();
+    this.saveLocalUserStats();
+    this._mergedUsersCache = {};
+    this._mergedUsersPromise = {};
+
+    if (!state.isSupabaseMode) {
+      localStorage.setItem("active_reading_plans", JSON.stringify(state.activePlans || []));
+    }
+    return { success: true, plan };
+  },
+
   async leavePlan(planId, presetKey) {
     loader.show("退出計畫中...");
 

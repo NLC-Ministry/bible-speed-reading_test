@@ -466,6 +466,11 @@ function initPlanControls() {
   if (optionsBtn && dropdown) {
     optionsBtn.addEventListener("click", (e) => {
       e.stopPropagation();
+      const flexibleScheduleMenuButton = document.getElementById("edit-flexible-plan-schedule-btn");
+      if (flexibleScheduleMenuButton) {
+        const plan = state.activePlan;
+        flexibleScheduleMenuButton.style.display = plan && (plan.isFixed === false || plan.is_fixed === false) ? "" : "none";
+      }
       dropdown.classList.toggle("hidden");
     });
     document.addEventListener("click", () => {
@@ -474,6 +479,26 @@ function initPlanControls() {
   }
 
 
+
+  const flexibleScheduleMenuButton = document.getElementById("edit-flexible-plan-schedule-btn");
+  if (flexibleScheduleMenuButton) {
+    flexibleScheduleMenuButton.addEventListener("click", async event => {
+      event.preventDefault();
+      event.stopPropagation();
+      const plan = state.activePlan;
+      if (!plan || (plan.isFixed !== false && plan.is_fixed !== false)) return;
+      const scheduleSettings = await openFlexibleScheduleDialog(plan, { editing: true });
+      if (!scheduleSettings) return;
+      const result = await db.updateFlexiblePlanSchedule(plan, scheduleSettings);
+      if (!result || !result.success) {
+        showToast("儲存每週安排失敗：" + ((result && result.error && result.error.message) || "請稍後再試"));
+        return;
+      }
+      showToast("每週讀經安排已更新，章節已重新分配。");
+      renderPlanScheduleView();
+      await renderPlanScheduleTracker();
+    });
+  }
 
   // Abandon Plan Button inside options dropdown
   const deleteBtn = document.getElementById("delete-plan-btn");
@@ -749,6 +774,8 @@ function renderJoinedPlansList() {
 
       const progress = plan.progress || 0;
       const currentRound = plan.currentRound || 1;
+      const isFlexiblePlan = plan.isFixed === false || plan.is_fixed === false;
+      const flexibleScheduleSummary = isFlexiblePlan ? formatFlexibleScheduleSummary(plan) : "";
 
       if (filter === "completed") {
         // Expired plan: show status label instead of progress bar
@@ -787,8 +814,34 @@ function renderJoinedPlansList() {
             <div style="font-size: 0.76rem; font-weight: 500; color: var(--text-secondary); margin-top: 0.1rem; line-height: 1.35;">
               ${progressText}
             </div>
+            ${isFlexiblePlan ? `
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:.65rem;margin-top:.35rem;">
+                <span style="font-size:.74rem;color:var(--text-muted);">${escapeHTML(flexibleScheduleSummary)}</span>
+                <button type="button" class="edit-flexible-schedule-btn btn-secondary"
+                  style="padding:.38rem .58rem;font-size:.72rem;white-space:nowrap;">調整每週安排</button>
+              </div>
+            ` : ""}
           </div>
         `;
+      }
+
+      const scheduleButton = card.querySelector(".edit-flexible-schedule-btn");
+      if (scheduleButton) {
+        scheduleButton.addEventListener("click", async event => {
+          event.preventDefault();
+          event.stopPropagation();
+          const scheduleSettings = await openFlexibleScheduleDialog(plan, { editing: true });
+          if (!scheduleSettings) return;
+          scheduleButton.disabled = true;
+          const result = await db.updateFlexiblePlanSchedule(plan, scheduleSettings);
+          scheduleButton.disabled = false;
+          if (!result || !result.success) {
+            showToast("儲存每週安排失敗：" + ((result && result.error && result.error.message) || "請稍後再試"));
+            return;
+          }
+          showToast("每週讀經安排已更新，章節已重新分配。");
+          renderJoinedPlansList();
+        });
       }
 
       container.appendChild(card);
@@ -798,12 +851,28 @@ function renderJoinedPlansList() {
   }
 }
 
-function openFlexibleScheduleDialog(plan) {
+function formatFlexibleScheduleSummary(plan) {
+  const labels = ["週日", "週一", "週二", "週三", "週四", "週五", "週六"];
+  const restDays = Array.isArray(plan && (plan.restWeekdays || plan.rest_weekdays))
+    ? (plan.restWeekdays || plan.rest_weekdays).map(Number).filter(day => day >= 0 && day <= 6)
+    : [];
+  const readingDays = Number(plan && (plan.readingDaysPerWeek || plan.reading_days_per_week)) || (7 - restDays.length);
+  return restDays.length
+    ? "每週 " + readingDays + " 天；" + restDays.map(day => labels[day]).join("、") + "休息"
+    : "每週 7 天；沒有固定休息日";
+}
+
+function openFlexibleScheduleDialog(plan, options = {}) {
   return new Promise(resolve => {
     const existing = document.getElementById("flexible-schedule-dialog");
     if (existing) existing.remove();
 
     const weekdayLabels = ["\u9031\u65e5", "\u9031\u4e00", "\u9031\u4e8c", "\u9031\u4e09", "\u9031\u56db", "\u9031\u4e94", "\u9031\u516d"];
+    const initialRestDays = Array.isArray(plan && (plan.restWeekdays || plan.rest_weekdays))
+      ? (plan.restWeekdays || plan.rest_weekdays).map(Number)
+      : [0, 6];
+    const initialReadingDays = Number(plan && (plan.readingDaysPerWeek || plan.reading_days_per_week)) || (7 - initialRestDays.length);
+    const isEditing = options.editing === true;
     const overlay = document.createElement("div");
     overlay.id = "flexible-schedule-dialog";
     overlay.className = "modal-overlay";
@@ -817,14 +886,14 @@ function openFlexibleScheduleDialog(plan) {
         </p>
         <label for="flexible-reading-days" style="display:block;margin-bottom:.45rem;font-size:.85rem;font-weight:500;color:var(--text-primary);">\u4e00\u9031\u60f3\u8b80\u7d93\u5e7e\u5929</label>
         <select id="flexible-reading-days" class="form-control" style="width:100%;margin-bottom:1.1rem;">
-          ${[1, 2, 3, 4, 5, 6, 7].map(days => `<option value="${days}" ${days === 5 ? "selected" : ""}>\u6bcf\u9031 ${days} \u5929</option>`).join("")}
+          ${[1, 2, 3, 4, 5, 6, 7].map(days => `<option value="${days}" ${days === initialReadingDays ? "selected" : ""}>\u6bcf\u9031 ${days} \u5929</option>`).join("")}
         </select>
         <fieldset style="border:0;padding:0;margin:0;">
           <legend style="margin-bottom:.55rem;font-size:.85rem;font-weight:500;color:var(--text-primary);">\u56fa\u5b9a\u4f11\u606f\u661f\u671f</legend>
           <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.5rem;">
             ${weekdayLabels.map((label, day) => `
               <label style="display:flex;align-items:center;gap:.35rem;padding:.55rem .45rem;border:1px solid var(--border-card);border-radius:10px;cursor:pointer;font-size:.78rem;color:var(--text-primary);">
-                <input class="schedule-weekday-checkbox" type="checkbox" value="${day}" ${day === 0 || day === 6 ? "checked" : ""}>
+                <input class="schedule-weekday-checkbox" type="checkbox" value="${day}" ${initialRestDays.includes(day) ? "checked" : ""}>
                 <span>${label}</span>
               </label>
             `).join("")}
@@ -834,7 +903,7 @@ function openFlexibleScheduleDialog(plan) {
         <p id="flexible-schedule-error" role="alert" style="display:none;margin:.55rem 0 0;font-size:.78rem;color:var(--color-danger);"></p>
         <div style="display:flex;justify-content:flex-end;gap:.65rem;margin-top:1.25rem;">
           <button type="button" id="flexible-schedule-cancel" class="btn-secondary">\u53d6\u6d88</button>
-          <button type="button" id="flexible-schedule-confirm" class="btn-primary">\u52a0\u5165\u8a08\u756b</button>
+          <button type="button" id="flexible-schedule-confirm" class="btn-primary">${isEditing ? "儲存安排" : "加入計畫"}</button>
         </div>
       </div>
     `;

@@ -103,3 +103,24 @@ describe("campaign data contract and statistics scope", () => {
     expect(edge).toContain('"publish_global_plan_rules"');
   });
 });
+
+describe("editable flexible weekly schedules", () => {
+  const plan = readFileSync(join(root, "js", "modules", "plan.js"), "utf8");
+  const db = readFileSync(join(root, "js", "db.js"), "utf8");
+  const migration = readFileSync(join(root, "supabase", "migrations", "0015_flexible_weekly_schedule.sql"), "utf8");
+
+  it("shows the saved rest weekdays and lets joined users edit them", () => {
+    expect(plan).toContain("formatFlexibleScheduleSummary");
+    expect(plan).toContain("edit-flexible-schedule-btn");
+    expect(plan).toContain("openFlexibleScheduleDialog(plan, { editing: true })");
+    expect(plan).toContain("db.updateFlexiblePlanSchedule");
+  });
+
+  it("persists the weekly schedule and rebuilds chapter distribution", () => {
+    expect(db).toContain("async updateFlexiblePlanSchedule");
+    expect(db).toContain("reading_days_per_week: weeklySchedule.readingDaysPerWeek");
+    expect(db).toContain("rest_weekdays: weeklySchedule.restWeekdays");
+    expect(db).toContain("const rebuilt = generatePlanObject");
+    expect(migration).toContain("cardinality(rest_weekdays) = 7 - reading_days_per_week");
+  });
+});
