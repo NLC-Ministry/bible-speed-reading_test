@@ -22,6 +22,8 @@
     href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&family=Outfit:wght@300;400;500;600;700&display=swap"
     rel="stylesheet">
   <link rel="stylesheet" href="index.css?v=20260720_round_editor">
+  <link rel="stylesheet" href="css/team-registration.css?v=20260722_reading_teams">
+  <link rel="stylesheet" href="css/team-admin-stats.css?v=20260722_reading_teams">
   <!-- Supabase JS Client library -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
   <!-- Chart.js for premium stats dashboard -->
@@ -135,6 +137,14 @@
               <button class="options-dropdown-item" id="edit-flexible-plan-schedule-btn">
                 <span class="menu-icon"><span class="nlc-icon" data-icon="calendarThirty"
                     aria-hidden="true"></span></span><span>每週讀經安排</span>
+              </button>
+              <button class="options-dropdown-item" id="view-reading-team-btn" hidden>
+                <span class="menu-icon"><span class="nlc-icon" data-icon="people"
+                    aria-hidden="true"></span></span><span>我的團隊</span>
+              </button>
+              <button class="options-dropdown-item" id="view-reading-team-stats-btn" hidden>
+                <span class="menu-icon"><span class="nlc-icon" data-icon="barChart"
+                    aria-hidden="true"></span></span><span>競賽團隊統計</span>
               </button>
               <button class="options-dropdown-item" id="delete-plan-btn">
                 <span class="menu-icon"><span class="nlc-icon" data-icon="logout"
@@ -1466,7 +1476,6 @@
                         <option value="group_leader">小組長 (示範組長甲) - 僅看 大安1第一組 統計</option>
                         <option value="zone_leader">區長 (東區區長) - 僅看 大安1 統計</option>
                         <option value="great_zone_leader">大區長 (東區大區長) - 僅看 東區 統計</option>
-                        <option value="senior_pastor">主任牧師 (示範主任牧師) - 看全教會統計 (最高權限)</option>
                       </select>
                       <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem; line-height: 1.4;">
                         提示：本切換器供您離線測試。切換後，首頁儀表板、成員清單、圖表等均會立即套用對應的角色視角進行過濾。</p>
@@ -1532,7 +1541,7 @@
                 成員權限管理 (管理員專屬)
               </h3>
               <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1.2rem; line-height: 1.5;">
-                您可以檢視所有成員，並手動升任/降職其角色權限（例如：小組長、區長、大區長、主任牧師或管理員）。
+                您可以檢視所有成員，並手動升任/降職其角色權限（例如：小組長、區長、大區長或管理員）。
               </p>
 
               <!-- Advanced Search & Filter Component -->
@@ -1924,7 +1933,7 @@
     </div>
   </div>
 
-  <script type="module" src="js/app.js?v=20260720_round_editor"></script>
+  <script type="module" src="js/app.js?v=20260722_admin_role"></script>
 </body>
 
 </html>

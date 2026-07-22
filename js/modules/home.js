@@ -1276,7 +1276,7 @@ async function updateAnnouncementsList() {
     ComponentSkeletonLoader.fill("announcement", listContainer, { count: 2 });
   }
 
-  const isAdmin = state.currentUser && (state.currentUser.role === 'admin' || state.currentUser.role === 'senior_pastor');
+  const isAdmin = state.currentUser && (state.currentUser.role === 'admin');
   const publishBtn = document.getElementById("btn-show-announcement-form");
   if (publishBtn) {
     publishBtn.classList.toggle("hidden", !isAdmin);

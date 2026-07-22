@@ -16,7 +16,7 @@ Org mapping helpers are duplicated from [`scripts/lib/nlc-profile-sync.mjs`](../
 ## Role policy (Phase 1)
 
 - Hub `primaryRole === "admin"` → app `admin`.
-- Otherwise **preserve** existing `profiles.role` (including SQL-promoted `admin` / `senior_pastor`).
+- Otherwise **preserve** existing `profiles.role` (including SQL-promoted `admin`).
 - **Phase 2 TODO:** map org-placement `leaderships[].roleName` → scoped app roles. See [Member Hub 組織定位](https://nlc-b1ffeeba.mintlify.site/api-reference/member-org-placement).
 
 ## Required secrets

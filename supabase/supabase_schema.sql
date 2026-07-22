@@ -74,7 +74,7 @@ CREATE TABLE public.profiles (
   last_seen_at TIMESTAMP WITH TIME ZONE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL,
-  CONSTRAINT profiles_role_check CHECK (role IN ('member', 'group_leader', 'zone_leader', 'great_zone_leader', 'admin', 'senior_pastor'))
+  CONSTRAINT profiles_role_check CHECK (role IN ('member', 'group_leader', 'zone_leader', 'great_zone_leader', 'admin'))
 );
 
 CREATE TABLE public.user_identities (
@@ -380,34 +380,34 @@ ALTER TABLE public.devotional_comments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.church_announcements ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY org_read_authenticated ON public.great_regions FOR SELECT TO authenticated USING (TRUE);
-CREATE POLICY org_manage_admin ON public.great_regions FOR ALL TO authenticated USING ((SELECT my_role FROM public.get_my_profile()) IN ('admin', 'senior_pastor')) WITH CHECK ((SELECT my_role FROM public.get_my_profile()) IN ('admin', 'senior_pastor'));
+CREATE POLICY org_manage_admin ON public.great_regions FOR ALL TO authenticated USING ((SELECT my_role FROM public.get_my_profile()) = 'admin') WITH CHECK ((SELECT my_role FROM public.get_my_profile()) = 'admin');
 
 CREATE POLICY zones_read_authenticated ON public.pastoral_zones FOR SELECT TO authenticated USING (TRUE);
-CREATE POLICY zones_manage_admin ON public.pastoral_zones FOR ALL TO authenticated USING ((SELECT my_role FROM public.get_my_profile()) IN ('admin', 'senior_pastor')) WITH CHECK ((SELECT my_role FROM public.get_my_profile()) IN ('admin', 'senior_pastor'));
+CREATE POLICY zones_manage_admin ON public.pastoral_zones FOR ALL TO authenticated USING ((SELECT my_role FROM public.get_my_profile()) = 'admin') WITH CHECK ((SELECT my_role FROM public.get_my_profile()) = 'admin');
 
 CREATE POLICY groups_read_authenticated ON public.small_groups FOR SELECT TO authenticated USING (TRUE);
-CREATE POLICY groups_manage_admin ON public.small_groups FOR ALL TO authenticated USING ((SELECT my_role FROM public.get_my_profile()) IN ('admin', 'senior_pastor')) WITH CHECK ((SELECT my_role FROM public.get_my_profile()) IN ('admin', 'senior_pastor'));
+CREATE POLICY groups_manage_admin ON public.small_groups FOR ALL TO authenticated USING ((SELECT my_role FROM public.get_my_profile()) = 'admin') WITH CHECK ((SELECT my_role FROM public.get_my_profile()) = 'admin');
 
 CREATE POLICY profiles_manage_own ON public.profiles FOR ALL TO authenticated USING (id = public.current_profile_id()) WITH CHECK (id = public.current_profile_id());
-CREATE POLICY profiles_manage_admin ON public.profiles FOR ALL TO authenticated USING ((SELECT my_role FROM public.get_my_profile()) IN ('admin', 'senior_pastor')) WITH CHECK ((SELECT my_role FROM public.get_my_profile()) IN ('admin', 'senior_pastor'));
+CREATE POLICY profiles_manage_admin ON public.profiles FOR ALL TO authenticated USING ((SELECT my_role FROM public.get_my_profile()) = 'admin') WITH CHECK ((SELECT my_role FROM public.get_my_profile()) = 'admin');
 CREATE POLICY profiles_select_by_scope ON public.profiles FOR SELECT TO authenticated USING (
   id = public.current_profile_id()
-  OR (SELECT my_role FROM public.get_my_profile()) IN ('admin', 'senior_pastor')
+  OR (SELECT my_role FROM public.get_my_profile()) = 'admin'
   OR ((SELECT my_role FROM public.get_my_profile()) = 'great_zone_leader' AND great_region = ANY(string_to_array((SELECT my_great_region FROM public.get_my_profile()), ',')))
   OR ((SELECT my_role FROM public.get_my_profile()) = 'zone_leader' AND pastoral_zone = ANY(string_to_array((SELECT my_pastoral_zone FROM public.get_my_profile()), ',')))
   OR ((SELECT my_role FROM public.get_my_profile()) IN ('group_leader', 'member') AND pastoral_zone = ANY(string_to_array((SELECT my_pastoral_zone FROM public.get_my_profile()), ',')) AND small_group = ANY(string_to_array((SELECT my_small_group FROM public.get_my_profile()), ',')))
 );
 
-CREATE POLICY identities_select_own_or_admin ON public.user_identities FOR SELECT TO authenticated USING (profile_id = public.current_profile_id() OR (SELECT my_role FROM public.get_my_profile()) IN ('admin', 'senior_pastor'));
-CREATE POLICY identities_manage_admin ON public.user_identities FOR ALL TO authenticated USING ((SELECT my_role FROM public.get_my_profile()) IN ('admin', 'senior_pastor')) WITH CHECK ((SELECT my_role FROM public.get_my_profile()) IN ('admin', 'senior_pastor'));
+CREATE POLICY identities_select_own_or_admin ON public.user_identities FOR SELECT TO authenticated USING (profile_id = public.current_profile_id() OR (SELECT my_role FROM public.get_my_profile()) = 'admin');
+CREATE POLICY identities_manage_admin ON public.user_identities FOR ALL TO authenticated USING ((SELECT my_role FROM public.get_my_profile()) = 'admin') WITH CHECK ((SELECT my_role FROM public.get_my_profile()) = 'admin');
 
-CREATE POLICY global_plans_read_visible ON public.global_plans FOR SELECT TO authenticated USING (is_hidden = FALSE OR (SELECT my_role FROM public.get_my_profile()) IN ('admin', 'senior_pastor'));
-CREATE POLICY global_plans_manage_admin ON public.global_plans FOR ALL TO authenticated USING ((SELECT my_role FROM public.get_my_profile()) IN ('admin', 'senior_pastor')) WITH CHECK ((SELECT my_role FROM public.get_my_profile()) IN ('admin', 'senior_pastor'));
+CREATE POLICY global_plans_read_visible ON public.global_plans FOR SELECT TO authenticated USING (is_hidden = FALSE OR (SELECT my_role FROM public.get_my_profile()) = 'admin');
+CREATE POLICY global_plans_manage_admin ON public.global_plans FOR ALL TO authenticated USING ((SELECT my_role FROM public.get_my_profile()) = 'admin') WITH CHECK ((SELECT my_role FROM public.get_my_profile()) = 'admin');
 
 CREATE POLICY reading_plans_manage_own ON public.reading_plans FOR ALL TO authenticated USING (user_id = public.current_profile_id()) WITH CHECK (user_id = public.current_profile_id());
 CREATE POLICY reading_plans_select_by_scope ON public.reading_plans FOR SELECT TO authenticated USING (
   user_id = public.current_profile_id()
-  OR (SELECT my_role FROM public.get_my_profile()) IN ('admin', 'senior_pastor')
+  OR (SELECT my_role FROM public.get_my_profile()) = 'admin'
   OR EXISTS (
     SELECT 1 FROM public.profiles p
     WHERE p.id = user_id AND (
@@ -421,7 +421,7 @@ CREATE POLICY reading_plans_select_by_scope ON public.reading_plans FOR SELECT T
 CREATE POLICY reading_logs_manage_own ON public.reading_logs FOR ALL TO authenticated USING (user_id = public.current_profile_id()) WITH CHECK (user_id = public.current_profile_id());
 CREATE POLICY reading_logs_select_by_scope ON public.reading_logs FOR SELECT TO authenticated USING (
   user_id = public.current_profile_id()
-  OR (SELECT my_role FROM public.get_my_profile()) IN ('admin', 'senior_pastor')
+  OR (SELECT my_role FROM public.get_my_profile()) = 'admin'
   OR EXISTS (
     SELECT 1 FROM public.profiles p
     WHERE p.id = user_id AND (
@@ -435,7 +435,7 @@ CREATE POLICY reading_logs_select_by_scope ON public.reading_logs FOR SELECT TO 
 CREATE POLICY devotional_notes_manage_own ON public.devotional_notes FOR ALL TO authenticated USING (user_id = public.current_profile_id()) WITH CHECK (user_id = public.current_profile_id());
 CREATE POLICY devotional_notes_select_group ON public.devotional_notes FOR SELECT TO authenticated USING (
   user_id = public.current_profile_id() OR
-  (SELECT role FROM public.profiles WHERE id = public.current_profile_id()) IN ('admin', 'senior_pastor') OR
+  (SELECT role FROM public.profiles WHERE id = public.current_profile_id()) = 'admin' OR
   EXISTS (
     SELECT 1 FROM public.profiles p1
     JOIN public.profiles p2 ON p1.pastoral_zone = p2.pastoral_zone AND p1.small_group = p2.small_group
@@ -445,7 +445,7 @@ CREATE POLICY devotional_notes_select_group ON public.devotional_notes FOR SELEC
 
 CREATE POLICY devotional_likes_select_group ON public.devotional_likes FOR SELECT TO authenticated USING (
   user_id = public.current_profile_id() OR
-  (SELECT role FROM public.profiles WHERE id = public.current_profile_id()) IN ('admin', 'senior_pastor') OR
+  (SELECT role FROM public.profiles WHERE id = public.current_profile_id()) = 'admin' OR
   EXISTS (
     SELECT 1 FROM public.profiles p1
     JOIN public.profiles p2 ON p1.pastoral_zone = p2.pastoral_zone AND p1.small_group = p2.small_group
@@ -456,7 +456,7 @@ CREATE POLICY devotional_likes_manage_own ON public.devotional_likes FOR ALL TO 
 
 CREATE POLICY devotional_comments_select_group ON public.devotional_comments FOR SELECT TO authenticated USING (
   user_id = public.current_profile_id() OR
-  (SELECT role FROM public.profiles WHERE id = public.current_profile_id()) IN ('admin', 'senior_pastor') OR
+  (SELECT role FROM public.profiles WHERE id = public.current_profile_id()) = 'admin' OR
   EXISTS (
     SELECT 1 FROM public.profiles p1
     JOIN public.profiles p2 ON p1.pastoral_zone = p2.pastoral_zone AND p1.small_group = p2.small_group
@@ -465,8 +465,8 @@ CREATE POLICY devotional_comments_select_group ON public.devotional_comments FOR
 );
 CREATE POLICY devotional_comments_manage_own ON public.devotional_comments FOR ALL TO authenticated USING (user_id = public.current_profile_id()) WITH CHECK (user_id = public.current_profile_id());
 
-CREATE POLICY announcements_read_published ON public.church_announcements FOR SELECT TO authenticated USING (is_published = TRUE OR (SELECT my_role FROM public.get_my_profile()) IN ('admin', 'senior_pastor'));
-CREATE POLICY announcements_manage_admin ON public.church_announcements FOR ALL TO authenticated USING ((SELECT my_role FROM public.get_my_profile()) IN ('admin', 'senior_pastor')) WITH CHECK ((SELECT my_role FROM public.get_my_profile()) IN ('admin', 'senior_pastor'));
+CREATE POLICY announcements_read_published ON public.church_announcements FOR SELECT TO authenticated USING (is_published = TRUE OR (SELECT my_role FROM public.get_my_profile()) = 'admin');
+CREATE POLICY announcements_manage_admin ON public.church_announcements FOR ALL TO authenticated USING ((SELECT my_role FROM public.get_my_profile()) = 'admin') WITH CHECK ((SELECT my_role FROM public.get_my_profile()) = 'admin');
 
 -- ============================================================
 -- Grants for views

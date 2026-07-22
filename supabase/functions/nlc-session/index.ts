@@ -12,8 +12,7 @@ const allowedRoles = new Set([
   "group_leader",
   "zone_leader",
   "great_zone_leader",
-  "admin",
-  "senior_pastor"
+  "admin"
 ]);
 
 function parseJwt(token: string) {
@@ -118,7 +117,7 @@ function mergeOrgSources(platformOrg: any, placementOrg: any, contextOrganizatio
 
 // Roles that must never be granted or inherited via a WEAK (email-only) account link.
 const PRIVILEGED_ROLES = new Set([
-  "admin", "senior_pastor", "great_zone_leader", "zone_leader", "group_leader"
+  "admin", "great_zone_leader", "zone_leader", "group_leader"
 ]);
 
 /**
@@ -140,6 +139,7 @@ function resolveSyncedRole(
   if (primaryRole === "admin" && strong && allowedRoles.has("admin")) return "admin";
   const existing = existingRole == null ? "" : String(existingRole).trim();
   if (existing !== "") {
+    if (existing === "senior_pastor") return strong ? "admin" : "member";
     if (strong) return existing;
     return PRIVILEGED_ROLES.has(existing) ? "member" : existing;
   }

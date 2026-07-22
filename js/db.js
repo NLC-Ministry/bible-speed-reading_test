@@ -1873,7 +1873,7 @@ const db = {
     } else if (appRouter.currentTab === "profile-view") {
       await (window.renderProfileView || renderProfileView)();
     } else if (appRouter.currentTab === "admin-view") {
-      const isSimulatedAdmin = state.currentUser.role === "admin" || state.currentUser.role === "senior_pastor";
+      const isSimulatedAdmin = state.currentUser.role === "admin";
       if (!isSimulatedAdmin) {
         appRouter.switchTab("profile-view");
       } else {
@@ -2056,6 +2056,87 @@ const db = {
     }
   },
 
+  _readingTeamPlanId(plan) {
+    const value = plan && (plan.globalPlanId || plan.global_plan_id || plan.id);
+    return isUuid(value) ? String(value) : null;
+  },
+
+  _readingTeamErrorMessage(error) {
+    const raw = String(error && (error.message || error.error || error.details) || error || "");
+    const messages = {
+      profile_required: "尚未找到你的會員資料。請先註冊或登入，完成會員資料同步後，再回來輸入邀請碼。",
+      profile_identity_not_found: "尚未找到你的會員資料。請先註冊或登入，完成會員資料同步後，再回來輸入邀請碼。",
+      team_plan_not_found: "這個計畫目前未開放團隊報名。",
+      team_statistics_admin_required: "只有系統管理員可以查看全部競賽團隊統計。",
+      invalid_team_division: "團隊只能選擇 3 人組或 6 人組。",
+      invalid_team_name: "請輸入 1 至 40 字的團隊名稱。",
+      already_in_plan_team: "你在這個計畫已加入一個團隊。",
+      team_invite_not_found: "找不到這組邀請碼，請向隊長確認。",
+      reading_team_full: "這個團隊已額滿。",
+      ready_team_roster_locked: "團隊已額滿並鎖定名單，如需調整請聯絡管理員。",
+      captain_must_disband_team: "隊長需解散尚未成隊的團隊，不能直接退出。",
+      team_captain_required: "只有隊長可以解散團隊。",
+      reading_team_not_found: "找不到這個團隊。",
+      not_a_team_member: "你目前不在這個團隊中。"
+    };
+    const key = Object.keys(messages).find(code => raw.includes(code));
+    return key ? messages[key] : (raw || "團隊資料處理失敗，請稍後再試。");
+  },
+
+  async _callReadingTeamRpc(functionName, args) {
+    if (!state.isSupabaseMode || !state.supabase || state.currentUser && state.currentUser.is_demo) {
+      return { success: false, message: "團隊報名需登入正式帳號後使用。" };
+    }
+    try {
+      const { data, error } = await state.supabase.rpc(functionName, args);
+      if (error) return { success: false, error, message: this._readingTeamErrorMessage(error) };
+      return { success: true, data };
+    } catch (error) {
+      return { success: false, error, message: this._readingTeamErrorMessage(error) };
+    }
+  },
+
+  async getMyReadingTeam(plan) {
+    const planId = this._readingTeamPlanId(plan);
+    if (!planId) return { success: false, message: "這個計畫目前未開放團隊報名。" };
+    const result = await this._callReadingTeamRpc("get_my_reading_team", { p_global_plan_id: planId });
+    return result.success ? { success: true, context: result.data || { team: null, members: [] } } : result;
+  },
+
+  async getReadingTeamStatistics(plan) {
+    const planId = this._readingTeamPlanId(plan);
+    if (!planId) return { success: false, message: "這個計畫目前未開放團隊統計。" };
+    const result = await this._callReadingTeamRpc("get_reading_team_statistics", { p_global_plan_id: planId });
+    return result.success ? { success: true, context: result.data || { summary: {}, teams: [] } } : result;
+  },
+
+  async createReadingTeam(plan, division, name) {
+    const planId = this._readingTeamPlanId(plan);
+    if (!planId) return { success: false, message: "這個計畫目前未開放團隊報名。" };
+    return this._callReadingTeamRpc("create_reading_team", {
+      p_global_plan_id: planId,
+      p_division: Number(division),
+      p_name: String(name || "").trim()
+    });
+  },
+
+  async joinReadingTeam(plan, inviteCode) {
+    const planId = this._readingTeamPlanId(plan);
+    if (!planId) return { success: false, message: "這個計畫目前未開放團隊報名。" };
+    return this._callReadingTeamRpc("join_reading_team_by_code", {
+      p_global_plan_id: planId,
+      p_invite_code: String(inviteCode || "").trim().toUpperCase()
+    });
+  },
+
+  async leaveReadingTeam(teamId) {
+    return this._callReadingTeamRpc("leave_reading_team", { p_team_id: teamId });
+  },
+
+  async disbandReadingTeam(teamId) {
+    return this._callReadingTeamRpc("disband_reading_team", { p_team_id: teamId });
+  },
+
   async joinPresetPlan(key, scheduleSettings = null) {
     let preset = (state.globalPlans || []).find(p => p.presetKey === key || p.id === key);
     if (!preset) {
@@ -2207,6 +2288,17 @@ const db = {
       localStorage.setItem("selected_plan_key", key);
     }
 
+    if (newPlanObj && preset.planKind) {
+      Object.assign(newPlanObj, {
+        globalPlanId: newPlanObj.globalPlanId || preset.globalPlanId || preset.id || null,
+        planKind: preset.planKind,
+        stageNo: preset.stageNo || null,
+        roundNo: preset.roundNo || null,
+        awardName: preset.awardName || null,
+        campaignDefinition: preset.campaignDefinition || null
+      });
+    }
+
     calculatePlanProgress();
     this.saveLocalUserStats();
     this._userDataPromise = null; // 💡 關鍵修復：清除資料加載快取以使快取失效
@@ -2228,6 +2320,7 @@ const db = {
     } else {
       showToast(`成功預約加入 ${planName}！計畫將於 ${startDate} 開始。`);
     }
+    return newPlanObj;
   },
 
   async joinPlan(name, startDate, endDate, books, key, scheduleSettings = null) {

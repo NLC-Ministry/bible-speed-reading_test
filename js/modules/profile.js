@@ -335,7 +335,6 @@ export async function renderProfileView() {
     group_leader: "小組長",
     zone_leader: "區長 (牧區負責人)",
     great_zone_leader: "大區長",
-    senior_pastor: "主任牧師 (最高權限)",
     admin: "系統管理員"
   };
 
@@ -501,7 +500,7 @@ export async function renderProfileView() {
     } catch (err) {
       console.error("Failed to save profile:", err);
       state.currentUser = oldProfile;
-      const isAdmin = state.currentUser && (state.currentUser.role === "admin" || state.currentUser.role === "senior_pastor");
+      const isAdmin = state.currentUser && (state.currentUser.role === "admin");
       if (isAdmin) {
         showToast(`儲存個人資料失敗 (開發者除錯): ${err.message || err}`);
       } else {
@@ -585,7 +584,6 @@ async function renderCareReminders() {
     group_leader: "小組長",
     zone_leader: "區長",
     great_zone_leader: "大區長",
-    senior_pastor: "主任牧師",
     admin: "系統管理員"
   };
 
@@ -776,8 +774,8 @@ function populateProfileGroupSelector(autoSelect = true) {
 }
 
 export function updateAdminNavVisibility() {
-  const isRealAdmin = !state.isSupabaseMode || (state.realRole === "admin" || state.realRole === "senior_pastor");
-  const isSimulatedAdmin = state.currentUser && (state.currentUser.role === "admin" || state.currentUser.role === "senior_pastor");
+  const isRealAdmin = !state.isSupabaseMode || (state.realRole === "admin");
+  const isSimulatedAdmin = state.currentUser && (state.currentUser.role === "admin");
   const shouldShowNav = isRealAdmin && isSimulatedAdmin;
 
   document.querySelectorAll(".admin-only-nav").forEach(btn => {
@@ -797,7 +795,6 @@ export function updateHeaderAvatar() {
     zone_leader: "\u7267\u5340\u9577",
     great_zone_leader: "\u5927\u5340\u9577",
     admin: "\u7cfb\u7d71\u7ba1\u7406\u54e1",
-    senior_pastor: "\u4e3b\u4efb\u7267\u5e2b"
   };
 
   const nameEl = document.getElementById("dropdown-user-name");

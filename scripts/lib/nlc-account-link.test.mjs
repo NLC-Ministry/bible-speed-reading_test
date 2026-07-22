@@ -20,9 +20,13 @@ describe("resolveSyncedRole — privilege gating by link strength", () => {
     }
   });
 
-  it("preserves an existing privileged role on a strong link", () => {
+  it("preserves admin and normalizes the retired role on a strong link", () => {
     expect(resolveSyncedRole(null, "admin", "identity")).toBe("admin");
-    expect(resolveSyncedRole(null, "senior_pastor", "member_id")).toBe("senior_pastor");
+    expect(resolveSyncedRole(null, "senior_pastor", "member_id")).toBe("admin");
+  });
+
+  it("does not inherit the retired role through a weak link", () => {
+    expect(resolveSyncedRole(null, "senior_pastor", "email")).toBe("member");
   });
 
   it("preserves a non-privileged existing role even on a weak link (account continuity)", () => {

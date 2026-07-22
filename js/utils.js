@@ -171,18 +171,18 @@ function refreshUserAvatars() {
 
 // ── User Scope Filtering ─────────────────────────────────────
 /**
- * Returns true if the user has admin/senior-pastor level access.
+ * Returns true if the user has administrator access.
  * @param {object} user
  */
 function getIsAdmin(user) {
   if (!user) return false;
   const role = user.role || "member";
-  return role === "admin" || role === "senior_pastor";
+  return role === "admin";
 }
 
 /**
  * Filter a list of users based on the current user's role.
- * - admin/senior_pastor → all users
+ * - admin                → all users
  * - great_zone_leader   → same great_region
  * - zone_leader         → same pastoral_zone
  * - group_leader        → same pastoral_zone + small_group
@@ -196,7 +196,7 @@ function getScopedUsers(allUsers, currentUser) {
   if (!currentUser) return allUsers;
   const role = currentUser.role || "member";
 
-  if (role === "senior_pastor" || role === "admin") {
+  if (role === "admin") {
     return allUsers;
   }
   if (role === "great_zone_leader") {
@@ -1288,7 +1288,10 @@ function generateChurchCampaignPlanObject(definition, presetKey, scheduleSetting
     wasDowngraded: false,
     isFixed: true,
     is_fixed: true,
-    planKind: "church_campaign",
+    planKind: definition.planKind || (definition.stageNo ? "church_campaign_stage" : "church_campaign"),
+    stageNo: Number(definition.stageNo) || null,
+    roundNo: Number(definition.roundNo) || null,
+    awardName: definition.awardName || null,
     campaignDefinition: window.cloneChurchCampaign(definition),
     campaignStages: definition.stages,
     campaignRules: definition.rules,
@@ -1726,7 +1729,7 @@ function isPlanHidden(plan) {
 function canManageHiddenPlans() {
   const role = (state.currentUser && state.currentUser.role) || 'member';
   const realRole = state.realRole || role;
-  return role === 'admin' || role === 'senior_pastor' || realRole === 'admin' || realRole === 'senior_pastor';
+  return role === 'admin' || realRole === 'admin';
 }
 
 function getVisiblePlans(plans) {
@@ -1739,8 +1742,8 @@ function getVisiblePlans(plans) {
 // Defined here (in utils.js, which loads early) so db.init() and other
 // early callers don't have to wait for profile.js to lazy-load.
 function updateAdminNavVisibility() {
-  const isRealAdmin = !state.isSupabaseMode || (state.realRole === 'admin' || state.realRole === 'senior_pastor');
-  const isSimulatedAdmin = state.currentUser && (state.currentUser.role === 'admin' || state.currentUser.role === 'senior_pastor');
+  const isRealAdmin = !state.isSupabaseMode || state.realRole === 'admin';
+  const isSimulatedAdmin = state.currentUser && state.currentUser.role === 'admin';
   const shouldShowNav = isRealAdmin && isSimulatedAdmin;
 
   document.querySelectorAll('.admin-only-nav').forEach(btn => {

@@ -29,7 +29,20 @@ const READ_TABLES = new Set([
 const USER_TABLES = new Set(["reading_plans", "reading_logs", "devotional_notes"]);
 const ADMIN_WRITE_TABLES = new Set(["great_regions", "pastoral_zones", "small_groups", "global_plans", "church_announcements", "profiles"]);
 const OWN_WRITE_TABLES = new Set(["reading_plans", "reading_logs", "devotional_notes", "devotional_likes", "devotional_comments", "care_reminders"]);
-const RPC_FUNCTIONS = new Set(["increment_likes", "decrement_likes", "publish_global_plan_rules"]);
+const TEAM_RPC_FUNCTIONS = new Set([
+  "get_my_reading_team",
+  "get_reading_team_statistics",
+  "create_reading_team",
+  "join_reading_team_by_code",
+  "leave_reading_team",
+  "disband_reading_team"
+]);
+const RPC_FUNCTIONS = new Set([
+  "increment_likes",
+  "decrement_likes",
+  "publish_global_plan_rules",
+  ...TEAM_RPC_FUNCTIONS
+]);
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), { status, headers: corsHeaders });
@@ -113,7 +126,7 @@ async function resolveProfile(supabaseAdmin: any, accessToken: string) {
 }
 
 function isAdmin(profile: any) {
-  return profile?.role === "admin" || profile?.role === "senior_pastor";
+  return profile?.role === "admin";
 }
 
 function normalizeRows(payload: any) {
@@ -241,7 +254,7 @@ Deno.serve(async (req: Request) => {
         return jsonResponse({ error: "forbidden_rpc" }, 403);
       }
       const rpcName = functionName;
-      const rpcArgs = functionName === "publish_global_plan_rules"
+      const rpcArgs = functionName === "publish_global_plan_rules" || TEAM_RPC_FUNCTIONS.has(functionName)
         ? { ...(body.args || {}), p_actor_id: profile.id }
         : (body.args || {});
       const { data, error } = await supabaseAdmin.rpc(rpcName, rpcArgs);

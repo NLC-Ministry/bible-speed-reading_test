@@ -90,13 +90,12 @@ const DEFAULT_ALLOWED_ROLES = new Set([
   "group_leader",
   "zone_leader",
   "great_zone_leader",
-  "admin",
-  "senior_pastor"
+  "admin"
 ]);
 
 /**
  * Role sync policy (Phase 1): Hub primaryRole admin maps to app admin;
- * otherwise preserve existing Supabase role (including SQL-promoted admin/senior_pastor).
+ * otherwise preserve existing Supabase role (including SQL-promoted admin).
  *
  * TODO(Phase 2): Map org-placement leaderships[].roleName → group_leader/zone_leader/great_zone_leader.
  * See https://nlc-b1ffeeba.mintlify.site/api-reference/member-org-placement
@@ -104,7 +103,8 @@ const DEFAULT_ALLOWED_ROLES = new Set([
 export function resolveSyncedRole(primaryRole, existingRole, allowedRoles = DEFAULT_ALLOWED_ROLES) {
   if (primaryRole === "admin" && allowedRoles.has("admin")) return "admin";
   if (existingRole !== null && existingRole !== undefined && String(existingRole).trim() !== "") {
-    return String(existingRole).trim();
+    const existing = String(existingRole).trim();
+    return existing === "senior_pastor" ? "admin" : existing;
   }
   return "member";
 }

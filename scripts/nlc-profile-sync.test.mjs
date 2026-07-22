@@ -102,8 +102,8 @@ describe("resolveSyncedRole", () => {
     expect(resolveSyncedRole("member", "admin")).toBe("admin");
   });
 
-  it("preserves senior_pastor when Hub has no admin role", () => {
-    expect(resolveSyncedRole("member", "senior_pastor")).toBe("senior_pastor");
+  it("normalizes the retired senior-pastor role to admin", () => {
+    expect(resolveSyncedRole("member", "senior_pastor")).toBe("admin");
   });
 
   it("defaults to member when no existing role", () => {

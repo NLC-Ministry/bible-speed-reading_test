@@ -385,7 +385,7 @@ window.addEventListener("planDataChanged", (e) => {
 });
 
 function canUseAdvancedGroupStats() {
-  const allowedRoles = ["admin", "senior_pastor", "great_zone_leader", "zone_leader", "group_leader"];
+  const allowedRoles = ["admin", "great_zone_leader", "zone_leader", "group_leader"];
   const currentRole = (state.currentUser && state.currentUser.role) || "member";
   const realRole = state.realRole || "member";
   return allowedRoles.includes(currentRole) || allowedRoles.includes(realRole);
@@ -468,6 +468,12 @@ function initPlanControls() {
       e.stopPropagation();
       const flexibleScheduleMenuButton = document.getElementById("edit-flexible-plan-schedule-btn");
       if (flexibleScheduleMenuButton) flexibleScheduleMenuButton.style.display = "";
+      const readingTeamMenuButton = document.getElementById("view-reading-team-btn");
+      const isTeamPlan = typeof window.isReadingTeamPlan === "function" && window.isReadingTeamPlan(state.activePlan);
+      if (readingTeamMenuButton) readingTeamMenuButton.hidden = !isTeamPlan;
+      const readingTeamStatsButton = document.getElementById("view-reading-team-stats-btn");
+      const role = state.currentUser && state.currentUser.role;
+      if (readingTeamStatsButton) readingTeamStatsButton.hidden = !isTeamPlan || role !== "admin";
       dropdown.classList.toggle("hidden");
     });
     document.addEventListener("click", () => {
@@ -506,6 +512,30 @@ function initPlanControls() {
       showToast("每週讀經安排已更新，章節已重新分配。");
       renderPlanScheduleView();
       await renderPlanScheduleTracker();
+    });
+  }
+
+  const readingTeamButton = document.getElementById("view-reading-team-btn");
+  if (readingTeamButton) {
+    readingTeamButton.addEventListener("click", async event => {
+      event.preventDefault();
+      event.stopPropagation();
+      dropdown?.classList.add("hidden");
+      if (state.activePlan && typeof window.openReadingTeamDialog === "function") {
+        await window.openReadingTeamDialog(state.activePlan);
+      }
+    });
+  }
+
+  const readingTeamStatsButton = document.getElementById("view-reading-team-stats-btn");
+  if (readingTeamStatsButton) {
+    readingTeamStatsButton.addEventListener("click", async event => {
+      event.preventDefault();
+      event.stopPropagation();
+      dropdown?.classList.add("hidden");
+      if (state.activePlan && typeof window.openReadingTeamAdminStatsDialog === "function") {
+        await window.openReadingTeamAdminStatsDialog(state.activePlan);
+      }
     });
   }
 
@@ -644,8 +674,8 @@ async function renderPlanView() {
     }
 
     // Admin simulation check
-    const isRealAdmin = !state.isSupabaseMode || (state.realRole === "admin" || state.realRole === "senior_pastor");
-    const isSimulatedAdmin = state.currentUser && (state.currentUser.role === "admin" || state.currentUser.role === "senior_pastor");
+    const isRealAdmin = !state.isSupabaseMode || (state.realRole === "admin");
+    const isSimulatedAdmin = state.currentUser && (state.currentUser.role === "admin");
     const adminCard = document.getElementById("admin-plan-card");
     if (adminCard) {
       if (isRealAdmin && isSimulatedAdmin) {
@@ -1154,9 +1184,16 @@ function renderPresetPlansList() {
     `;
 
     card.onclick = async () => {
+      const participation = typeof window.chooseReadingPlanParticipation === "function"
+        ? await window.chooseReadingPlanParticipation(plan)
+        : { mode: "personal", division: null };
+      if (!participation) return;
       const scheduleSettings = await openFlexibleScheduleDialog(plan);
       if (!scheduleSettings) return;
-      await db.joinPresetPlan(key, scheduleSettings);
+      const joinedPlan = await db.joinPresetPlan(key, scheduleSettings);
+      if (joinedPlan && participation.mode === "team" && typeof window.openReadingTeamDialog === "function") {
+        await window.openReadingTeamDialog(joinedPlan, { preferredDivision: participation.division });
+      }
     };
 
     container.appendChild(card);
@@ -2631,7 +2668,7 @@ function setupCascadingSelectors(regionId, zoneId, groupId, masterId) {
   groupSelect.disabled = false;
 
   const userRole = (state.currentUser && state.currentUser.role) || "member";
-  const isAdmin = userRole === "admin" || userRole === "senior_pastor";
+  const isAdmin = userRole === "admin";
   const isGreatZoneLeader = userRole === "great_zone_leader";
   const isZoneLeader = userRole === "zone_leader";
   const isGroupLeader = userRole === "group_leader";
@@ -3206,7 +3243,7 @@ async function renderGroupMiniStats() {
   } else {
     // If no selector filter is loaded yet, guess label from user role
     const userRole = state.currentUser.role || "member";
-    if (userRole === "admin" || userRole === "senior_pastor") {
+    if (userRole === "admin") {
       scopeLabel = "全教會";
     } else if (userRole === "great_zone_leader") {
       scopeLabel = state.currentUser.great_region || "大區";
@@ -3373,7 +3410,7 @@ function renderGroupGrowthTrend() {
       else if (selectedFilter.startsWith('group:')) scopeLabel = selectedFilter.replace('group:', '');
     } else {
       const userRole = state.currentUser.role || 'member';
-      if (userRole === 'admin' || userRole === 'senior_pastor') scopeLabel = '全教會';
+      if (userRole === 'admin') scopeLabel = '全教會';
       else if (userRole === 'great_zone_leader') scopeLabel = state.currentUser.great_region || '大區';
       else if (userRole === 'zone_leader') scopeLabel = state.currentUser.pastoral_zone || '牧區';
       else scopeLabel = state.currentUser.small_group || '小組';
@@ -3547,7 +3584,7 @@ function renderGroupTeamHeatmap() {
     }
   } else {
     const userRole = state.currentUser.role || "member";
-    if (userRole === "admin" || userRole === "senior_pastor") {
+    if (userRole === "admin") {
       scopeLabel = "全教會";
     } else if (userRole === "great_zone_leader") {
       scopeLabel = state.currentUser.great_region || "大區";
@@ -4040,7 +4077,7 @@ async function renderGroupParticipantsRankingTable() {
 
   const userZone = state.currentUser.pastoral_zone || "";
   const userRole = state.currentUser.role || "member";
-  const isAdmin = userRole === "admin" || userRole === "senior_pastor";
+  const isAdmin = userRole === "admin";
   const isGreatZoneLeader = userRole === "great_zone_leader";
   const isZoneLeader = userRole === "zone_leader";
   const isGroupLeader = userRole === "group_leader";
@@ -4291,7 +4328,7 @@ window.displayParticipantsList = function (limit = 100) {
 
   // Determine if current user is a leader who can send care reminders
   const _careRole = (state.currentUser && state.currentUser.role) || "member";
-  const _canSendCare = ["group_leader", "zone_leader", "great_zone_leader", "senior_pastor", "admin"].includes(_careRole);
+  const _canSendCare = ["group_leader", "zone_leader", "great_zone_leader", "admin"].includes(_careRole);
 
   visibleItems.forEach(m => {
     const itemRow = document.createElement("div");
@@ -4925,13 +4962,13 @@ async function updateStatsView(filterPresetKey = null) {
   rawAllUsers = getScopedUsers(rawAllUsers, mockUser);
 
   // Filter pastoralStats based on Great Region for non-admin roles
-  if (role !== "admin" && role !== "senior_pastor") {
+  if (role !== "admin") {
     pastoralStats = pastoralStats.filter(z => z.great_region === mockUser.great_region);
   }
 
   // 1. Determine Stats Scoped Users
   let statsUsers = [];
-  if (role === "senior_pastor" || role === "admin") {
+  if (role === "admin") {
     const zoneSelectGroup = document.getElementById("stats-zone-selector");
     const selectedZone = zoneSelectGroup ? zoneSelectGroup.value : "";
     if (selectedZone) {
@@ -4954,7 +4991,7 @@ async function updateStatsView(filterPresetKey = null) {
   // 2. Update Mini Card Labels based on Scoped Team
   const miniCardLabels = document.querySelectorAll('.stats-overview-row .label');
   if (miniCardLabels.length === 3) {
-    if (role === "senior_pastor" || role === "admin") {
+    if (role === "admin") {
       const zoneSelectGroup = document.getElementById("stats-zone-selector");
       const selectedZone = zoneSelectGroup ? zoneSelectGroup.value : "";
       miniCardLabels[0].textContent = selectedZone ? `${selectedZone} 總閱讀章數` : "全教會總閱讀章數";
@@ -5403,7 +5440,7 @@ function renderHeatmap(teamUsers = []) {
   const titleEl = document.getElementById("heatmap-card-title");
   if (titleEl) {
     const role = state.currentUser.role || "member";
-    if (role === "senior_pastor" || role === "admin") {
+    if (role === "admin") {
       const zoneSelectGroup = document.getElementById("stats-zone-selector");
       const selectedZone = zoneSelectGroup ? zoneSelectGroup.value : "";
       titleEl.textContent = selectedZone
@@ -5441,7 +5478,7 @@ function renderTeamStatsAnalysisDashboard(unfilteredAllUsers, mockUser) {
   let teamUsers = [];
   const role = mockUser.role || 'member';
 
-  if (role === 'admin' || role === 'senior_pastor') {
+  if (role === 'admin') {
     const zoneSelectGroup = document.getElementById("stats-zone-selector");
     const selectedZone = zoneSelectGroup ? zoneSelectGroup.value : "";
     if (selectedZone) {

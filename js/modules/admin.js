@@ -202,7 +202,7 @@ export async function renderAdminUserManagement() {
   try {
     const users = await db.fetchMergedUsersList(null, true);
     
-    const roleOrder = { senior_pastor: 1, admin: 2, great_zone_leader: 3, zone_leader: 4, group_leader: 5, member: 6 };
+    const roleOrder = { admin: 1, great_zone_leader: 2, zone_leader: 3, group_leader: 4, member: 5 };
     const sortedUsers = [...users].sort((a, b) => {
       if (a.name === state.currentUser.name) return -1;
       if (b.name === state.currentUser.name) return 1;
@@ -231,7 +231,6 @@ export async function renderAdminUserManagement() {
       group_leader: "小組長",
       zone_leader: "區長",
       great_zone_leader: "大區長",
-      senior_pastor: "主任牧師",
       admin: "系統管理員"
     };
 
@@ -295,7 +294,6 @@ export function openMemberEditBottomSheet(user) {
     { value: "group_leader", label: "小組長" },
     { value: "zone_leader", label: "區長" },
     { value: "great_zone_leader", label: "大區長" },
-    { value: "senior_pastor", label: "主任牧師" },
     { value: "admin", label: "系統管理員" }
   ];
 
