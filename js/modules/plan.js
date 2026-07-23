@@ -14,7 +14,8 @@ let planSearchQuery = '';
 const PLAN_ROUTE = Object.freeze({
   LIST: "LIST",
   DETAIL: "DETAIL",
-  GROUP: "GROUP"
+  GROUP: "GROUP",
+  ORG_STATS: "ORG_STATS"
 });
 
 window.currentPlanViewState = window.currentPlanViewState || PLAN_ROUTE.LIST;
@@ -112,6 +113,9 @@ function setOnlyPlanRouteVisible(route) {
   forceHidden(shell.groupView, true);
   forceHidden(shell.legacyList, false);
   forceHidden(shell.legacyDetail, route === PLAN_ROUTE.LIST);
+
+  const orgSub = document.getElementById("plan-org-stats-subview");
+  if (orgSub) forceHidden(orgSub, route !== PLAN_ROUTE.ORG_STATS);
 
   return shell;
 }
@@ -241,6 +245,18 @@ async function showPlanGroupSubview(view = GROUP_SUBVIEW.STATS) {
   }
 }
 
+async function checkUserHasTeam() {
+  if (!state.activePlan) return false;
+  const supported = typeof window.isReadingTeamPlan === "function" && window.isReadingTeamPlan(state.activePlan);
+  if (!supported) return false;
+  const result = await db.getMyReadingTeam(state.activePlan);
+  if (result && result.success) {
+    const contexts = getJoinedReadingTeamContexts(result.context);
+    return contexts.length > 0;
+  }
+  return false;
+}
+
 window.PlanPageController = {
   currentIndex: PLAN_PAGE.READING,
   groupLoadedForPlanKey: null,
@@ -301,6 +317,14 @@ window.PlanPageController = {
   },
   async switchPage(index, options = {}) {
     if (!state.activePlan) return;
+
+    // Check if user has team and dynamically update third tab name
+    const hasTeam = await checkUserHasTeam();
+    const statsTab = document.getElementById("plan-primary-tab-stats");
+    if (statsTab) {
+      statsTab.textContent = hasTeam ? "團隊統計" : "團體報名";
+    }
+
     const target = Number(index) === PLAN_PAGE.GROUP ? PLAN_PAGE.GROUP : PLAN_PAGE.READING;
     const shell = this.ensureShell();
     if (!shell?.wrapper) return;
@@ -473,23 +497,55 @@ async function prepareReadingTeamSubview(mode) {
         document.getElementById("member-list-container")
       ];
 
+  // 1. If we are in ORG_STATS page: show org elements, hide team elements
+  if (window.currentPlanViewState === PLAN_ROUTE.ORG_STATS) {
+    switcher.classList.add("hidden");
+    inline.classList.add("hidden");
+    const regContainer = document.getElementById("reading-team-registration-inline");
+    if (regContainer) regContainer.classList.add("hidden");
+    organizationElements.forEach(element => setReadingTeamSubviewElementHidden(element, false));
+    return true;
+  }
+
+  // 2. Fetch team context
   const supported = typeof window.isReadingTeamPlan === "function" && window.isReadingTeamPlan(state.activePlan);
   const result = supported ? await db.getMyReadingTeam(state.activePlan) : null;
   const contexts = result && result.success ? getJoinedReadingTeamContexts(result.context) : [];
   const activeDivisions = new Set(contexts.map(context => Number(context.team.division)));
 
+  // Remove the organization options from select dropdown
+  const orgOption = select.querySelector('option[value="organization"]');
+  if (orgOption) orgOption.remove();
+
   select.querySelectorAll('option[data-reading-team-division]').forEach(option => {
     if (!activeDivisions.has(Number(option.dataset.readingTeamDivision))) option.remove();
   });
 
+  // 3. User is NOT in a team
   if (contexts.length === 0) {
     select.value = "organization";
     delete select.dataset.readingTeamDefaultPlan;
     switcher.classList.add("hidden");
     inline.classList.add("hidden");
-    organizationElements.forEach(element => setReadingTeamSubviewElementHidden(element, false));
+    
+    // Hide organization stats on main plan tabs
+    organizationElements.forEach(element => setReadingTeamSubviewElementHidden(element, true));
+    
+    // Show inline team registration card
+    const regContainer = document.getElementById("reading-team-registration-inline");
+    if (regContainer) {
+      regContainer.classList.remove("hidden");
+      window.renderReadingTeamRegistrationInline(regContainer, state.activePlan);
+    }
     return true;
   }
+
+  // 4. User IS in a team
+  const regContainer = document.getElementById("reading-team-registration-inline");
+  if (regContainer) regContainer.classList.add("hidden");
+
+  // Always hide organization stats on main plan tabs
+  organizationElements.forEach(element => setReadingTeamSubviewElementHidden(element, true));
 
   contexts.forEach(context => {
     const division = Number(context.team.division);
@@ -515,7 +571,13 @@ async function prepareReadingTeamSubview(mode) {
     select.dataset.readingTeamDefaultPlan = activePlanKey;
     select.value = `reading-team-${Number(contexts[0].team.division)}`;
   }
-  switcher.classList.remove("hidden");
+  
+  // Show switcher only if user joined both 3-person and 6-person teams
+  if (contexts.length > 1) {
+    switcher.classList.remove("hidden");
+  } else {
+    switcher.classList.add("hidden");
+  }
 
   if (!select.dataset.readingTeamBound) {
     select.dataset.readingTeamBound = "true";
@@ -541,7 +603,6 @@ async function prepareReadingTeamSubview(mode) {
   const selectedDivision = Number(String(select.value).replace("reading-team-", ""));
   const selectedContext = contexts.find(context => Number(context.team.division) === selectedDivision) || null;
   const showTeam = !!selectedContext;
-  organizationElements.forEach(element => setReadingTeamSubviewElementHidden(element, showTeam));
   inline.classList.toggle("hidden", !showTeam);
   if (showTeam && typeof window.renderMyReadingTeamInline === "function") {
     window.renderMyReadingTeamInline(inline, state.activePlan, selectedContext, mode);
@@ -628,8 +689,13 @@ function initPlanControls() {
 
   // Back Button
   const backBtn = document.getElementById("btn-back-to-plans");
-  if (backBtn) {
+  if (backBtn && !backBtn.dataset.listenerBound) {
+    backBtn.dataset.listenerBound = "true";
     backBtn.addEventListener("click", () => {
+      if (window.currentPlanViewState === PLAN_ROUTE.ORG_STATS) {
+        setPlanState(PLAN_ROUTE.DETAIL);
+        return;
+      }
       state.activePlan = null;
       if (typeof window.syncActivePlanContext === 'function') window.syncActivePlanContext(null);
       localStorage.removeItem("selected_plan_key");
@@ -646,7 +712,8 @@ function initPlanControls() {
       if (flexibleScheduleMenuButton) flexibleScheduleMenuButton.style.display = "";
       const readingTeamMenuButton = document.getElementById("view-reading-team-btn");
       const isTeamPlan = typeof window.isReadingTeamPlan === "function" && window.isReadingTeamPlan(state.activePlan);
-      if (readingTeamMenuButton) readingTeamMenuButton.hidden = !isTeamPlan;
+      const hasPermission = state.currentUser && ['admin', 'great_zone_leader', 'zone_leader', 'group_leader'].includes(state.currentUser.role);
+      if (readingTeamMenuButton) readingTeamMenuButton.hidden = !isTeamPlan || !hasPermission;
       dropdown.classList.toggle("hidden");
     });
     document.addEventListener("click", () => {
@@ -694,8 +761,8 @@ function initPlanControls() {
       event.preventDefault();
       event.stopPropagation();
       dropdown?.classList.add("hidden");
-      if (state.activePlan && typeof window.openReadingTeamDialog === "function") {
-        await window.openReadingTeamDialog(state.activePlan);
+      if (state.activePlan) {
+        await setPlanState(PLAN_ROUTE.ORG_STATS);
       }
     });
   }
@@ -6066,56 +6133,199 @@ function renderProfileReadingStats() {
     : `<span style="font-size: 0.95rem; font-weight: 500; color: var(--text-muted);">0 天</span>`;
 
   const lagIconClass = stats.lagDays > 0 ? "stat-icon-wrapper--danger" : "stat-icon-wrapper--neutral";
-  const lagValueClass = stats.lagDays > 0 ? "stat-value--danger" : "stat-value--muted";
-  const leadIconClass = stats.leadDays > 0 ? "stat-icon-wrapper--success" : "stat-icon-wrapper--neutral";
-  const leadValueClass = stats.leadDays > 0 ? "stat-value--success" : "stat-value--muted";
-  const makeupIconClass = stats.makeupDays > 0 ? "stat-icon-wrapper--brand" : "stat-icon-wrapper--neutral";
-  const makeupValueClass = stats.makeupDays > 0 ? "stat-value--brand" : "stat-value--muted";
+  const lagValueClass = stats.lagDays > 0 async function enterPlanListState() {
+  window.currentPlanViewState = PLAN_ROUTE.LIST;
+  state.planDetailOpen = false;
+  state.planActiveSubTab = "today";
+  if (window.PlanPageController) window.PlanPageController.groupLoadedForPlanKey = null;
+  const shell = setOnlyPlanRouteVisible(PLAN_ROUTE.LIST);
+  moveGroupNodesToDetail(shell);
+  renderJoinedPlansList();
+  renderPresetPlansList();
+}
 
-  container.innerHTML = `
-    <div class="profile-stats-grid" style="display: grid; grid-template-columns: 1fr; gap: 1rem;">
-      
-      <!-- Today's Day -->
-      <div class="stat-item-card" style="background: var(--bg-card); border: 1px solid var(--border-card); padding: 1rem; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: space-between;">
-        <div style="display: flex; align-items: center; gap: 0.8rem;">
-          <div class="stat-icon-wrapper stat-icon-wrapper--brand">
-            ${typeof renderIcon === "function" ? renderIcon("calendar", { size: "sm", className: "nlc-icon" }) : ""}
-          </div>
-          <div>
-            <div style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 500;">今天計畫進度</div>
-            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.1rem;">目前已進行的計畫天數</div>
-          </div>
-        </div>
-        <div style="font-weight: 500; display: flex; align-items: baseline; gap: 0.1rem;">
-          ${todayProgressText}
-        </div>
-      </div>
+async function enterPlanDetailState() {
+  if (!state.activePlan) {
+    await enterPlanListState();
+    return;
+  }
+  window.currentPlanViewState = PLAN_ROUTE.DETAIL;
+  state.planDetailOpen = true;
+  state.planActiveSubTab = "today";
+  setOnlyPlanRouteVisible(PLAN_ROUTE.DETAIL);
+  if (window.PlanPageController) await window.PlanPageController.switchPage(PLAN_PAGE.READING, { skipChrome: true });
+}
 
-      <!-- Consecutive Streak -->
-      <div class="stat-item-card" style="background: var(--bg-card); border: 1px solid var(--border-card); padding: 1rem; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: space-between;">
-        <div style="display: flex; align-items: center; gap: 0.8rem;">
-          <div class="stat-icon-wrapper stat-icon-wrapper--danger">
-            ${typeof renderIcon === "function" ? renderIcon("fire", { size: "sm", className: "nlc-icon" }) : ""}
-          </div>
-          <div>
-            <div style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 500;">連續讀經</div>
-            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.1rem;">每日穩定靈修天數</div>
-          </div>
-        </div>
-        <div class="stat-value stat-value--danger">
-          ${streakDays} <span class="stat-value__unit">天</span>
-        </div>
-      </div>
+async function fetchGroupRankings(planId) {
+  if (!state.activePlan && planId) {
+    state.activePlan = (state.activePlans || []).find(plan =>
+      plan.id === planId ||
+      plan.globalPlanId === planId ||
+      plan.presetKey === planId
+    ) || null;
+    if (typeof window.syncActivePlanContext === "function") window.syncActivePlanContext(state.activePlan);
+  }
+  if (!state.activePlan) return;
 
-      <!-- Behind Days -->
-      <div class="stat-item-card" style="background: var(--bg-card); border: 1px solid var(--border-card); padding: 1rem; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: space-between;">
-        <div style="display: flex; align-items: center; gap: 0.8rem;">
-          <div class="stat-icon-wrapper ${lagIconClass}">
-            ${typeof renderIcon === "function" ? renderIcon("exclamationCircle", { size: "sm", className: "nlc-icon" }) : ""}
-          </div>
-          <div>
-            <div style="font-size: 0.85rem; color: var(--text-secondary); font-weight: 500;">落後進度</div>
-            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.1rem;">落後預計進度天數</div>
+  window._statsTabScope = getDefaultGroupStatsScope();
+  populateStatsSelector();
+  populateMembersSelector();
+}
+
+async function enterGroupProgressState() {
+  if (!state.activePlan) {
+    await enterPlanListState();
+    return;
+  }
+  window.currentPlanViewState = PLAN_ROUTE.GROUP;
+  state.planDetailOpen = true;
+  const requestedSubview = Object.values(GROUP_SUBVIEW).includes(state.planActiveSubTab)
+    ? state.planActiveSubTab
+    : (window.PlanPageController?.groupSubview || GROUP_SUBVIEW.STATS);
+  state.planActiveSubTab = requestedSubview;
+  setOnlyPlanRouteVisible(PLAN_ROUTE.GROUP);
+  if (window.PlanPageController) {
+    window.PlanPageController.groupSubview = requestedSubview;
+    await window.PlanPageController.switchPage(PLAN_PAGE.GROUP, { skipChrome: true, primaryView: requestedSubview });
+  }
+}
+
+function restoreOrgStatsDOM() {
+  const statsSub = document.getElementById("subview-plan-stats");
+  const membersSub = document.getElementById("subview-plan-members");
+  
+  const scopeBar = document.getElementById("stats-admin-scope-bar");
+  const groupSec = document.getElementById("stats-group-section");
+  const orgControls = document.getElementById("members-organization-controls");
+  const memberList = document.getElementById("member-list-container");
+  
+  if (statsSub) {
+    const personalSec = document.getElementById("stats-personal-section");
+    if (scopeBar) statsSub.insertBefore(scopeBar, personalSec);
+    if (groupSec) statsSub.appendChild(groupSec);
+  }
+  if (membersSub) {
+    const selectSwitch = document.getElementById("members-team-view-switch");
+    if (orgControls) {
+      if (selectSwitch) selectSwitch.after(orgControls);
+      else membersSub.appendChild(orgControls);
+    }
+    if (memberList) membersSub.appendChild(memberList);
+  }
+}
+
+async function enterOrgStatsState() {
+  if (!state.activePlan) {
+    await enterPlanListState();
+    return;
+  }
+  window.currentPlanViewState = PLAN_ROUTE.ORG_STATS;
+  state.planDetailOpen = true;
+  
+  const listSub = document.getElementById("plan-list-subview");
+  const detailSub = document.getElementById("plan-detail-subview");
+  const orgSub = document.getElementById("plan-org-stats-subview");
+  if (listSub) listSub.classList.add("hidden");
+  if (detailSub) detailSub.classList.add("hidden");
+  if (orgSub) orgSub.classList.remove("hidden");
+  
+  const brandText = document.querySelector("#top-bar-title-area .brand-text");
+  const planNameEl = document.getElementById("top-bar-plan-name");
+  if (brandText) brandText.style.display = "none";
+  if (planNameEl) {
+    planNameEl.textContent = "牧區小組狀況";
+    planNameEl.style.display = "block";
+    planNameEl.classList.remove("hidden");
+  }
+  
+  const backBtn = document.getElementById("btn-back-to-plans");
+  if (backBtn) {
+    backBtn.classList.remove("hidden");
+    const backBtnText = backBtn.querySelector("span:not(.nlc-icon)");
+    if (backBtnText) backBtnText.textContent = "返回";
+  }
+  
+  const statsHeader = document.getElementById("plan-org-stats-header");
+  const statsContent = document.getElementById("plan-org-stats-content");
+  
+  const scopeBar = document.getElementById("stats-admin-scope-bar");
+  const groupSec = document.getElementById("stats-group-section");
+  const orgControls = document.getElementById("members-organization-controls");
+  const memberList = document.getElementById("member-list-container");
+  
+  if (statsHeader && scopeBar) statsHeader.appendChild(scopeBar);
+  if (statsHeader && orgControls) statsHeader.appendChild(orgControls);
+  if (statsContent && groupSec) statsContent.appendChild(groupSec);
+  if (statsContent && memberList) statsContent.appendChild(memberList);
+  
+  if (scopeBar) scopeBar.classList.remove("hidden");
+  if (orgControls) orgControls.style.display = "";
+  if (groupSec) groupSec.classList.remove("hidden");
+  if (memberList) memberList.classList.remove("hidden");
+  
+  window._statsTabScope = null;
+  populateStatsSelector();
+  populateMembersSelector();
+  
+  await renderPlanStatsView();
+  await renderPlanMembersView();
+}
+
+async function setPlanState(newState) {
+  ensurePlanRouteShell();
+
+  const normalized = String(newState || "").toUpperCase();
+  if (normalized === PLAN_ROUTE.DETAIL || normalized === "DETAIL" || normalized === PLAN_ROUTE.GROUP || normalized === "GROUP" || normalized === "ORG_STATS" || newState === PLAN_ROUTE.ORG_STATS) {
+    if (state.activePlan && isPlanExpired(state.activePlan)) {
+      showToast("此計畫已過期，無法再進入進度閱讀。");
+      await enterPlanListState();
+      return;
+    }
+  }
+
+  if (window.currentPlanViewState === PLAN_ROUTE.ORG_STATS && normalized !== "ORG_STATS" && newState !== PLAN_ROUTE.ORG_STATS) {
+    restoreOrgStatsDOM();
+    const orgSub = document.getElementById("plan-org-stats-subview");
+    if (orgSub) orgSub.classList.add("hidden");
+    const brandText = document.querySelector("#top-bar-title-area .brand-text");
+    const planNameEl = document.getElementById("top-bar-plan-name");
+    if (brandText) brandText.style.display = "";
+    const backBtn = document.getElementById("btn-back-to-plans");
+    if (backBtn) {
+      const backBtnText = backBtn.querySelector("span:not(.nlc-icon)");
+      if (backBtnText) backBtnText.textContent = "計畫";
+    }
+  }
+
+  if (normalized === PLAN_ROUTE.LIST || normalized === "LIST") {
+    await enterPlanListState();
+  } else if (normalized === PLAN_ROUTE.DETAIL || normalized === "DETAIL") {
+    await enterPlanDetailState();
+  } else if (normalized === PLAN_ROUTE.GROUP || normalized === "GROUP") {
+    await enterGroupProgressState();
+  } else if (normalized === "ORG_STATS" || newState === PLAN_ROUTE.ORG_STATS) {
+    await enterOrgStatsState();
+  } else {
+    console.error(`[PlanSM] Unknown state: ${newState}`);
+    return;
+  }
+
+  if (typeof appRouter !== "undefined" && typeof appRouter.updateNavigationChrome === "function") {
+    appRouter.updateNavigationChrome();
+  }
+}
+
+function planGoBack() {
+  if (window.currentPlanViewState === PLAN_ROUTE.ORG_STATS) {
+    setPlanState(PLAN_ROUTE.DETAIL);
+    return;
+  }
+  if (state.planActiveSubTab === "settings" && window.PlanPageController) {
+    window.PlanPageController.closeSettingsPage();
+    return;
+  }
+  if (getCurrentPlanRoute() !== PLAN_ROUTE.LIST) setPlanState(PLAN_ROUTE.LIST);
+}��數</div>
           </div>
         </div>
         <div class="stat-value ${lagValueClass}">
