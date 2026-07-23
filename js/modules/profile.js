@@ -216,16 +216,11 @@ export async function renderProfileView() {
 
   const urlParams = new URLSearchParams(window.location.search);
   const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname === '::1' || window.location.hostname.startsWith('192.168.') || window.location.hostname.startsWith('10.') || window.location.hostname.startsWith('172.') || window.location.hostname.endsWith('.local');
-  const forceOfflineDemo = false;
-  const showDemoData = false;
-
   let greatRegionsList = (state.orgStructure && state.orgStructure.regions && state.orgStructure.regions.length > 0) 
     ? state.orgStructure.regions 
     : ["東區", "南區", "西區", "北區", "青少年", "慶典", "創藝"];
   
-  if (!showDemoData) {
-    greatRegionsList = greatRegionsList.filter(r => !r.startsWith("示範"));
-  }
+  greatRegionsList = greatRegionsList.filter(r => !r.startsWith("示範"));
   
   greatRegionSelect.innerHTML = `<option value="">-- 請選擇大區 --</option>`;
   greatRegionsList.forEach(rName => {
@@ -375,16 +370,7 @@ async function renderCareReminders() {
   containerCol.innerHTML = "";
   containerCol.classList.add("hidden");
 
-  // 🔒 安全防護：虛擬關心提醒 UI 僅在本機測試環境顯示
-  const _hostname = window.location.hostname;
-  const _isLocalhost = _hostname === 'localhost' || _hostname === '127.0.0.1' || _hostname === '::1' ||
-                       _hostname.startsWith('192.168.') || _hostname.startsWith('10.') ||
-                       _hostname.startsWith('172.') || _hostname.endsWith('.local');
-  const isDemoMode = false;
   const isSupabaseLive = state.isSupabaseMode && state.supabase;
-
-  // Only proceed if: (a) localhost demo mode, OR (b) live Supabase with real user
-  if (isDemoMode && !_isLocalhost) return;
 
   const { data: reminders, error } = await db.fetchCareReminders();
   if (!error && typeof window.updateCareReminderBadge === "function") {
@@ -493,18 +479,11 @@ function populateProfileZones(greatRegion, autoSelect = true) {
     return;
   }
 
-  const urlParams = new URLSearchParams(window.location.search);
-  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.startsWith('192.168.');
-  const forceOfflineDemo = false;
-  const showDemoData = false;
-
   let predefinedZones = (state.orgStructure && state.orgStructure.zones && state.orgStructure.zones[greatRegion] && state.orgStructure.zones[greatRegion].length > 0) 
     ? state.orgStructure.zones[greatRegion] 
     : ((typeof MOCK_PASTORAL_ZONES_BY_REGION !== "undefined" && MOCK_PASTORAL_ZONES_BY_REGION[greatRegion]) || []);
   
-  if (!showDemoData) {
-    predefinedZones = predefinedZones.filter(z => !z.startsWith("示範"));
-  }
+  predefinedZones = predefinedZones.filter(z => !z.startsWith("示範"));
   
   predefinedZones.forEach(zName => {
     const option = document.createElement("option");
@@ -556,18 +535,11 @@ function populateProfileGroupSelector(autoSelect = true) {
     return;
   }
 
-  const urlParams = new URLSearchParams(window.location.search);
-  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.startsWith('192.168.');
-  const forceOfflineDemo = false;
-  const showDemoData = false;
-
   let predefinedGroups = (state.orgStructure && state.orgStructure.groups && state.orgStructure.groups[zone] && state.orgStructure.groups[zone].length > 0) 
     ? state.orgStructure.groups[zone] 
     : ((typeof MOCK_SMALL_GROUPS !== "undefined" && MOCK_SMALL_GROUPS[zone]) || []);
 
-  if (!showDemoData) {
-    predefinedGroups = predefinedGroups.filter(g => !g.startsWith("示範"));
-  }
+  predefinedGroups = predefinedGroups.filter(g => !g.startsWith("示範"));
 
   predefinedGroups.forEach(groupName => {
     const option = document.createElement("option");

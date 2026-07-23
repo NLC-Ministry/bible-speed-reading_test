@@ -12,7 +12,7 @@ import './design/icon-registry.js';
 import './design/icons.js';
 import './state.js?v=20260720_complete_svg_badges';
 import './auth.js';
-import './db.js?v=20260723_join_plan_detail';
+import './db.js?v=20260724_clean_demo_mode';
 import './utils.js?v=20260723_production_cleanup';
 import './gamification.js?v=20260723_production_cleanup';
 import './modules/campaign-rule-editor.js?v=20260720_round_editor';
@@ -24,7 +24,7 @@ import { SupabaseRepository } from './pwa/SupabaseRepository.js';
 
 cleanupProductionStorage(window.localStorage);
 
-const buildVersion = "__BUILD_VERSION__" + "_join_plan_detail";
+const buildVersion = "__BUILD_VERSION__" + "_clean_demo_mode";
 const moduleCache = {};
 let careReminderBadgeLastRefresh = 0;
 

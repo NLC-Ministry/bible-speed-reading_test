@@ -5533,8 +5533,11 @@ async function updateGroupChart(zoneName) {
       console.error("Failed to load small group stats from Supabase:", e);
     }
   } else {
-    // Demo Mode
-    groupStats = MockStatsService.getSmallGroupStats(zoneName, mockUser);
+    if (typeof MockStatsService !== 'undefined' && MockStatsService) {
+      groupStats = MockStatsService.getSmallGroupStats(zoneName, mockUser);
+    } else {
+      groupStats = [];
+    }
   }
 
   const labels = groupStats.map(g => g.name);
@@ -5576,78 +5579,10 @@ function renderMonthlyHallOfFame() {
 
   fameList.innerHTML = "";
 
-  const urlParams = new URLSearchParams(window.location.search);
-  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname.startsWith('192.168.');
-  const forceOfflineDemo = false;
-  const showDemoData = false;
-  if (!showDemoData) {
-    const placeholder = document.createElement("div");
-    placeholder.style.cssText = "grid-column: span 3; text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.9rem;";
-    placeholder.textContent = "正式計畫尚未結算，月度名人堂虛位以待！";
-    fameList.appendChild(placeholder);
-    return;
-  }
-
-  const winners = [
-    {
-      month: "2026年6月 (本月累計)",
-      top3: [
-        { rank: "gold", name: "示範組長丁", zone: "大安6", chapters: 980 },
-        { rank: "silver", name: "示範組長戊", zone: "中永和", chapters: 800 },
-        { rank: "bronze", name: "東區大區長", zone: "大安1", chapters: 750 }
-      ]
-    },
-    {
-      month: "2026年5月 (結算前三)",
-      top3: [
-        { rank: "gold", name: "示範組長乙", zone: "大安2", chapters: 650 },
-        { rank: "silver", name: "示範組員八", zone: "文山", chapters: 620 },
-        { rank: "bronze", name: "東區區長", zone: "大安1", chapters: 600 }
-      ]
-    },
-    {
-      month: "2026年4月 (結算前三)",
-      top3: [
-        { rank: "gold", name: "示範組員五", zone: "大安6", chapters: 540 },
-        { rank: "silver", name: "示範組員二", zone: "大安1", chapters: 520 },
-        { rank: "bronze", name: "示範組長甲", zone: "大安1", chapters: 480 }
-      ]
-    }
-  ];
-
-  winners.forEach(w => {
-    const item = document.createElement("div");
-    item.className = "monthly-fame-item";
-
-    const title = document.createElement("div");
-    title.className = "monthly-fame-month";
-    title.textContent = w.month;
-    item.appendChild(title);
-
-    w.top3.forEach((t, i) => {
-      const row = document.createElement("div");
-      row.className = "fame-row";
-
-      const rankSpan = document.createElement("span");
-      rankSpan.className = `fame-rank ${t.rank}`;
-      rankSpan.textContent = i + 1;
-      row.appendChild(rankSpan);
-
-      const nameSpan = document.createElement("span");
-      nameSpan.className = "fame-name";
-      nameSpan.textContent = `${t.name} (${t.zone})`;
-      row.appendChild(nameSpan);
-
-      const valSpan = document.createElement("span");
-      valSpan.className = "fame-value";
-      valSpan.textContent = `${t.chapters} 章`;
-      row.appendChild(valSpan);
-
-      item.appendChild(row);
-    });
-
-    fameList.appendChild(item);
-  });
+  const placeholder = document.createElement("div");
+  placeholder.style.cssText = "grid-column: span 3; text-align: center; padding: 2rem; color: var(--text-muted); font-size: 0.9rem;";
+  placeholder.textContent = "正式計畫尚未結算，月度名人堂虛位以待！";
+  fameList.appendChild(placeholder);
 }
 
 // ==========================================
@@ -6716,14 +6651,8 @@ window.openCareReminderDialog = function(member) {
       sendBtn.innerHTML = `<span class="nlc-icon nlc-icon--sm" data-icon="send" aria-hidden="true"></span> 傳送關心`;
       if (typeof hydrateIcons === "function") hydrateIcons(sendBtn);
 
-      const isDemoOrNoId = !member.id;
-      if (isDemoOrNoId) {
-        overlay.remove();
-        if (typeof showToast === "function") showToast(`已模擬傳送關心提醒給 ${member.name} 💛`);
-      } else {
-        errorEl.textContent = `傳送失敗：${err.message || "請稍後再試"}`;
-        errorEl.style.display = "block";
-      }
+      errorEl.textContent = `傳送失敗：${err.message || "請稍後再試"}`;
+      errorEl.style.display = "block";
     }
   });
 

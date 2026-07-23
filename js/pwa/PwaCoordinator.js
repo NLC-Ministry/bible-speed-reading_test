@@ -88,7 +88,7 @@ export class PwaCoordinator {
   }
 
   shouldQueue() {
-    return Boolean(window.state?.isSupabaseMode && window.state?.supabase && !window.state?.currentUser?.is_demo);
+    return Boolean(window.state?.isSupabaseMode && window.state?.supabase);
   }
 
   async applyLocalReadingChange(book, chapter, isChecked, roundOverride) {
