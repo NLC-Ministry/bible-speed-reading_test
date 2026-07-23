@@ -2313,12 +2313,23 @@ const db = {
     this.saveLocalUserStats();
     this._userDataPromise = null; // 💡 關鍵修復：清除資料加載快取以使快取失效
 
+    state.planDetailOpen = true;
+    state.planActiveSubTab = "today";
+    state.selectedPlanDay = null;
+    window.currentPlanViewState = "DETAIL";
+    if (typeof window.syncActivePlanContext === "function") {
+      window.syncActivePlanContext(newPlanObj);
+    }
+
     loader.hide();
-    renderPlanView();
     updateDashboardView();
 
     if (typeof appRouter !== "undefined" && typeof appRouter.switchTab === "function") {
-      appRouter.switchTab("dashboard-view");
+      await appRouter.switchTab("plan-view", { keepPlanDetail: true });
+    } else if (typeof window.setPlanState === "function") {
+      await window.setPlanState("DETAIL");
+    } else {
+      renderPlanView();
     }
 
     const started = isPlanStarted(newPlanObj);

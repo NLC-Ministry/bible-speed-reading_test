@@ -1099,8 +1099,9 @@ function formatCampaignReadingRange(reading) {
   return reading.book + " " + (from === to ? from : from + "–" + to) + "章";
 }
 
-function openPlanDetailsDialog(plan) {
+function openPlanDetailsDialog(plan, options = {}) {
   if (!plan) return;
+  const joinAction = typeof options.onJoin === "function" ? options.onJoin : null;
   const existing = document.getElementById("plan-details-dialog");
   if (existing) existing.remove();
 
@@ -1145,7 +1146,23 @@ function openPlanDetailsDialog(plan) {
   document.body.appendChild(overlay);
   if (typeof hydrateIcons === "function") hydrateIcons(overlay);
   const close = () => overlay.remove();
-  overlay.querySelector("#plan-details-close").addEventListener("click", close);
+  const closeButton = overlay.querySelector("#plan-details-close");
+  closeButton.addEventListener("click", close);
+  if (joinAction) {
+    closeButton.textContent = "\u8fd4\u56de\u8a08\u756b\u5217\u8868";
+    closeButton.className = "secondary-btn";
+    closeButton.parentElement.style.gap = ".65rem";
+    const joinButton = document.createElement("button");
+    joinButton.type = "button";
+    joinButton.className = "primary-btn";
+    joinButton.textContent = isFixedPlanUpcoming(plan) ? "\u9810\u5148\u52a0\u5165\u8a08\u756b" : "\u52a0\u5165\u8a08\u756b";
+    joinButton.addEventListener("click", async () => {
+      joinButton.disabled = true;
+      close();
+      await joinAction();
+    });
+    closeButton.before(joinButton);
+  }
   overlay.addEventListener("click", event => { if (event.target === overlay) close(); });
 }
 
@@ -1384,22 +1401,24 @@ function renderPresetPlansList() {
         ${description ? `<p style="margin:.15rem 0 0;font-size:.76rem;line-height:1.45;color:var(--text-secondary);">${escapeHTML(description)}</p>` : ""}
         ${isCampaignStage ? `<div style="font-size:.76rem;font-weight:500;color:var(--primary-color);"><span class="nlc-icon" data-icon="award" aria-hidden="true"></span> 完成獲得 ${escapeHTML(awardName)}</div>` : ""}
         ${upcomingNotice ? `<div style="padding:.42rem .58rem;border-radius:9px;background:var(--bg-secondary);font-size:.74rem;line-height:1.45;color:var(--text-secondary);"><span class="nlc-icon" data-icon="hourglass" aria-hidden="true"></span> ${escapeHTML(upcomingNotice)}</div>` : ""}
-        <div style="font-size:.76rem;font-weight:500;color:var(--primary-color);margin-top:.15rem;">+ ${isUpcomingFixed ? "預先加入計畫" : "加入計畫"}</div>
+        <div style="font-size:.76rem;font-weight:500;color:var(--primary-color);margin-top:.15rem;">${isUpcomingFixed ? "預覽計畫詳情" : "查看計畫詳情"}</div>
       </div>
     `;
 
-    card.onclick = async () => {
-      const scheduleSettings = await openFlexibleScheduleDialog(plan);
-      if (!scheduleSettings) return;
-      const joinedPlan = await db.joinPresetPlan(key, scheduleSettings);
-      if (!joinedPlan) return;
+    card.onclick = () => {
+      openPlanDetailsDialog(plan, { onJoin: async () => {
+        const scheduleSettings = await openFlexibleScheduleDialog(plan);
+        if (!scheduleSettings) return;
+        const joinedPlan = await db.joinPresetPlan(key, scheduleSettings);
+        if (!joinedPlan) return;
 
-      const division = typeof window.offerReadingTeamParticipation === "function"
-        ? await window.offerReadingTeamParticipation(joinedPlan)
-        : null;
-      if (division && typeof window.openReadingTeamDialog === "function") {
-        await window.openReadingTeamDialog(joinedPlan, { preferredDivision: division });
-      }
+        const division = typeof window.offerReadingTeamParticipation === "function"
+          ? await window.offerReadingTeamParticipation(joinedPlan)
+          : null;
+        if (division && typeof window.openReadingTeamDialog === "function") {
+          await window.openReadingTeamDialog(joinedPlan, { preferredDivision: division });
+        }
+      }});
     };
 
     container.appendChild(card);
