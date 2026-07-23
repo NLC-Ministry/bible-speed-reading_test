@@ -187,7 +187,7 @@ describe("NLC and browser integration", () => {
     expect(plan).toContain("openReadingTeamDialog(joinedPlan");
     expect(plan.indexOf("await db.joinPresetPlan")).toBeLessThan(plan.indexOf("offerReadingTeamParticipation(joinedPlan)"));
     expect(html).toContain('id="view-reading-team-btn"');
-    expect(html).toContain("我的團隊");
+    expect(html).toContain("牧區小組狀況");
     expect(html).not.toContain('id="view-reading-team-stats-btn"');
     expect(html).toContain('id="stats-team-view-select"');
     expect(html).toContain('id="members-team-view-select"');
