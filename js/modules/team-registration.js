@@ -94,9 +94,15 @@
     return new Intl.DateTimeFormat("zh-TW", { month: "numeric", day: "numeric" }).format(date);
   }
 
-  function renderMember(member, totalChapters) {
+  function getMemberProgress(member, totalChapters) {
     const read = Number(member.chaptersRead || 0);
     const progress = totalChapters > 0 ? Math.min(100, Math.round(read / totalChapters * 100)) : 0;
+    return { read, progress };
+  }
+
+  function renderMember(member, totalChapters) {
+    const { read, progress } = getMemberProgress(member, totalChapters);
+    const canRemind = Boolean(member.userId && !member.isMe);
     return `<article class="reading-team-member${member.isMe ? " reading-team-member--me" : ""}">
       <div class="reading-team-member__avatar">${escapeHTML(String(member.name || "隊員").slice(0, 1))}</div>
       <div class="reading-team-member__body">
@@ -105,7 +111,56 @@
         <div class="reading-team-progress" role="progressbar" aria-label="${escapeHTML(member.name || "隊員")}進度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${progress}"><span style="width:${progress}%"></span></div>
       </div>
       <strong class="reading-team-member__percent">${progress}%</strong>
+      ${canRemind ? `<button type="button" class="reading-team-remind-btn" data-team-remind-user="${escapeHTML(member.userId)}" aria-label="提醒 ${escapeHTML(member.name || "隊員")}讀經" title="戳一下提醒讀經"><span class="nlc-icon nlc-icon--sm" data-icon="remind" aria-hidden="true"></span></button>` : ""}
     </article>`;
+  }
+
+  function bindTeamReminderButtons(container, team, members, totalChapters) {
+    if (!container || !team) return;
+    container.querySelectorAll("[data-team-remind-user]").forEach(button => {
+      button.addEventListener("click", () => {
+        const member = members.find(item => String(item.userId) === String(button.dataset.teamRemindUser));
+        if (!member || typeof window.openCareReminderDialog !== "function") return;
+        const { read, progress } = getMemberProgress(member, totalChapters);
+        window.openCareReminderDialog({
+          ...member,
+          id: member.userId,
+          completed: read,
+          statusStr: progress >= 100 ? "已完成本遍" : progress > 0 ? `已完成 ${progress}%` : "尚未開始",
+          statusColor: progress >= 100 ? "var(--color-success-foreground)" : progress > 0 ? "var(--color-brand)" : "var(--text-muted)",
+          isBehind: progress > 0 && progress < 100,
+          isNotStarted: progress === 0,
+          readingTeamId: team.id,
+          readingTeamPlanId: team.globalPlanId
+        });
+      });
+    });
+  }
+
+  function getExpectedChapters(plan, totalChapters) {
+    const days = Array.isArray(plan && plan.days) ? plan.days : [];
+    const start = new Date(`${plan && plan.startDate || ""}T00:00:00`);
+    if (!days.length || Number.isNaN(start.getTime())) return 0;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const elapsedDays = Math.max(0, Math.min(days.length, Math.floor((today - start) / 86400000) + 1));
+    return Math.min(totalChapters, days.slice(0, elapsedDays)
+      .reduce((sum, day) => sum + (Array.isArray(day.chapters) ? day.chapters.length : 0), 0));
+  }
+
+  function renderTeamStatGrid(members, totalChapters, plan) {
+    const totalRead = members.reduce((sum, member) => sum + Number(member.chaptersRead || 0), 0);
+    const activeToday = members.filter(member => Number(member.todayRead || 0) > 0).length;
+    const expectedChapters = getExpectedChapters(plan, totalChapters);
+    const behindCount = members.filter(member => Number(member.currentRound || 1) === 1 && Number(member.chaptersRead || 0) < expectedChapters).length;
+    const rereadCount = members.filter(member => Number(member.currentRound || 1) > 1).length;
+    return `<div class="reading-team-stat-grid" aria-label="團隊讀經統計">
+      <article class="reading-team-stat-card reading-team-stat-card--primary"><span>總閱讀章數</span><strong>${totalRead}<small>章</small></strong><span class="nlc-icon" data-icon="bookOpen" aria-hidden="true"></span></article>
+      <article class="reading-team-stat-card"><span>團隊人數</span><strong>${members.length}<small>人</small></strong><span class="nlc-icon" data-icon="people" aria-hidden="true"></span></article>
+      <article class="reading-team-stat-card"><span>今日活躍</span><strong>${activeToday}<small>人</small></strong><span class="nlc-icon" data-icon="lightning" aria-hidden="true"></span></article>
+      <article class="reading-team-stat-card"><span>進度落後</span><strong>${behindCount}<small>人</small></strong><span class="nlc-icon" data-icon="hourglass" aria-hidden="true"></span></article>
+      <article class="reading-team-stat-card"><span>進入複讀</span><strong>${rereadCount}<small>人</small></strong><span class="nlc-icon" data-icon="refresh" aria-hidden="true"></span></article>
+    </div>`;
   }
 
   window.openReadingTeamDialog = async function openReadingTeamDialog(plan, options = {}) {
@@ -241,6 +296,7 @@
         <p class="reading-team-form-error" data-team-error role="alert" hidden></p>`;
       panel.querySelector("[data-team-close]").onclick = close;
       panel.querySelector("[data-team-close-footer]").onclick = close;
+      bindTeamReminderButtons(panel, team, members, totalChapters);
       panel.querySelectorAll("[data-team-view-division]").forEach(button => {
         button.onclick = () => {
           const selected = allContexts.find(item => Number(item.team.division) === Number(button.dataset.teamViewDivision));
@@ -319,15 +375,18 @@
         <div><span>團隊完成狀況</span><strong>${averageProgress}%</strong><span>${totalRead} / ${totalChapters * members.length} 章</span></div>
         <div class="reading-team-summary__progress"><span>組隊狀態</span><strong>${Number(team.memberCount)} / ${Number(team.capacity)}</strong><span>${isReady ? "已成隊" : "等待隊員"}</span></div>
       </div>` : "";
+    container.classList.toggle("reading-team-inline--stats", mode === "stats");
     container.innerHTML = `
       <div class="reading-team-inline__header">
         <div><h3>${escapeHTML(team.name || "我的團隊")}</h3><p>${Number(team.division)} 人團隊・一起查看彼此的讀經進度</p></div>
         <span class="stat-badge stat-badge--brand">${mode === "stats" ? "團隊統計" : "組員狀況"}</span>
       </div>
       ${summary}
+      ${mode === "stats" ? renderTeamStatGrid(members, totalChapters, plan) : ""}
       <section class="reading-team-members" aria-label="團隊成員">
         <div class="reading-team-member-list">${members.map(member => renderMember(member, totalChapters)).join("")}</div>
       </section>`;
+    if (mode === "members") bindTeamReminderButtons(container, team, members, totalChapters);
     hydrate(container);
   };
 

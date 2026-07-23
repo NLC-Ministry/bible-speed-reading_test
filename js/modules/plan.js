@@ -6435,12 +6435,20 @@ window.openCareReminderDialog = function(member) {
     if (typeof hydrateIcons === "function") hydrateIcons(sendBtn);
 
     try {
-      const { error } = await db.sendCareReminder({
-        recipientId: member.id,
-        reason: selectedReason,
-        message: message,
-        planKey: state.activePlan ? (state.activePlan.presetKey || state.activePlan.globalPlanId || "") : ""
-      });
+      const { error } = member.readingTeamId
+        ? await db.sendReadingTeamReminder({
+            teamId: member.readingTeamId,
+            recipientId: member.id,
+            globalPlanId: member.readingTeamPlanId,
+            reason: selectedReason,
+            message: message
+          })
+        : await db.sendCareReminder({
+            recipientId: member.id,
+            reason: selectedReason,
+            message: message,
+            planKey: state.activePlan ? (state.activePlan.presetKey || state.activePlan.globalPlanId || "") : ""
+          });
 
       if (error) throw error;
 

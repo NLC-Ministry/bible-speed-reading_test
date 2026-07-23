@@ -35,7 +35,8 @@ const TEAM_RPC_FUNCTIONS = new Set([
   "create_reading_team",
   "join_reading_team_by_code",
   "leave_reading_team",
-  "disband_reading_team"
+  "disband_reading_team",
+  "send_reading_team_reminder"
 ]);
 const RPC_FUNCTIONS = new Set([
   "increment_likes",

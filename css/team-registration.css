@@ -401,6 +401,55 @@ body.reading-team-modal-open .main-content {
   margin-top: 0;
 }
 
+.reading-team-stat-grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 12px 0 18px;
+}
+
+.reading-team-stat-card {
+  background: var(--reading-team-surface);
+  border: 1px solid var(--reading-team-separator);
+  border-radius: 14px;
+  display: grid;
+  gap: 6px;
+  min-height: 104px;
+  padding: 14px;
+  position: relative;
+}
+
+.reading-team-stat-card--primary {
+  background: var(--reading-team-accent-soft);
+  border-color: color-mix(in srgb, var(--reading-team-accent) 38%, var(--reading-team-separator));
+  grid-column: 1 / -1;
+}
+
+.reading-team-stat-card > span:first-child {
+  color: var(--text-secondary);
+  font-size: .76rem;
+}
+
+.reading-team-stat-card > strong {
+  align-self: end;
+  font-size: 1.55rem;
+  font-weight: 500;
+}
+
+.reading-team-stat-card small {
+  color: var(--text-secondary);
+  font-size: .72rem;
+  font-weight: 400;
+  margin-left: 4px;
+}
+
+.reading-team-stat-card > .nlc-icon {
+  color: var(--reading-team-accent);
+  position: absolute;
+  right: 13px;
+  top: 13px;
+}
+
 .reading-team-summary {
   background: var(--reading-team-surface);
   border: 1px solid var(--reading-team-separator);
@@ -481,12 +530,37 @@ body.reading-team-modal-open .main-content {
   border-radius: 13px;
   display: grid;
   gap: 12px;
-  grid-template-columns: 40px 1fr auto;
+  grid-template-columns: 40px minmax(0, 1fr) auto auto;
   padding: 11px 12px;
+}
+
+.reading-team-remind-btn {
+  align-items: center;
+  background: color-mix(in srgb, var(--color-warning-text, #d97706) 10%, var(--reading-team-surface));
+  border: 1px solid color-mix(in srgb, var(--color-warning-text, #d97706) 35%, var(--reading-team-separator));
+  border-radius: 50%;
+  color: var(--color-warning-text, #d97706);
+  cursor: pointer;
+  display: inline-flex;
+  height: 36px;
+  justify-content: center;
+  transition: background-color .18s ease, border-color .18s ease, transform .18s ease;
+  width: 36px;
+}
+
+.reading-team-remind-btn:hover,
+.reading-team-remind-btn:focus-visible {
+  background: color-mix(in srgb, var(--color-warning-text, #d97706) 18%, var(--reading-team-surface));
+  border-color: var(--color-warning-text, #d97706);
+  transform: translateY(-1px);
 }
 
 .reading-team-member--me {
   border-color: color-mix(in srgb, var(--reading-team-accent) 55%, var(--reading-team-separator));
+}
+
+.reading-team-inline--stats .reading-team-remind-btn {
+  display: none;
 }
 
 .reading-team-member__avatar {

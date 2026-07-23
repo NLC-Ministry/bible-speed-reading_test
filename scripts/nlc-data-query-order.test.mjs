@@ -12,7 +12,7 @@ const source = fs.readFileSync(
 describe("nlc-data query composition", () => {
   it("does not return a PromiseLike Supabase query directly from the async scope helper", () => {
     const helper = source.match(
-      /async function applyForcedScope[\s\S]*?\n}\n\nDeno\.serve/
+      /async function applyForcedScope[\s\S]*?\r?\n}\r?\n\r?\nDeno\.serve/
     )?.[0] || "";
 
     expect(helper).toContain("return { query");

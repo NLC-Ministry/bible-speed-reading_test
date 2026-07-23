@@ -2079,6 +2079,11 @@ const db = {
       team_captain_required: "只有隊長可以解散團隊。",
       reading_team_not_found: "找不到這個團隊。",
       not_a_team_member: "你目前不在這個團隊中。",
+      team_reminder_self_not_allowed: "不需要提醒自己，完成閱讀後直接打卡就可以了。",
+      team_reminder_same_team_required: "只能提醒同一支團隊裡的夥伴。",
+      team_reminder_daily_limit: "今天已提醒過這位夥伴，明天再為彼此加油。",
+      invalid_reminder_reason: "請重新選擇提醒方式。",
+      invalid_reminder_message: "提醒內容需為 1 至 300 字。",
       forbidden_rpc: "團隊功能暫時無法使用，請稍後再試。"
     };
     const key = Object.keys(messages).find(code => raw.includes(code));
@@ -2137,6 +2142,17 @@ const db = {
 
   async disbandReadingTeam(teamId) {
     return this._callReadingTeamRpc("disband_reading_team", { p_team_id: teamId });
+  },
+
+  async sendReadingTeamReminder({ teamId, recipientId, globalPlanId, reason, message }) {
+    const result = await this._callReadingTeamRpc("send_reading_team_reminder", {
+      p_team_id: teamId,
+      p_recipient_id: recipientId,
+      p_global_plan_id: globalPlanId,
+      p_reason: reason,
+      p_message: String(message || "").trim()
+    });
+    return result.success ? { error: null } : { error: new Error(result.message || "提醒傳送失敗。") };
   },
 
   async joinPresetPlan(key, scheduleSettings = null) {

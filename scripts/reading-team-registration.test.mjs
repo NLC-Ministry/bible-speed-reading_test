@@ -5,6 +5,7 @@ const read = path => readFileSync(new URL(`../${path}`, import.meta.url), "utf8"
 const migration = read("supabase/migrations/0019_reading_team_registration.sql");
 const forwardMigration = read("supabase/migrations/0021_enforce_reading_team_uuid_links.sql");
 const dualDivisionMigration = read("supabase/migrations/0022_allow_both_team_divisions.sql");
+const peerReminderMigration = read("supabase/migrations/0023_reading_team_peer_reminders.sql");
 const edge = read("supabase/functions/nlc-data/index.ts");
 const db = read("js/db.js");
 const plan = read("js/modules/plan.js");
@@ -74,6 +75,16 @@ describe("reading competition team schema", () => {
     expect(dualDivisionMigration).toContain("ORDER BY division");
     expect(dualDivisionMigration).not.toContain("get_all_reading_teams");
   });
+
+  it("allows peer reminders only between UUID-linked members of the same team", () => {
+    expect(peerReminderMigration).toContain("send_reading_team_reminder");
+    expect(peerReminderMigration).toMatch(/JOIN public\.reading_team_members sender[\s\S]*sender\.user_id = actor_id/);
+    expect(peerReminderMigration).toMatch(/JOIN public\.reading_team_members recipient[\s\S]*recipient\.user_id = p_recipient_id/);
+    expect(peerReminderMigration).toContain("team_reminder_same_team_required");
+    expect(peerReminderMigration).toContain("team_reminder_daily_limit");
+    expect(peerReminderMigration).toContain("auth.uid() IS NOT NULL");
+    expect(peerReminderMigration).not.toMatch(/UPDATE\s+public\.(profiles|small_groups|pastoral_zones)/i);
+  });
 });
 
 describe("NLC and browser integration", () => {
@@ -83,7 +94,8 @@ describe("NLC and browser integration", () => {
       "create_reading_team",
       "join_reading_team_by_code",
       "leave_reading_team",
-      "disband_reading_team"
+      "disband_reading_team",
+      "send_reading_team_reminder"
     ]) expect(edge).toContain(`"${name}"`);
     expect(edge).toContain("TEAM_RPC_FUNCTIONS.has(functionName)");
     expect(edge).toContain('"get_reading_team_statistics"');
@@ -107,6 +119,9 @@ describe("NLC and browser integration", () => {
     expect(teamUi).toContain("並產生邀請碼");
     expect(teamUi).toContain("使用邀請碼加入團隊");
     expect(teamUi).toContain("team.inviteCode");
+    expect(teamUi).toContain("renderTeamStatGrid");
+    expect(teamUi).toContain("data-team-remind-user");
+    expect(db).toContain("sendReadingTeamReminder");
     expect(teamUi).toContain("加入後，你可以查看自己的團隊與夥伴進度");
     expect(teamUi).toContain("只有同隊成員可查看");
     expect(teamUi).toContain("其他隊伍的資料不會顯示");
