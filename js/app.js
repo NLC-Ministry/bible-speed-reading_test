@@ -16,12 +16,12 @@ import './db.js?v=20260723_silent_achievements';
 import './utils.js?v=20260722_admin_role';
 import './gamification.js?v=20260723_silent_achievements';
 import './modules/campaign-rule-editor.js?v=20260720_round_editor';
-import './modules/team-registration.js?v=20260723_personal_progress_first';
+import './modules/team-registration.js?v=20260723_team_invite_tabs';
 import { initializePwa } from './pwa/PwaCoordinator.js';
 import { IndexedDbClient } from './pwa/IndexedDbClient.js';
 import { SupabaseRepository } from './pwa/SupabaseRepository.js';
 
-const buildVersion = "__BUILD_VERSION__" + "_plan_search_card_background";
+const buildVersion = "__BUILD_VERSION__" + "_team_invite_tabs";
 const moduleCache = {};
 
 async function loadModule(name, path) {

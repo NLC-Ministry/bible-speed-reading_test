@@ -520,8 +520,9 @@ function initPlanControls() {
   const optionsBtn = document.getElementById("btn-plan-options");
   const dropdown = document.getElementById("plan-options-dropdown");
   if (optionsBtn && dropdown) {
-    optionsBtn.addEventListener("click", (e) => {
+    optionsBtn.addEventListener("click", async (e) => {
       e.stopPropagation();
+      const isOpening = dropdown.classList.contains("hidden");
       const flexibleScheduleMenuButton = document.getElementById("edit-flexible-plan-schedule-btn");
       if (flexibleScheduleMenuButton) flexibleScheduleMenuButton.style.display = "";
       const readingTeamMenuButton = document.getElementById("view-reading-team-btn");
@@ -529,8 +530,14 @@ function initPlanControls() {
       if (readingTeamMenuButton) readingTeamMenuButton.hidden = !isTeamPlan;
       const readingTeamStatsButton = document.getElementById("view-reading-team-stats-btn");
       const role = state.currentUser && state.currentUser.role;
-      if (readingTeamStatsButton) readingTeamStatsButton.hidden = !isTeamPlan || role !== "admin";
+      if (readingTeamStatsButton) readingTeamStatsButton.hidden = true;
       dropdown.classList.toggle("hidden");
+
+      if (!isOpening || !isTeamPlan || role !== "admin" || !readingTeamStatsButton) return;
+      const planAtOpen = state.activePlan;
+      const membership = await db.getMyReadingTeam(planAtOpen);
+      if (dropdown.classList.contains("hidden") || state.activePlan !== planAtOpen) return;
+      readingTeamStatsButton.hidden = !(membership.success && membership.context && membership.context.team);
     });
     document.addEventListener("click", () => {
       dropdown.classList.add("hidden");
@@ -1186,7 +1193,6 @@ function openFlexibleScheduleDialog(plan, options = {}) {
       if (event.target === overlay) close(null);
     });
     updateSummary();
-    daysSelect.focus();
   });
 }
 

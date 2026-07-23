@@ -76,9 +76,15 @@ describe("NLC and browser integration", () => {
     expect(teamUi).toContain("data-team-skip");
     expect(teamUi).toContain('data-team-division="3"');
     expect(teamUi).toContain('data-team-division="6"');
+    expect(teamUi).toContain('data-registration-mode="create"');
+    expect(teamUi).toContain('data-registration-mode="join"');
+    expect(teamUi).toContain('id="reading-team-code"');
+    expect(teamUi).toContain("並產生邀請碼");
+    expect(teamUi).toContain("使用邀請碼加入團隊");
+    expect(teamUi).toContain("team.inviteCode");
     expect(teamUi).toContain("一般會員只能查看自己加入的隊伍");
     expect(teamUi).toContain("只有同隊成員可查看");
-    expect(teamUi).toContain("系統不會只用姓名建立成員");
+    expect(teamUi).toContain("不會只用姓名建立成員");
     expect(db).toContain("尚未找到你的會員資料");
   });
 
@@ -87,6 +93,7 @@ describe("NLC and browser integration", () => {
     expect(teamCss).toContain("--reading-team-surface-raised:");
     expect(teamCss).toContain("body.dark-theme .reading-team-overlay");
     expect(teamCss).toContain("body.warm-theme .reading-team-overlay");
+    expect(teamCss).toContain(".reading-team-registration-tabs");
     expect(teamCss).toContain("@media (prefers-contrast: more)");
     expect(teamCss).not.toMatch(/var\(--bg-secondary,\s*#2/i);
   });
@@ -109,7 +116,10 @@ describe("NLC and browser integration", () => {
     expect(html).toContain('id="view-reading-team-btn"');
     expect(html).toContain("我的團隊");
     expect(html).toContain("競賽團隊統計");
-    expect(plan).toContain('readingTeamStatsButton.hidden = !isTeamPlan || role !== "admin"');
+    expect(plan).toContain("readingTeamStatsButton.hidden = true");
+    expect(plan).toContain("await db.getMyReadingTeam(planAtOpen)");
+    expect(plan).toContain("membership.context && membership.context.team");
+    expect(teamUi).toContain("請先加入 3 人或 6 人團隊");
     expect(migration).toMatch(/get_reading_team_statistics[\s\S]*team_statistics_admin_required/);
     expect(db).toContain('_callReadingTeamRpc("get_my_reading_team"');
     expect(db).toContain("return newPlanObj;");

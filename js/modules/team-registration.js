@@ -121,36 +121,52 @@
     const renderEmpty = () => {
       panel.innerHTML = `
         <header class="reading-team-dialog__header">
-          <div><p class="reading-team-eyebrow">${escapeHTML(plan.name || "教會讀經計畫")}</p><h3 id="reading-team-dialog-title">團隊報名</h3></div>
+          <div><p class="reading-team-eyebrow">${escapeHTML(plan.name || "教會讀經計畫")}</p><h3 id="reading-team-dialog-title">我的團隊</h3></div>
           <button type="button" class="reading-team-close" data-team-close aria-label="關閉"><span class="nlc-icon nlc-icon--sm" data-icon="close" aria-hidden="true"></span></button>
         </header>
-        <p class="reading-team-dialog__intro">競賽團隊與教會牧區、小組資料分開管理。一般會員只能查看自己加入的隊伍；尚未註冊的隊員需先完成會員資料同步，系統不會只用姓名建立成員。</p>
-        <div class="reading-team-division-switch" role="radiogroup" aria-label="選擇團隊組別">
-          <button type="button" role="radio" data-division="3" aria-checked="${preferredDivision === 3}">3 人組</button>
-          <button type="button" role="radio" data-division="6" aria-checked="${preferredDivision === 6}">6 人組</button>
+        <p class="reading-team-dialog__intro">你尚未加入團隊。可以建立 3 人或 6 人團隊並取得邀請碼，也可以輸入隊長分享的邀請碼加入。</p>
+        <div class="reading-team-registration-tabs" role="tablist" aria-label="團隊報名方式">
+          <button type="button" role="tab" data-registration-mode="create" aria-selected="true" aria-controls="reading-team-create-form">建立團隊</button>
+          <button type="button" role="tab" data-registration-mode="join" aria-selected="false" aria-controls="reading-team-join-form">輸入邀請碼</button>
         </div>
-        <div class="reading-team-form-grid">
-          <form id="reading-team-create-form" class="reading-team-form-card">
+        <form id="reading-team-create-form" class="reading-team-form-card reading-team-registration-panel" data-registration-panel="create" role="tabpanel">
+          <div class="reading-team-registration-panel__heading">
             <span class="reading-team-form-card__icon"><span class="nlc-icon nlc-icon--md" data-icon="plus" aria-hidden="true"></span></span>
-            <h4>建立新隊伍</h4>
-            <p>你會成為隊長，系統會產生邀請碼。</p>
-            <label for="reading-team-name">隊伍名稱</label>
-            <input id="reading-team-name" class="form-control" maxlength="40" required placeholder="例如：恩典同行隊">
-            <button type="submit" class="primary-btn">建立 <span data-division-label>${preferredDivision}</span> 人隊</button>
-          </form>
-          <form id="reading-team-join-form" class="reading-team-form-card">
+            <div><h4>建立新團隊</h4><p>選擇人數並命名，你會成為隊長。</p></div>
+          </div>
+          <span class="reading-team-field-label">團隊人數</span>
+          <div class="reading-team-division-switch" role="radiogroup" aria-label="選擇團隊組別">
+            <button type="button" role="radio" data-division="3" aria-checked="${preferredDivision === 3}">3 人團隊</button>
+            <button type="button" role="radio" data-division="6" aria-checked="${preferredDivision === 6}">6 人團隊</button>
+          </div>
+          <label for="reading-team-name">團隊名稱</label>
+          <input id="reading-team-name" class="form-control" maxlength="40" required placeholder="例如：恩典同行隊">
+          <button type="submit" class="primary-btn reading-team-submit">建立 <span data-division-label>${preferredDivision}</span> 人團隊並產生邀請碼</button>
+          <span class="reading-team-form-hint">建立成功後，邀請碼會立即顯示並可複製分享。</span>
+        </form>
+        <form id="reading-team-join-form" class="reading-team-form-card reading-team-registration-panel" data-registration-panel="join" role="tabpanel" hidden>
+          <div class="reading-team-registration-panel__heading">
             <span class="reading-team-form-card__icon"><span class="nlc-icon nlc-icon--md" data-icon="lock" aria-hidden="true"></span></span>
-            <h4>使用邀請碼加入</h4>
-            <p>邀請碼只會讓你加入這個計畫中的指定隊伍。</p>
-            <label for="reading-team-code">邀請碼</label>
-            <input id="reading-team-code" class="form-control reading-team-code-input" maxlength="16" required autocomplete="off" placeholder="輸入邀請碼">
-            <button type="submit" class="secondary-btn">加入隊伍</button>
-          </form>
-        </div>
+            <div><h4>使用邀請碼加入</h4><p>輸入隊長提供的邀請碼，即可連結到指定團隊。</p></div>
+          </div>
+          <label for="reading-team-code">團隊邀請碼</label>
+          <input id="reading-team-code" class="form-control reading-team-code-input" maxlength="16" required autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="輸入邀請碼">
+          <button type="submit" class="primary-btn reading-team-submit">使用邀請碼加入團隊</button>
+          <span class="reading-team-form-hint">邀請碼不分大小寫；每個階段只能加入一支團隊。</span>
+        </form>
+        <p class="reading-team-registration-privacy">競賽團隊與牧區、小組分開管理。一般會員只能查看自己加入的隊伍；系統會以會員 UUID 連結成員，不會只用姓名建立成員。</p>
         <p class="reading-team-form-error" data-team-error role="alert" hidden></p>`;
       const error = panel.querySelector("[data-team-error]");
       const showError = message => { error.textContent = message; error.hidden = false; };
       panel.querySelector("[data-team-close]").onclick = close;
+      panel.querySelectorAll("[data-registration-mode]").forEach(button => {
+        button.onclick = () => {
+          const mode = button.dataset.registrationMode;
+          panel.querySelectorAll("[data-registration-mode]").forEach(item => item.setAttribute("aria-selected", String(item === button)));
+          panel.querySelectorAll("[data-registration-panel]").forEach(item => { item.hidden = item.dataset.registrationPanel !== mode; });
+          panel.querySelector(mode === "join" ? "#reading-team-code" : "#reading-team-name")?.focus();
+        };
+      });
       panel.querySelectorAll("[data-division]").forEach(button => {
         button.onclick = () => {
           preferredDivision = Number(button.dataset.division);
@@ -273,6 +289,13 @@
     closeOnBackdrop(overlay, close);
     panel.innerHTML = `<div class="reading-team-loading"><span class="nlc-icon nlc-icon--md" data-icon="people" aria-hidden="true"></span><span>正在整理競賽團隊統計…</span></div>`;
     hydrate(panel);
+    const membership = await db.getMyReadingTeam(plan);
+    if (!document.body.contains(overlay)) return null;
+    if (!membership.success || !membership.context || !membership.context.team) {
+      removeOverlay(overlay);
+      showToast("請先加入 3 人或 6 人團隊，再查看競賽團隊統計。");
+      return null;
+    }
     const result = await db.getReadingTeamStatistics(plan);
     if (!document.body.contains(overlay)) return null;
     if (!result.success) {

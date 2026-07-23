@@ -29,7 +29,8 @@ describe("single administrator role", () => {
   it("uses admin as the only full-system role", () => {
     expect(dataEdge).toContain('return profile?.role === "admin";');
     expect(dataEdge).not.toContain('profile?.role === "senior_pastor"');
-    expect(plan).toContain('readingTeamStatsButton.hidden = !isTeamPlan || role !== "admin"');
+    expect(plan).toContain('role !== "admin"');
+    expect(plan).toContain("readingTeamStatsButton.hidden = true");
   });
 
   it("normalizes a legacy identity value during the deployment transition", () => {

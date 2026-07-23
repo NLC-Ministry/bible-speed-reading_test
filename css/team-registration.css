@@ -116,8 +116,7 @@ body.reading-team-modal-open .main-content {
   width: 44px;
 }
 
-.reading-team-choice-grid,
-.reading-team-form-grid {
+.reading-team-choice-grid {
   display: grid;
   gap: 12px;
   margin-top: 18px;
@@ -132,10 +131,6 @@ body.reading-team-modal-open .main-content {
   box-shadow: var(--shadow-sm);
   overflow: hidden;
   padding: 6px;
-}
-
-.reading-team-form-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .reading-team-choice,
@@ -215,6 +210,61 @@ body.reading-team-modal-open .main-content {
   flex: 0 0 auto;
 }
 
+.reading-team-registration-tabs {
+  background: var(--reading-team-surface);
+  border: 1px solid var(--reading-team-separator);
+  border-radius: 13px;
+  display: grid;
+  gap: 4px;
+  grid-template-columns: 1fr 1fr;
+  margin: 18px 0 12px;
+  padding: 4px;
+}
+
+.reading-team-registration-tabs button {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-radius: 9px;
+  color: var(--text-secondary, #aaa);
+  cursor: pointer;
+  font: inherit;
+  min-height: 42px;
+}
+
+.reading-team-registration-tabs button[aria-selected="true"] {
+  background: var(--reading-team-surface-raised);
+  box-shadow: var(--shadow-sm);
+  color: var(--reading-team-accent);
+  font-weight: 500;
+}
+
+.reading-team-registration-panel {
+  margin-top: 0;
+}
+
+.reading-team-registration-panel[hidden] {
+  display: none;
+}
+
+.reading-team-registration-panel__heading {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+}
+
+.reading-team-registration-panel__heading > div {
+  min-width: 0;
+}
+
+.reading-team-field-label,
+.reading-team-form-hint,
+.reading-team-registration-privacy {
+  color: var(--text-secondary, #aaa);
+  font-size: .78rem;
+  line-height: 1.5;
+}
+
 .reading-team-division-switch {
   background: var(--reading-team-surface);
   border-radius: 12px;
@@ -240,10 +290,6 @@ body.reading-team-modal-open .main-content {
   font-weight: 500;
 }
 
-.reading-team-form-grid {
-  grid-template-columns: 1fr 1fr;
-}
-
 .reading-team-form-card {
   display: flex;
   flex-direction: column;
@@ -267,6 +313,20 @@ body.reading-team-modal-open .main-content {
   color: var(--text-primary, #f4f4f4);
   min-height: 44px;
   padding: 0 12px;
+}
+
+.reading-team-registration-panel .reading-team-division-switch {
+  margin: 0;
+}
+
+.reading-team-submit {
+  justify-content: center;
+  min-height: 48px;
+  width: 100%;
+}
+
+.reading-team-registration-privacy {
+  margin: 14px 2px 0;
 }
 
 .reading-team-code-input {
@@ -464,8 +524,7 @@ body.reading-team-modal-open .main-content {
     align-items: flex-start;
   }
 
-  .reading-team-choice-grid,
-  .reading-team-form-grid {
+  .reading-team-choice-grid {
     grid-template-columns: 1fr;
   }
 
