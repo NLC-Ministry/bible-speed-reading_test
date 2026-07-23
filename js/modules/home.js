@@ -1505,11 +1505,6 @@ async function fetchRandomVerse(event, options = {}) {
   isVerseLoading = true;
   isImgLoading = true;
 
-  localStorage.setItem("has_shared_verse", "true");
-  if (typeof checkAchievements === "function") {
-    checkAchievements();
-  }
-
   setVerseCardLoading(true, options);
 
   if (!state.verseCardMode) {
@@ -1621,13 +1616,6 @@ async function shareAsImage(e) {
             text: (window.APP_COPY && window.APP_COPY.verse.shareText) || "分享今日經文給你"
           });
 
-          localStorage.setItem("has_shared_verse", "true");
-          localStorage.setItem("badge_share_verse_unlocked", "true");
-          if (typeof window.triggerBadgeUnlockNotification === "function") {
-            window.triggerBadgeUnlockNotification("share_verse", "傳遞愛光芒");
-          } else if (typeof checkAchievements === "function") {
-            checkAchievements();
-          }
         } catch (shareError) {
           if (shareError.name !== 'AbortError') {
             fallbackDownload(canvas);
@@ -1659,13 +1647,6 @@ function fallbackDownload(canvas) {
   link.href = canvas.toDataURL('image/png');
   link.click();
 
-  localStorage.setItem("has_shared_verse", "true");
-  localStorage.setItem("badge_share_verse_unlocked", "true");
-  if (typeof window.triggerBadgeUnlockNotification === "function") {
-    window.triggerBadgeUnlockNotification("share_verse", "傳遞愛光芒");
-  } else if (typeof checkAchievements === "function") {
-    checkAchievements();
-  }
 }
 
 async function syncVerseLikes(verseSource) {

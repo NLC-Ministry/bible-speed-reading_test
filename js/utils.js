@@ -320,10 +320,6 @@ function buildHeatmapGrid(containerId, logsByDate, teamSize = 1, label = "章", 
   container.appendChild(wrapper);
 }
 
-const BADGE_UNLOCK_TARGETS = {
-  subscribe_plan: 1, streak_30: 1, complete_plan: 1, share_verse: 1, read_all_bible: 10
-};
-
 function getCampaignStageCompletedRounds(stageNo) {
   const target = Number(stageNo || 0);
   let completedRounds = Number(localStorage.getItem(`church_stage_completed_rounds_${target}`) || 0);
@@ -351,19 +347,7 @@ function getBadgeMilestoneConfig(badgeId) {
     const stageNo = Number(badgeId.replace("church_stage_award_", ""));
     return { levels: [5, 4, 3, 2, 1], unit: "遍", getValue: () => getCampaignStageCompletedRounds(stageNo) };
   }
-  const activePlanCount = () => (state.activePlans || []).length;
-  const completedPlanCount = () => (state.activePlans || []).filter(plan => Number(plan.progress || 0) >= 100 || Number(plan.currentRound || 1) > 1).length;
-  const config = {
-    subscribe_plan: { levels: [5, 4, 3, 2, 1], unit: "個計畫", getValue: activePlanCount },
-    streak_30: { levels: [30, 21, 14, 7, 1], unit: "天", getValue: () => Number((state.currentUser && state.currentUser.streak) || 0) },
-    complete_plan: { levels: [5, 4, 3, 2, 1], unit: "個計畫", getValue: completedPlanCount },
-    share_verse: { levels: [50, 25, 10, 5, 1], unit: "次分享", getValue: () => Number(localStorage.getItem("verse_share_count") || (localStorage.getItem("has_shared_verse") === "true" ? 1 : 0)) },
-    read_all_bible: { levels: [1189, 800, 500, 100, 10], unit: "章", getValue: () => {
-      const uniqueChapters = new Set((state.readingLogs || []).map(log => `${log.book}_${log.chapter}`));
-      return uniqueChapters.size;
-    }}
-  };
-  return config[badgeId] || { levels: [5, 4, 3, 2, 1], unit: "次", getValue: () => 0 };
+  return { levels: [5, 4, 3, 2, 1], unit: "遍", getValue: () => 0 };
 }
 
 function getBadgeProgressValue(badgeId) {
@@ -426,27 +410,18 @@ function attachBadgeOpenHandlers(element, badge, isUnlocked) {
       openDetail();
     }
   };
-}window.getBadgeTierClass = function(starsCount) {
-  if (starsCount === 1) return "tier-bronze";
-  if (starsCount === 2) return "tier-silver";
-  if (starsCount === 3) return "tier-gold";
-  if (starsCount === 4) return "tier-platinum";
-  if (starsCount >= 5) return "tier-legendary";
-  return "";
-};
+}
 
 const CAMPAIGN_MEDAL_FRAME_CLASSES = Array.from({ length: 10 }, (_, index) =>
   `campaign-medal-stage-${index + 1}`
 );
 
-function getBadgeFrameClass(badge, starsCount) {
+function getBadgeFrameClass(badge) {
   const stageNo = Number(badge && badge.campaignStageNo || 0);
   if (stageNo >= 1 && stageNo <= CAMPAIGN_MEDAL_FRAME_CLASSES.length) {
     return `campaign-medal-stage-${stageNo}`;
   }
-  return typeof window.getBadgeTierClass === "function"
-    ? window.getBadgeTierClass(starsCount)
-    : "";
+  return "";
 }
 
 function renderBadgeWall(containerId) {
@@ -476,7 +451,7 @@ function renderBadgeWall(containerId) {
     badgeItem.setAttribute("aria-label", (isUnlocked ? "已點亮：" : "尚未點亮：") + badge.title);
     const safeTitle = typeof escapeHTML === "function" ? escapeHTML(badge.title) : badge.title;
     const hexState = isUnlocked ? "honor-badge-hex--unlocked" : "honor-badge-hex--locked";
-    const tierClass = getBadgeFrameClass(badge, starState.level);
+    const tierClass = getBadgeFrameClass(badge);
     badgeItem.innerHTML = `
       ${!isUnlocked ? `<div class="honor-badge-item__lock"><span class="nlc-icon nlc-icon--sm" data-icon="lock" aria-hidden="true"></span></div>` : ""}
       <div class="honor-badge-item__icon-wrap honor-badge-hex-shell">
@@ -511,7 +486,7 @@ function renderBadgeStrip(containerId, options) {
     item.type = "button";
     item.className = "badge-strip__item " + (isUnlocked ? "unlocked" : "locked");
     item.setAttribute("aria-label", (isUnlocked ? "已點亮：" : "尚未點亮：") + badge.title);
-    const tierClass = getBadgeFrameClass(badge, starState.level);
+    const tierClass = getBadgeFrameClass(badge);
     const hexState = isUnlocked ? "honor-badge-hex--unlocked" : "honor-badge-hex--locked";
     item.innerHTML = `
       <span class="honor-badge-hex-shell honor-badge-hex-shell--sm">
@@ -636,11 +611,10 @@ window.openBadgeDetailPage = function(badge, isUnlocked, isDark) {
     if (hexInner) {
       hexInner.classList.remove(
         "honor-badge-hex--unlocked", "honor-badge-hex--locked",
-        "tier-bronze", "tier-silver", "tier-gold", "tier-platinum", "tier-legendary",
         ...CAMPAIGN_MEDAL_FRAME_CLASSES
       );
       hexInner.classList.add(isUnlocked ? "honor-badge-hex--unlocked" : "honor-badge-hex--locked");
-      const frameClass = getBadgeFrameClass(badge, badgeStarState.level);
+      const frameClass = getBadgeFrameClass(badge);
       if (frameClass) hexInner.classList.add(frameClass);
     }
     shield.style.background = "";

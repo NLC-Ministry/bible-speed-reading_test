@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { isRetiredPlanRequest } from "./retired-resources.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("APP_ORIGIN") || "*",
@@ -267,6 +268,10 @@ Deno.serve(async (req: Request) => {
       auth: { persistSession: false, autoRefreshToken: false }
     });
     const profile = await resolveProfile(supabaseAdmin, accessToken);
+
+    if (isRetiredPlanRequest(body)) {
+      return jsonResponse({ error: "resource_not_found", resource: "reading_plan" }, 404);
+    }
 
     if (action === "rpc") {
       const functionName = typeof body.function === "string" ? body.function : "";

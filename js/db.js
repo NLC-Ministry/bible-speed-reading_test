@@ -1,7 +1,7 @@
 
 
 /**
- * 依計畫名稱查找 CHURCH_PLAN_PRESETS 的 key（僅作舊資料 fallback 使用）
+ * 依計畫名稱查找目前階段定義的 key。
  * @param {string} name
  * @returns {string|null}
  */
@@ -23,9 +23,8 @@ function quotePostgrestValue(value) {
 }
 
 /**
- * A plan can be referenced by a global UUID, a legacy preset key (for example
- * q1), or its display name. Keep all aliases together so older enrollments are
- * included in the same church-wide statistics as newer enrollments.
+ * A plan can be referenced by a global UUID, its current stage key, or its
+ * display name. Keep those aliases together so statistics stay plan-specific.
  */
 function getPlanFilterAliases(filterValue) {
   if (!filterValue) return [];
@@ -911,12 +910,7 @@ const db = {
           // Self-heal legacy timezone-offsetted dates and missing year/month properties
           if (plan.presetKey && plan.days && plan.days.length > 0) {
             const isMissingProperties = !plan.days[0].year || !plan.days[0].month;
-            const hasShiftBug = (plan.presetKey === 'q1' && plan.days[0].date === '06/30') || 
-                               (plan.presetKey === 'q2' && plan.days[0].date === '09/30') || 
-                               (plan.presetKey === 'q3' && plan.days[0].date === '12/31') || 
-                               (plan.presetKey === 'q4' && plan.days[0].date === '03/31');
-                               
-            if ((hasShiftBug || isMissingProperties) && typeof generatePlanObject === 'function') {
+            if (isMissingProperties && typeof generatePlanObject === 'function') {
               const preset = CHURCH_PLAN_PRESETS[plan.presetKey];
               if (preset) {
                 const freshPlan = generatePlanObject(plan.name, plan.startDate, plan.endDate, plan.target_books || preset.books, plan.presetKey, plan.level || 'normal');
@@ -999,7 +993,7 @@ const db = {
               book: ch.book,
               chapter: ch.chapter,
               read_at: new Date(state.activePlan.startDate).toISOString(),
-              presetKey: "q1"
+              presetKey: defaultDemoPresetKey
             });
             count++;
           } else {
@@ -1848,7 +1842,7 @@ const db = {
             book: ch.book,
             chapter: ch.chapter,
             read_at: new Date(state.activePlan.startDate).toISOString(),
-            presetKey: "q1"
+            presetKey: defaultDemoPresetKey
           });
           count++;
         } else {
@@ -2206,9 +2200,7 @@ const db = {
       try {
         const user = await this.getCurrentDbUser();
         if (user) {
-          // 判斷是否為 global_plans 的 UUID key（非 q1~q4 的固定 key）
-          const presetKeys = Object.keys(CHURCH_PLAN_PRESETS);
-          const isGlobalPlanUUID = !presetKeys.includes(key) && key && key.includes('-');
+          const isGlobalPlanUUID = isUuid(key);
 
           const insertPayload = {
             user_id: user.id,
@@ -2531,7 +2523,7 @@ const db = {
         campaignDefinition: p.campaignDefinition ? window.cloneChurchCampaign(p.campaignDefinition) : null
       });
       });
-      // 自訂計畫：排除掉 presetKey 為 q1~q4 的項目避免重複
+      // 自訂計畫：排除目前內建階段，避免重複顯示。
       const customPlans = loadedList.filter(p => !presetKeys.includes(p.presetKey) && !presetKeys.includes(p.id));
       const masterDefinition = localCampaignOverride || window.CHURCH_CAMPAIGN;
       const masterPlan = {

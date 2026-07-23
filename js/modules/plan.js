@@ -1300,10 +1300,9 @@ function renderPresetPlansList() {
   container.innerHTML = "";
 
   const legacyCategoryIdPrefix = "00000000-0000-0000-a000-";
-  const isLegacyChoicePlan = plan =>
+  const isObsoleteCategoryPlan = plan =>
     String(plan && (plan.id || plan.globalPlanId || "")).startsWith(legacyCategoryIdPrefix)
-    || String(plan && plan.presetKey || "").startsWith("m_")
-    || ["q1", "q2", "q3", "q4"].includes(String(plan && plan.presetKey || ""));
+    || String(plan && plan.presetKey || "").startsWith("m_");
 
   const sourcePlans = state.globalPlans && state.globalPlans.length > 0
     ? state.globalPlans
@@ -1330,7 +1329,7 @@ function renderPresetPlansList() {
   };
 
   const visiblePlans = sourcePlans.filter(plan => {
-    if (!plan || isLegacyChoicePlan(plan) || isLegacyCampaignMaster(plan)) return false;
+    if (!plan || isObsoleteCategoryPlan(plan) || isLegacyCampaignMaster(plan)) return false;
     if (isPlanHidden(plan) && !canManageHiddenPlans()) return false;
     if (!matchesPlanSearch(plan)) return false;
     return ![plan.id, plan.globalPlanId, plan.presetKey, plan.name]

@@ -4,7 +4,7 @@
 import '../config.js';
 import './data/bible_data.js';
 import './data/bible_verse_counts.js';
-import './copy/zh-Hant.js';
+import './copy/zh-Hant.js?v=20260723_production_cleanup';
 import './data/church_campaign.js?v=20260720_complete_svg_badges';
 import './design/design-tokens.js';
 import './design/design-system-helpers.js';
@@ -12,16 +12,19 @@ import './design/icon-registry.js';
 import './design/icons.js';
 import './state.js?v=20260720_complete_svg_badges';
 import './auth.js';
-import './db.js?v=20260723_team_dual_division';
-import './utils.js?v=20260722_admin_role';
-import './gamification.js?v=20260723_silent_achievements';
+import './db.js?v=20260723_production_cleanup';
+import './utils.js?v=20260723_production_cleanup';
+import './gamification.js?v=20260723_production_cleanup';
 import './modules/campaign-rule-editor.js?v=20260720_round_editor';
 import './modules/team-registration.js?v=20260723_team_dual_division';
-import { initializePwa } from './pwa/PwaCoordinator.js';
+import { cleanupProductionStorage } from './production-cleanup.mjs';
+import { initializePwa } from './pwa/PwaCoordinator.js?v=20260723_production_cleanup';
 import { IndexedDbClient } from './pwa/IndexedDbClient.js';
 import { SupabaseRepository } from './pwa/SupabaseRepository.js';
 
-const buildVersion = "__BUILD_VERSION__" + "_sharing_wall_control";
+cleanupProductionStorage(window.localStorage);
+
+const buildVersion = "__BUILD_VERSION__" + "_production_cleanup";
 const moduleCache = {};
 let careReminderBadgeLastRefresh = 0;
 
