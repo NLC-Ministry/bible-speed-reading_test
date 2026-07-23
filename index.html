@@ -141,7 +141,7 @@
               </button>
               <button class="options-dropdown-item" id="view-reading-team-btn" hidden>
                 <span class="menu-icon"><span class="nlc-icon" data-icon="people"
-                    aria-hidden="true"></span></span><span>我的團隊</span>
+                    aria-hidden="true"></span></span><span>牧區小組狀況</span>
               </button>
               <button class="options-dropdown-item" id="delete-plan-btn">
                 <span class="menu-icon"><span class="nlc-icon" data-icon="logout"
@@ -927,6 +927,7 @@
             </div>
 
             <div id="reading-team-stats-inline" class="reading-team-inline hidden" aria-live="polite"></div>
+            <div id="reading-team-registration-inline" class="reading-team-inline hidden" aria-live="polite"></div>
 
             <!-- 管理權限統計篩選器 (只在 管理 tab 顯示) -->
             <div class="stats-admin-scope-bar hidden" id="stats-admin-scope-bar"
@@ -1364,6 +1365,18 @@
 
 
           </div><!-- end subview-plan-members -->
+
+          <!-- 子分頁：牧區小組狀況 (全版滿版 APP 頁面) -->
+          <div id="plan-org-stats-subview" class="hidden" style="display: flex; flex-direction: column; width: 100%; min-height: 0;">
+            <!-- 頂部資訊 / 篩選控制列 -->
+            <div id="plan-org-stats-header" style="background: var(--bg-card); border-radius: 12px; border-bottom: 1px solid var(--border-card); display: flex; flex-direction: column; gap: 0.8rem; margin-bottom: 0.8rem;">
+              <!-- 這裡會動態搬移篩選聯動組件與統計標籤 -->
+            </div>
+            <!-- 內容呈現區 -->
+            <div id="plan-org-stats-content" style="display: flex; flex-direction: column; gap: 1.2rem; flex: 1; min-height: 0;">
+              <!-- 這裡會動態搬移小組排名與成員狀況名單 -->
+            </div>
+          </div>
 
         </div><!-- end plan-detail-subview -->
       </section>

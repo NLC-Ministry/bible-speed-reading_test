@@ -503,6 +503,154 @@
     hydrate(container);
   };
 
+  window.renderReadingTeamRegistrationInline = async function renderReadingTeamRegistrationInline(container, plan, options = {}) {
+    if (!container || !isSupportedPlan(plan)) return;
+    
+    // Get existing team memberships first
+    const result = await db.getMyReadingTeam(plan);
+    const joinedContexts = result && result.success ? getJoinedReadingTeamContexts(result.context) : [];
+    
+    const joinedDivisions = new Set(joinedContexts.map(context => Number(context.team.division)));
+    const availableDivisions = [3, 6].filter(division => !joinedDivisions.has(division));
+    
+    let preferredDivision = [3, 6].includes(Number(options.preferredDivision)) ? Number(options.preferredDivision) : 3;
+    if (!availableDivisions.includes(preferredDivision)) preferredDivision = availableDivisions[0] || 3;
+    
+    if (availableDivisions.length === 0) {
+      container.innerHTML = `<div class="p-6 text-center text-muted"><p>你已加入所有組別的團隊（3 人與 6 人團隊）。</p></div>`;
+      return;
+    }
+
+    container.innerHTML = `
+      <div class="reading-team-registration-card" style="padding: 1.2rem; background: var(--bg-card); border-radius: 16px; border: 1px solid var(--border-card); box-shadow: var(--shadow-sm); margin-bottom: 1rem;">
+        <p class="reading-team-dialog__intro" style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 1.2rem;">
+          ${joinedContexts.length ? `你已加入 ${Array.from(joinedDivisions).join("、")} 人團隊，還可以加入另一種人數的團隊。` : "你可以同時參加一支 3 人團隊與一支 6 人團隊。建立團隊或輸入邀請碼即可加入此計畫之團隊。"}
+        </p>
+        <div class="reading-team-registration-tabs" role="tablist" aria-label="團隊報名方式" style="display: flex; gap: 8px; margin-bottom: 1.2rem;">
+          <button type="button" class="secondary-btn" data-registration-mode="create" aria-selected="true" aria-controls="reading-team-create-form-inline" style="flex: 1; padding: 0.6rem 0.5rem; font-size: 0.9rem;">建立團隊</button>
+          <button type="button" class="secondary-btn" data-registration-mode="join" aria-selected="false" aria-controls="reading-team-join-form-inline" style="flex: 1; padding: 0.6rem 0.5rem; font-size: 0.9rem;">輸入邀請碼</button>
+        </div>
+        
+        <form id="reading-team-create-form-inline" class="reading-team-form-card reading-team-registration-panel" data-registration-panel="create" role="tabpanel" style="display: flex; flex-direction: column; gap: 1rem;">
+          <div class="reading-team-registration-panel__heading" style="display: flex; gap: 12px; align-items: center; margin-bottom: 0.4rem;">
+            <span class="reading-team-form-card__icon" style="display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: var(--color-brand-subtle); color: var(--color-brand);"><span class="nlc-icon nlc-icon--md" data-icon="plus" aria-hidden="true"></span></span>
+            <div><h4 style="margin: 0; font-size: 0.95rem; font-weight: 600;">建立新團隊</h4><p style="margin: 0; font-size: 0.75rem; color: var(--text-muted);">選擇人數並命名，你會成為隊長。</p></div>
+          </div>
+          <div>
+            <span class="reading-team-field-label" style="display: block; font-size: 0.8rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.4rem;">團隊人數</span>
+            <div class="reading-team-division-switch" role="radiogroup" aria-label="選擇團隊組別" style="display: flex; gap: 8px;">
+              ${availableDivisions.map(division => `<button type="button" class="secondary-btn" data-division="${division}" aria-checked="${preferredDivision === division}" style="flex: 1; padding: 0.5rem 0.8rem; font-size: 0.85rem;">${division} 人團隊</button>`).join("")}
+            </div>
+          </div>
+          <div>
+            <label for="reading-team-name-inline" style="display: block; font-size: 0.8rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.4rem;">團隊名稱</label>
+            <input id="reading-team-name-inline" class="form-control" maxlength="40" required placeholder="例如：恩典同行隊" style="width: 100%;">
+          </div>
+          <button type="submit" class="primary-btn reading-team-submit" style="width: 100%; margin-top: 0.5rem;">建立 <span data-division-label>${preferredDivision}</span> 人團隊並產生邀請碼</button>
+        </form>
+
+        <form id="reading-team-join-form-inline" class="reading-team-form-card reading-team-registration-panel" data-registration-panel="join" role="tabpanel" hidden style="display: flex; flex-direction: column; gap: 1rem;">
+          <div class="reading-team-registration-panel__heading" style="display: flex; gap: 12px; align-items: center; margin-bottom: 0.4rem;">
+            <span class="reading-team-form-card__icon" style="display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: var(--color-brand-subtle); color: var(--color-brand);"><span class="nlc-icon nlc-icon--md" data-icon="lock" aria-hidden="true"></span></span>
+            <div><h4 style="margin: 0; font-size: 0.95rem; font-weight: 600;">使用邀請碼加入</h4><p style="margin: 0; font-size: 0.75rem; color: var(--text-muted);">輸入隊長提供的邀請碼，即可加入指定團隊。</p></div>
+          </div>
+          <div>
+            <label for="reading-team-code-inline" style="display: block; font-size: 0.8rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.4rem;">團隊邀請碼</label>
+            <input id="reading-team-code-inline" class="form-control reading-team-code-input" maxlength="16" required autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="輸入邀請碼" style="width: 100%; text-transform: uppercase;">
+          </div>
+          <button type="submit" class="primary-btn reading-team-submit" style="width: 100%; margin-top: 0.5rem;">使用邀請碼加入團隊</button>
+        </form>
+        
+        <p class="reading-team-registration-privacy" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 1rem; text-align: center;">加入後，你可以查看自己的團隊與夥伴進度；其他隊伍的資料不會顯示。</p>
+        <p class="reading-team-form-error" data-team-error role="alert" hidden style="color: var(--color-danger); font-size: 0.8rem; margin-top: 0.8rem; text-align: center;"></p>
+      </div>`;
+
+    const error = container.querySelector("[data-team-error]");
+    const showError = message => { error.textContent = message; error.hidden = false; };
+    
+    // Bind tab switcher
+    const tabs = container.querySelectorAll("[data-registration-mode]");
+    const panels = container.querySelectorAll("[data-registration-panel]");
+    tabs.forEach(button => {
+      if (button.dataset.registrationMode === "create") {
+        button.classList.add("active");
+        button.style.background = "var(--color-brand)";
+        button.style.color = "#ffffff";
+        button.style.borderColor = "var(--color-brand)";
+      }
+      button.onclick = () => {
+        const mode = button.dataset.registrationMode;
+        tabs.forEach(item => {
+          const isActive = item === button;
+          item.classList.toggle("active", isActive);
+          item.style.background = isActive ? "var(--color-brand)" : "";
+          item.style.color = isActive ? "#ffffff" : "";
+          item.style.borderColor = isActive ? "var(--color-brand)" : "";
+        });
+        panels.forEach(item => {
+          item.hidden = item.dataset.registrationPanel !== mode;
+        });
+        container.querySelector(mode === "join" ? "#reading-team-code-inline" : "#reading-team-name-inline")?.focus();
+      };
+    });
+
+    // Bind division switches
+    const divisionButtons = container.querySelectorAll("[data-division]");
+    divisionButtons.forEach(button => {
+      if (Number(button.dataset.division) === preferredDivision) {
+        button.classList.add("active");
+        button.style.background = "var(--color-brand-subtle)";
+        button.style.borderColor = "var(--primary-color)";
+        button.style.color = "var(--primary-color)";
+      }
+      button.onclick = () => {
+        preferredDivision = Number(button.dataset.division);
+        divisionButtons.forEach(item => {
+          const isSelected = item === button;
+          item.classList.toggle("active", isSelected);
+          item.style.background = isSelected ? "var(--color-brand-subtle)" : "";
+          item.style.borderColor = isSelected ? "var(--primary-color)" : "";
+          item.style.color = isSelected ? "var(--primary-color)" : "";
+        });
+        container.querySelector("[data-division-label]").textContent = preferredDivision;
+      };
+    });
+
+    // Handle submit events
+    container.querySelector("#reading-team-create-form-inline").onsubmit = async event => {
+      event.preventDefault();
+      error.hidden = true;
+      const submitBtn = event.currentTarget.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      const nameInput = container.querySelector("#reading-team-name-inline").value.trim();
+      const result = await db.createReadingTeam(plan, preferredDivision, nameInput);
+      submitBtn.disabled = false;
+      if (!result.success) return showError(result.message || "建立隊伍失敗，請稍後再試。");
+      showToast("團隊建立成功！");
+      // Trigger plan view update to stats mode
+      if (window.PlanPageController) {
+        await window.PlanPageController.switchPage(PLAN_PAGE.GROUP, { forceReload: true });
+      }
+    };
+
+    container.querySelector("#reading-team-join-form-inline").onsubmit = async event => {
+      event.preventDefault();
+      error.hidden = true;
+      const submitBtn = event.currentTarget.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      const codeInput = container.querySelector("#reading-team-code-inline").value.trim();
+      const result = await db.joinReadingTeam(plan, codeInput);
+      submitBtn.disabled = false;
+      if (!result.success) return showError(result.message || "加入隊伍失敗，請確認邀請碼。");
+      showToast("成功加入團隊！");
+      // Trigger plan view update to stats mode
+      if (window.PlanPageController) {
+        await window.PlanPageController.switchPage(PLAN_PAGE.GROUP, { forceReload: true });
+      }
+    };
+
+    hydrate(container);
+  };
 
   window.isReadingTeamPlan = isSupportedPlan;
 })();
