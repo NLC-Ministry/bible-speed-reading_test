@@ -21,7 +21,7 @@ import { initializePwa } from './pwa/PwaCoordinator.js';
 import { IndexedDbClient } from './pwa/IndexedDbClient.js';
 import { SupabaseRepository } from './pwa/SupabaseRepository.js';
 
-const buildVersion = "__BUILD_VERSION__" + "_stats_navigation";
+const buildVersion = "__BUILD_VERSION__" + "_sharing_wall_control";
 const moduleCache = {};
 let careReminderBadgeLastRefresh = 0;
 
@@ -210,6 +210,9 @@ appRouter.switchTab = async function (tabId, options = {}) {
       }
       if (typeof window.renderAdminOrgManagement === 'function') {
         window.renderAdminOrgManagement(); // sync, no await needed
+      }
+      if (mod && typeof mod.renderAdminFeatureSettings === 'function') {
+        await mod.renderAdminFeatureSettings();
       }
     }
 

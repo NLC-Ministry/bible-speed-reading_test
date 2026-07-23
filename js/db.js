@@ -2896,6 +2896,63 @@ const db = {
     }
   },
 
+  async getFeatureSetting(key, fallback = false) {
+    const allowedKeys = new Set(["pastoral_sharing_wall"]);
+    if (!allowedKeys.has(key)) {
+      return { enabled: Boolean(fallback), error: new Error("unknown_feature_setting") };
+    }
+
+    if (state.isSupabaseMode && state.supabase && !(state.currentUser && state.currentUser.is_demo)) {
+      try {
+        const { data, error } = await state.supabase
+          .from("app_feature_settings")
+          .select("key, enabled")
+          .eq("key", key)
+          .maybeSingle();
+        if (error) return { enabled: Boolean(fallback), error };
+        return { enabled: data ? data.enabled === true : Boolean(fallback), error: null };
+      } catch (error) {
+        return { enabled: Boolean(fallback), error };
+      }
+    }
+
+    const stored = localStorage.getItem(`nlc_feature_${key}`);
+    return {
+      enabled: stored === null ? Boolean(fallback) : stored === "true",
+      error: null
+    };
+  },
+
+  async updateFeatureSetting(key, enabled) {
+    const allowedKeys = new Set(["pastoral_sharing_wall"]);
+    if (!allowedKeys.has(key)) return { error: new Error("unknown_feature_setting") };
+    if (!state.currentUser || state.currentUser.role !== "admin") {
+      return { error: new Error("admin_required") };
+    }
+
+    const normalized = enabled === true;
+    if (state.isSupabaseMode && state.supabase && !state.currentUser.is_demo) {
+      try {
+        const { data, error } = await state.supabase
+          .from("app_feature_settings")
+          .upsert({
+            key,
+            enabled: normalized,
+            updated_by: state.currentProfileId || state.currentUser.id || null
+          }, { onConflict: "key" })
+          .select("key, enabled")
+          .single();
+        if (error) return { error };
+        return { data, error: null };
+      } catch (error) {
+        return { error };
+      }
+    }
+
+    localStorage.setItem(`nlc_feature_${key}`, String(normalized));
+    return { data: { key, enabled: normalized }, error: null };
+  },
+
   async fetchCareReminders() {
     const hostname = window.location.hostname;
     const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1' ||

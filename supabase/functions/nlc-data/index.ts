@@ -24,10 +24,11 @@ const READ_TABLES = new Set([
   "member_reading_summary",
   "view_pastoral_zone_stats",
   "view_small_group_stats",
-  "care_reminders"
+  "care_reminders",
+  "app_feature_settings"
 ]);
 const USER_TABLES = new Set(["reading_plans", "reading_logs", "devotional_notes"]);
-const ADMIN_WRITE_TABLES = new Set(["great_regions", "pastoral_zones", "small_groups", "global_plans", "church_announcements", "profiles"]);
+const ADMIN_WRITE_TABLES = new Set(["great_regions", "pastoral_zones", "small_groups", "global_plans", "church_announcements", "profiles", "app_feature_settings"]);
 const OWN_WRITE_TABLES = new Set(["reading_plans", "reading_logs", "devotional_notes", "devotional_likes", "devotional_comments", "care_reminders"]);
 const TEAM_RPC_FUNCTIONS = new Set([
   "get_my_reading_team",
@@ -126,6 +127,16 @@ async function resolveProfile(supabaseAdmin: any, accessToken: string) {
   return profile;
 }
 
+
+async function isFeatureEnabled(supabaseAdmin: any, key: string) {
+  const { data, error } = await supabaseAdmin
+    .from("app_feature_settings")
+    .select("enabled")
+    .eq("key", key)
+    .maybeSingle();
+  if (error) return false;
+  return data?.enabled === true;
+}
 function isAdmin(profile: any) {
   return profile?.role === "admin";
 }
@@ -259,6 +270,10 @@ Deno.serve(async (req: Request) => {
 
     if (action === "rpc") {
       const functionName = typeof body.function === "string" ? body.function : "";
+      if (["increment_likes", "decrement_likes"].includes(functionName)
+        && !(await isFeatureEnabled(supabaseAdmin, "pastoral_sharing_wall"))) {
+        return jsonResponse({ error: "feature_archived" }, 403);
+      }
       if (!RPC_FUNCTIONS.has(functionName)) return jsonResponse({ error: "forbidden_rpc" }, 403);
       if (functionName === "publish_global_plan_rules" && !isAdmin(profile)) {
         return jsonResponse({ error: "forbidden_rpc" }, 403);
@@ -357,6 +372,13 @@ Deno.serve(async (req: Request) => {
     const canAdminWrite = ["insert", "update", "delete", "upsert"].includes(action) && ADMIN_WRITE_TABLES.has(table) && isAdmin(profile);
     if (!canRead && !canOwnWrite && !canAdminWrite) return jsonResponse({ error: "forbidden" }, 403);
 
+
+    const devotionalTables = new Set(["devotional_notes", "devotional_likes", "devotional_comments"]);
+    if (devotionalTables.has(table)
+      && !(await isFeatureEnabled(supabaseAdmin, "pastoral_sharing_wall"))) {
+      if (action === "select") return jsonResponse({ data: [], profile });
+      return jsonResponse({ error: "feature_archived" }, 403);
+    }
     let query: any;
     if (action === "select") {
       query = supabaseAdmin.from(table).select(body.select || "*");

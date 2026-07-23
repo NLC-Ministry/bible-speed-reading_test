@@ -886,6 +886,69 @@ export function showResponsibilityModal(role, user) {
     };
   });
 }
+function updatePastoralWallControl(enabled, options = {}) {
+  const toggle = document.getElementById("admin-pastoral-wall-toggle");
+  const status = document.getElementById("admin-pastoral-wall-status");
+  if (!toggle || !status) return;
+  toggle.setAttribute("aria-checked", enabled ? "true" : "false");
+  toggle.setAttribute("aria-label", enabled ? "封存牧區靈修分享牆" : "開放牧區靈修分享牆");
+  toggle.disabled = options.disabled === true;
+  status.textContent = enabled ? "目前開放，首頁會顯示分享牆" : "目前封存，首頁不顯示分享牆";
+}
+
+export async function renderAdminFeatureSettings() {
+  const card = document.querySelector(".admin-feature-settings-card")?.closest(".card-col");
+  const toggle = document.getElementById("admin-pastoral-wall-toggle");
+  const feedback = document.getElementById("admin-pastoral-wall-feedback");
+  if (!card || !toggle || !feedback) return;
+
+  const isAdmin = state.currentUser && state.currentUser.role === "admin";
+  card.classList.toggle("hidden", !isAdmin);
+  if (!isAdmin) return;
+
+  feedback.classList.add("hidden");
+  feedback.textContent = "";
+  updatePastoralWallControl(false, { disabled: true });
+
+  const result = await db.getFeatureSetting("pastoral_sharing_wall", false);
+  if (result.error) {
+    updatePastoralWallControl(false, { disabled: true });
+    feedback.textContent = "目前無法讀取設定，請確認資料庫更新已完成。";
+    feedback.classList.remove("hidden");
+    return;
+  }
+
+  updatePastoralWallControl(result.enabled === true);
+
+  if (!toggle.dataset.featureSettingBound) {
+    toggle.dataset.featureSettingBound = "true";
+    toggle.addEventListener("click", async () => {
+      const currentEnabled = toggle.getAttribute("aria-checked") === "true";
+      const nextEnabled = !currentEnabled;
+      updatePastoralWallControl(currentEnabled, { disabled: true });
+      feedback.classList.add("hidden");
+
+      const saveResult = await db.updateFeatureSetting("pastoral_sharing_wall", nextEnabled);
+      if (saveResult.error) {
+        updatePastoralWallControl(currentEnabled);
+        feedback.textContent = "設定沒有儲存成功，請稍後再試。";
+        feedback.classList.remove("hidden");
+        return;
+      }
+
+      updatePastoralWallControl(nextEnabled);
+      if (typeof showToast === "function") {
+        showToast(nextEnabled ? "牧區靈修分享牆已開放" : "牧區靈修分享牆已封存");
+      }
+      window.dispatchEvent(new CustomEvent("pastoral-sharing-wall-changed", {
+        detail: { enabled: nextEnabled }
+      }));
+    });
+  }
+
+  if (typeof hydrateIcons === "function") hydrateIcons(card);
+}
+
 
 export function init() {
   const searchInput = document.getElementById("admin-search-user");
@@ -907,6 +970,7 @@ export function init() {
 window.renderAdminUserManagement = renderAdminUserManagement;
 window.renderAdminOrgManagement = renderAdminOrgManagement;
 window.initAdminFiltersUI = initAdminFiltersUI;
+window.renderAdminFeatureSettings = renderAdminFeatureSettings;
 window.openAdminFilterBottomSheet = openAdminFilterBottomSheet;
 window.closeAdminFilterBottomSheet = closeAdminFilterBottomSheet;
 window.initAdminUserManagement = init;

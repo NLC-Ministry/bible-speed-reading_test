@@ -21,7 +21,7 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+TC:wght@300;400;500;700&family=Outfit:wght@300;400;500;600;700&display=swap"
     rel="stylesheet">
-  <link rel="stylesheet" href="index.css?v=20260723_unread_reminder_badge">
+  <link rel="stylesheet" href="index.css?v=20260723_sharing_wall_control">
   <link rel="stylesheet" href="css/team-registration.css?v=20260723_team_member_roster">
 
   <!-- Supabase JS Client library -->
@@ -364,7 +364,8 @@
           </div>
 
           <!-- 首頁最下方的金句牆區塊 (符合 UI/UX 設計風格的牧區靈修分享牆) -->
-          <div class="glass-card dashboard-panel-card sharing-wall-card span-12 mt-6">
+          <div class="glass-card dashboard-panel-card sharing-wall-card span-12 mt-6 hidden"
+            id="pastoral-sharing-wall-card" aria-hidden="true">
             <div class="dashboard-panel-card__header card-header-flex" style="margin-bottom: 1rem;">
               <h3 class="dashboard-panel-card__title card-title" style="margin: 0;">
                 <span class="dashboard-panel-card__title-icon" aria-hidden="true">
@@ -1541,6 +1542,30 @@
       <!-- VIEW 6: ADMIN CONSOLE -->
       <section id="admin-view" class="view-pane hidden">
         <div class="grid-layout">
+          <div class="card-col span-12">
+            <div class="glass-card admin-feature-settings-card">
+              <div class="admin-feature-settings-card__copy">
+                <span class="admin-feature-settings-card__icon" aria-hidden="true">
+                  <span class="nlc-icon nlc-icon--md" data-icon="setting"></span>
+                </span>
+                <div>
+                  <h3 class="card-title">功能開放設定</h3>
+                  <p>可暫時封存牧區靈修分享牆；既有分享、按讚與留言都會保留。</p>
+                </div>
+              </div>
+              <div class="admin-feature-setting-row">
+                <div class="admin-feature-setting-row__label">
+                  <strong>牧區靈修分享牆</strong>
+                  <span id="admin-pastoral-wall-status">讀取設定中…</span>
+                </div>
+                <button type="button" class="feature-switch" id="admin-pastoral-wall-toggle"
+                  role="switch" aria-checked="false" aria-label="開放牧區靈修分享牆" disabled>
+                  <span class="feature-switch__thumb" aria-hidden="true"></span>
+                </button>
+              </div>
+              <p class="admin-feature-setting-feedback hidden" id="admin-pastoral-wall-feedback" role="status"></p>
+            </div>
+          </div>
           <div class="card-col span-12" style="margin-top: 1.5rem;">
             <div class="glass-card">
               <h3 class="card-title" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
@@ -1942,7 +1967,7 @@
     </div>
   </div>
 
-  <script type="module" src="js/app.js?v=20260723_stats_navigation"></script>
+  <script type="module" src="js/app.js?v=20260723_sharing_wall_control"></script>
 </body>
 
 </html>

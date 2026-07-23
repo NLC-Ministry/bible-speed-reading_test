@@ -3,6 +3,37 @@ import { validateVerseSource } from "./verse-validator.mjs";
 import { DevotionalSharingController } from "./devotional-sharing-controller.mjs";
 
 const sharingController = new DevotionalSharingController();
+let pastoralSharingWallEnabled = false;
+
+function applyPastoralSharingWallVisibility(enabled) {
+  pastoralSharingWallEnabled = enabled === true;
+  const card = document.getElementById("pastoral-sharing-wall-card");
+  if (!card) return;
+  card.classList.toggle("hidden", !pastoralSharingWallEnabled);
+  card.setAttribute("aria-hidden", pastoralSharingWallEnabled ? "false" : "true");
+  if (!pastoralSharingWallEnabled) {
+    const wall = document.getElementById("home-verse-wall");
+    if (wall) wall.innerHTML = "";
+    document.querySelector(".devotional-card")?.classList.add("hidden");
+  }
+}
+
+async function refreshPastoralSharingWallAvailability() {
+  applyPastoralSharingWallVisibility(false);
+  if (typeof db === "undefined" || typeof db.getFeatureSetting !== "function") return false;
+  const result = await db.getFeatureSetting("pastoral_sharing_wall", false);
+  const enabled = !result.error && result.enabled === true;
+  applyPastoralSharingWallVisibility(enabled);
+  if (enabled) await fetchPastoralVerseWall();
+  return enabled;
+}
+
+window.addEventListener("pastoral-sharing-wall-changed", event => {
+  const enabled = event.detail?.enabled === true;
+  applyPastoralSharingWallVisibility(enabled);
+  if (enabled) fetchPastoralVerseWall();
+});
+
 
 const DAILY_VERSES = [
   { text: "「愛是恆久忍耐，又有恩慈；愛是不嫉妒；愛是不自誇，不張狂，不做害羞的事，不求自己的益處，不輕易發怒，不計算人的惡。」", source: "哥林多前書 13:4-5" },
@@ -388,9 +419,7 @@ export function updateDashboardView() {
   renderPastoralZoneRankingList();
   loadTodayDevotional();
 
-  if (typeof fetchPastoralVerseWall === "function") {
-    fetchPastoralVerseWall();
-  }
+  refreshPastoralSharingWallAvailability();
 
   renderPilgrimageTrail();
   if (!state.pilgrimageControlsInit) {
@@ -1947,6 +1976,7 @@ async function fetchPastoralVerseWall() {
 
   const todayStr = new Date().toLocaleDateString('zh-TW', { timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-');
 
+  if (!pastoralSharingWallEnabled) return;
   const isHistory = (sharingController.tab === "history");
   const historyFilter = sharingController.filter;
   const historyFilterWrapper = document.getElementById("wall-history-filter-wrapper");
