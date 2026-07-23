@@ -8,30 +8,30 @@ export function updateFilterChipsUI() {
   if (chipRegion) {
     if (state.adminFilters.region) {
       chipRegion.classList.add("active");
-      chipRegion.innerHTML = `<span>${state.adminFilters.region}</span> <span class="chip-clear" data-clear="region">ï¿½ï¿½ï¿½</span>`;
+      chipRegion.innerHTML = `<span>${state.adminFilters.region}</span> <span class="chip-clear" data-clear="region">嚙踝蕭嚙�</span>`;
     } else {
       chipRegion.classList.remove("active");
-      chipRegion.innerHTML = `<span>ï¿½ï¿½å¸ï¿½å¸ä¹ï¿½ï¿½ï¿½</span> <span class="chip-arrow">ï¿½ï¿½ï¿½</span>`;
+      chipRegion.innerHTML = `<span>嚙踝蕭�賂蕭�訾�嚙踝蕭嚙�</span> <span class="chip-arrow">嚙踝蕭嚙�</span>`;
     }
   }
 
   if (chipZone) {
     if (state.adminFilters.zone) {
       chipZone.classList.add("active");
-      chipZone.innerHTML = `<span>${state.adminFilters.zone}</span> <span class="chip-clear" data-clear="zone">ï¿½ï¿½ï¿½</span>`;
+      chipZone.innerHTML = `<span>${state.adminFilters.zone}</span> <span class="chip-clear" data-clear="zone">嚙踝蕭嚙�</span>`;
     } else {
       chipZone.classList.remove("active");
-      chipZone.innerHTML = `<span>ï¿½ï¿½å¸ï¿½å½ï¿½æ¹ï¿½ï¿½</span> <span class="chip-arrow">ï¿½ï¿½ï¿½</span>`;
+      chipZone.innerHTML = `<span>嚙踝蕭�賂蕭�踝蕭�對蕭嚙�</span> <span class="chip-arrow">嚙踝蕭嚙�</span>`;
     }
   }
 
   if (chipGroup) {
     if (state.adminFilters.group) {
       chipGroup.classList.add("active");
-      chipGroup.innerHTML = `<span>${state.adminFilters.group}</span> <span class="chip-clear" data-clear="group">ï¿½ï¿½ï¿½</span>`;
+      chipGroup.innerHTML = `<span>${state.adminFilters.group}</span> <span class="chip-clear" data-clear="group">嚙踝蕭嚙�</span>`;
     } else {
       chipGroup.classList.remove("active");
-      chipGroup.innerHTML = `<span>ï¿½ï¿½å¸ï¿½å¸ï¿½ï¿½è¯ï¿½</span> <span class="chip-arrow">ï¿½ï¿½ï¿½</span>`;
+      chipGroup.innerHTML = `<span>嚙踝蕭�賂蕭�賂蕭嚙質嚙�</span> <span class="chip-arrow">嚙踝蕭嚙�</span>`;
     }
   }
 }
@@ -42,14 +42,14 @@ export function openAdminFilterBottomSheet(type) {
   const listEl = document.getElementById("bottom-sheet-list");
   if (!overlay || !listEl) return;
 
-  let title = "ï¿½ï¿½è±¢ï¿½ï¿½è­æï¿½è±¢ï¿½ï¿½éï¿½";
+  let title = "嚙踝蕭鞊ｇ蕭嚙質�蕭鞊ｇ蕭嚙賡�嚙�";
   let options = [];
   let selectedValue = state.adminFilters[type];
 
   const getPredefinedRegions = () => {
     return (state.orgStructure && state.orgStructure.regions && state.orgStructure.regions.length > 0)
       ? state.orgStructure.regions
-      : ["ï¿½ï¿½åï¿½ï¿½", "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½", "é¼è¸¹ï¿½ï¿½", "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½", "ï¿½ï¿½ï¿½æ ï¿½æï¿½", "ï¿½ï¿½åï¿½ï¿½", "ï¿½ï¿½èï¿½ï¿½"];
+      : ["嚙踝蕭�蕭嚙�", "嚙踝蕭嚙踝蕭嚙踝蕭", "�潸號嚙踝蕭", "嚙踝蕭嚙踝蕭嚙踝蕭", "嚙踝蕭嚙賣�嚙賣�嚙�", "嚙踝蕭�蕭嚙�", "嚙踝蕭�蕭嚙�"];
   };
 
   const getPredefinedZones = () => {
@@ -79,13 +79,13 @@ export function openAdminFilterBottomSheet(type) {
   };
 
   if (type === "region") {
-    title = "ï¿½ï¿½è±¢ï¿½ï¿½æ­æ¹ï¿½ï¿½";
+    title = "嚙踝蕭鞊ｇ蕭嚙賣�對蕭嚙�";
     options = getPredefinedRegions();
   } else if (type === "zone") {
-    title = "ï¿½ï¿½è±¢ï¿½ï¿½ï¿½ï¿½æ¹ï¿½ï¿½";
+    title = "嚙踝蕭鞊ｇ蕭嚙踝蕭嚙賣嚙踝蕭";
     options = getPredefinedZones();
   } else if (type === "group") {
-    title = "ï¿½ï¿½è±¢ï¿½ï¿½æ ï¿½è¯ï¿½";
+    title = "嚙踝蕭鞊ｇ蕭嚙賣�嚙質嚙�";
     options = getPredefinedGroups();
   }
 
@@ -95,9 +95,9 @@ export function openAdminFilterBottomSheet(type) {
   const allBtn = document.createElement("button");
   allBtn.className = `bottom-sheet-item ${!selectedValue ? "selected" : ""}`;
   allBtn.type = "button";
-  allBtn.textContent = `ï¿½ï¿½å¸ï¿½ï¿½${type === "region" ? "æ­æ¹ï¿½ï¿½" : (type === "zone" ? "ï¿½ï¿½æ¹ï¿½ï¿½" : "æ ï¿½è¯ï¿½")}`;
+  allBtn.textContent = `嚙踝蕭�賂蕭嚙�${type === "region" ? "�剜嚙踝蕭" : (type === "zone" ? "嚙踝蕭�對蕭嚙�" : "�蕭�荔蕭")}`;
   allBtn.onclick = () => {
-    console.log(`ï¿½ï¿½ï¿½ï¿½ [Debug] Bottom Sheet ï¿½ï¿½è±¢ï¿½ï¿½çï¿½ï¿½ï¿½æ¤ç¥ï¿½ï¿½ï¿½: ï¿½ï¿½å¸ï¿½ï¿½${type}`);
+    console.log(`嚙踝蕭嚙踝蕭 [Debug] Bottom Sheet 嚙踝蕭鞊ｇ蕭嚙賜�嚙踝蕭嚙賣蟡蕭嚙踝蕭: 嚙踝蕭�賂蕭嚙�${type}`);
     state.adminFilters[type] = null;
     if (type === "region") {
       state.adminFilters.zone = null;
@@ -117,7 +117,7 @@ export function openAdminFilterBottomSheet(type) {
     btn.type = "button";
     btn.textContent = opt;
     btn.onclick = () => {
-      console.log(`ï¿½ï¿½ï¿½ï¿½ [Debug] Bottom Sheet ï¿½ï¿½è±¢ï¿½ï¿½è­æï¿½è±¢ï¿½ï¿½éï¿½: ${type} = ${opt}`);
+      console.log(`嚙踝蕭嚙踝蕭 [Debug] Bottom Sheet 嚙踝蕭鞊ｇ蕭嚙質�蕭鞊ｇ蕭嚙賡�嚙�: ${type} = ${opt}`);
       state.adminFilters[type] = opt;
       if (type === "region") {
         state.adminFilters.zone = null;
@@ -136,7 +136,7 @@ export function openAdminFilterBottomSheet(type) {
 }
 
 export function closeAdminFilterBottomSheet() {
-  console.log("ï¿½ï¿½ï¿½ï¿½ [Debug] ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½èâ ï¿½ï¿½è­æï¿½ï¿½ Bottom Sheet");
+  console.log("嚙踝蕭嚙踝蕭 [Debug] 嚙踝蕭嚙踝蕭嚙踝蕭��嚙踝蕭�剜�嚙踝蕭 Bottom Sheet");
   const overlay = document.getElementById("global-bottom-sheet");
   if (overlay) overlay.classList.remove("active");
 }
@@ -149,7 +149,7 @@ export function initAdminFiltersUI() {
         e.preventDefault();
         const clearBtn = e.target.closest(".chip-clear");
         if (clearBtn) {
-          console.log(`ï¿½ï¿½ï¿½ [Debug] çï¿½ï¿½ï¿½æ¤ç¥ï¿½ï¿½è±¢ï¿½ï¿½èæï¿½ï¿½ï¿½ï¿½ï¿½æºï¿½ï¿½ï¿½ï¿½: ${type}`);
+          console.log(`嚙踝蕭嚙� [Debug] �蕭嚙踝蕭�斤�嚙踝蕭鞊ｇ蕭嚙質��蕭嚙踝蕭嚙踝蕭�綽蕭嚙踝蕭嚙�: ${type}`);
           e.stopPropagation();
           state.adminFilters[type] = null;
           if (type === "region") {
@@ -161,7 +161,7 @@ export function initAdminFiltersUI() {
           updateFilterChipsUI();
           renderAdminUserManagement();
         } else {
-          console.log(`ï¿½ï¿½ï¿½ï¿½ [Debug] è­æï¿½è±¢ï¿½ï¿½èæ¹ï¿½ï¿½ï¿½ï¿½ï¿½æºï¿½ï¿½ï¿½ï¿½åï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Bottom Sheet: ${type}`);
+          console.log(`嚙踝蕭嚙踝蕭 [Debug] �剜�嚙質悻嚙踝蕭�嚙踝蕭嚙踝蕭嚙賣嚙踝蕭嚙踝蕭�蕭嚙踝蕭嚙踝蕭嚙踝蕭 Bottom Sheet: ${type}`);
           openAdminFilterBottomSheet(type);
         }
       };
@@ -171,7 +171,7 @@ export function initAdminFiltersUI() {
   const closeBtn = document.getElementById("btn-close-bottom-sheet");
   if (closeBtn) {
     closeBtn.onclick = (e) => {
-      console.log("ï¿½ï¿½ï¿½ï¿½ [Debug] ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ Bottom Sheet ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½æºï¿½ï¿½ï¿½ï¿½");
+      console.log("嚙踝蕭嚙踝蕭 [Debug] 嚙踝蕭嚙踝蕭嚙踝蕭 Bottom Sheet 嚙踝蕭嚙踝蕭嚙踝蕭�綽蕭嚙踝蕭嚙�");
       e.preventDefault();
       closeAdminFilterBottomSheet();
     };
@@ -181,7 +181,7 @@ export function initAdminFiltersUI() {
   if (overlay) {
     overlay.onclick = (e) => {
       if (e.target === overlay) {
-        console.log("ï¿½ï¿½ï¿½ï¿½ [Debug] æºï¿½ï¿½ï¿½ï¿½ Bottom Sheet æ­ï¿½ï¿½ï¿½å¸ï¿½æ¡èï¿½ï¿½ï¿½ï¿½ï¿½ï¿½");
+        console.log("嚙踝蕭嚙踝蕭 [Debug] �綽蕭嚙踝蕭嚙� Bottom Sheet �哨蕭嚙踝蕭�賂蕭獢�嚙踝蕭嚙踝蕭嚙踝蕭");
         closeAdminFilterBottomSheet();
       }
     };
@@ -221,16 +221,16 @@ export async function renderAdminUserManagement() {
     listContainer.innerHTML = "";
 
     if (filteredUsers.length === 0) {
-      listContainer.innerHTML = `<div style="text-align: center; padding: 2.5rem; color: var(--text-muted);">ï¿½ï¿½â ï¿½è²æ³µï¿½ï¿½ï¿½ï¿½ï¿½ï¿½</div>`;
+      listContainer.innerHTML = `<div style="text-align: center; padding: 2.5rem; color: var(--text-muted);">嚙踝蕭�蕭鞎陬嚙踝蕭嚙踝蕭嚙踝蕭</div>`;
       return;
     }
 
     const roleLabels = {
-      member: "éï¿½ï¿½ï¿½ç¥ï¿½ï¿½ï¿½ï¿½ï¿½",
-      group_leader: "æ ï¿½è¯ï¿½ï¿½ï¿½ï¿½",
-      zone_leader: "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½",
-      great_zone_leader: "æ­æ¹ï¿½ï¿½ï¿½ï¿½ï¿½",
-      admin: "èé¤çµèâ ï¿½ï¿½ï¿½ï¿½ï¿½"
+      member: "�蕭嚙踝蕭蟡蕭嚙踝蕭嚙踝蕭",
+      group_leader: "�蕭�荔蕭嚙踝蕭嚙�",
+      zone_leader: "嚙踝蕭嚙踝蕭嚙踝蕭",
+      great_zone_leader: "�剜嚙踝蕭嚙踝蕭嚙�",
+      admin: "��蝯��蕭嚙踝蕭嚙踝蕭"
     };
 
     filteredUsers.forEach(user => {
@@ -265,7 +265,7 @@ export async function renderAdminUserManagement() {
 
   } catch (err) {
     console.error("Failed to render admin user management:", err);
-    listContainer.innerHTML = `<div class="text-danger" style="text-align: center; padding: 2.5rem;">é ï¿½ï¿½ï¿½äºä»ï¿½ï¿½ï¿½: ${err.message || err}</div>`;
+    listContainer.innerHTML = `<div class="text-danger" style="text-align: center; padding: 2.5rem;">�蕭嚙踝蕭鈭�嚙踝蕭嚙�: ${err.message || err}</div>`;
   }
 }
 
@@ -275,15 +275,15 @@ export function openMemberEditBottomSheet(user) {
   const listEl = document.getElementById("bottom-sheet-list");
   if (!overlay || !listEl) return;
 
-  if (titleEl) titleEl.textContent = `èâ ï¿½ï¿½ ${user.name} ï¿½ï¿½ï¿½çï¿½ï¿½ï¿½ï¿½`;
+  if (titleEl) titleEl.textContent = `��嚙踝蕭 ${user.name} 嚙踝蕭嚙賜�嚙踝蕭嚙踝蕭`;
   listEl.innerHTML = "";
 
   const roleOptions = [
-    { value: "member", label: "éï¿½ï¿½ï¿½ç¥ï¿½ï¿½ï¿½ï¿½ï¿½" },
-    { value: "group_leader", label: "æ ï¿½è¯ï¿½ï¿½ï¿½ï¿½" },
-    { value: "zone_leader", label: "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½" },
-    { value: "great_zone_leader", label: "æ­æ¹ï¿½ï¿½ï¿½ï¿½ï¿½" },
-    { value: "admin", label: "èé¤çµèâ ï¿½ï¿½ï¿½ï¿½ï¿½" }
+    { value: "member", label: "�蕭嚙踝蕭蟡蕭嚙踝蕭嚙踝蕭" },
+    { value: "group_leader", label: "�蕭�荔蕭嚙踝蕭嚙�" },
+    { value: "zone_leader", label: "嚙踝蕭嚙踝蕭嚙踝蕭" },
+    { value: "great_zone_leader", label: "�剜嚙踝蕭嚙踝蕭嚙�" },
+    { value: "admin", label: "��蝯��蕭嚙踝蕭嚙踝蕭" }
   ];
 
 
@@ -299,13 +299,13 @@ export function openMemberEditBottomSheet(user) {
     scopeBtn.type = "button";
 
     let scopeDesc = "";
-    if (user.role === "great_zone_leader") scopeDesc = user.managed_regions || user.great_region || "ï¿½ï¿½è¾èº«æ°ï¿½";
-    else if (user.role === "zone_leader") scopeDesc = user.managed_zones || user.pastoral_zone || "ï¿½ï¿½è¾èº«æ°ï¿½";
-    else if (user.role === "group_leader") scopeDesc = user.managed_groups || user.small_group || "ï¿½ï¿½è¾èº«æ°ï¿½";
+    if (user.role === "great_zone_leader") scopeDesc = user.managed_regions || user.great_region || "嚙踝蕭�曇澈�堆蕭";
+    else if (user.role === "zone_leader") scopeDesc = user.managed_zones || user.pastoral_zone || "嚙踝蕭�曇澈�堆蕭";
+    else if (user.role === "group_leader") scopeDesc = user.managed_groups || user.small_group || "嚙踝蕭�曇澈�堆蕭";
 
-    scopeBtn.innerHTML = iconLabel("edit", `é½æ ¼ï¿½å¯§æ£é §ï¿½è­ï¿½ï¿½ï¿½ï¿½ (${scopeDesc})`);
+    scopeBtn.innerHTML = iconLabel("edit", `�賣嚙賢祐��嚙質嚙踝蕭嚙踝蕭 (${scopeDesc})`);
     scopeBtn.onclick = async () => {
-      console.log(`ï¿½ï¿½ï¿½å­ï¿½ [Debug] é½æ ¼ï¿½å¯§æ£é §ï¿½è­ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½é¡æï¿½ï¿½ï¿½ï¿½ï¿½åï¿½ï¿½ï¿½ï¿½ï¿½ï¿½â´ï¿½ï¿½${user.name}`);
+      console.log(`嚙踝蕭嚙賢嚙� [Debug] �賣嚙賢祐��嚙質嚙踝蕭嚙踝蕭嚙踝蕭嚙踝蕭嚙踝蕭�⊥�嚙踝蕭嚙踝蕭嚙賢�嚙踝蕭嚙踝蕭嚙踝蕭�湛蕭嚙�${user.name}`);
       closeAdminFilterBottomSheet();
       const resp = await showResponsibilityModal(user.role, user);
       if (!resp) return;
@@ -325,10 +325,10 @@ export function openMemberEditBottomSheet(user) {
           state.currentUser.managed_groups = resp.managed_groups;
           if (typeof renderProfileView === "function") renderProfileView();
         }
-        alert("æè«ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½æ¹ï¿½åæ£é §ï¿½è­ï¿½ï¿½ï¿½ï¿½åï¿½");
+        alert("�嚙踝蕭嚙踝蕭嚙踝蕭嚙賣�嚙賢���嚙質嚙踝蕭嚙踝蕭�蕭");
         renderAdminUserManagement();
       } else {
-        alert("ï¿½ï¿½æ¹ï¿½åæ£é §ï¿½è­ï¿½ï¿½ï¿½ï¿½æ­æï¿½ï¿½åï¿½é¢ï¿½ï¿½ï¿½ï¿½é°è¾ï¿½ï¿½");
+        alert("嚙踝蕭皝蕭��改蕭�哨蕭嚙踝蕭嚙賣�蕭嚙賢�嚙賡嚙踝蕭嚙踝蕭�啗嚙踝蕭");
       }
     };
     listEl.appendChild(scopeBtn);
@@ -339,7 +339,7 @@ export function openMemberEditBottomSheet(user) {
   headerText.style.color = "var(--text-secondary)";
   headerText.style.margin = "0.2rem 0 0.5rem 0.2rem";
   headerText.style.fontWeight = "bold";
-  headerText.textContent = "éï¿½ï¿½ï¿½æ¸²ï¿½ï¿½ï¿½ï¿½è°æ¾ï¿½ï¿½ï¿½åï¿½";
+  headerText.textContent = "�蕭嚙踝蕭皜莎蕭嚙踝蕭嚙質瞉蕭嚙踝蕭�蕭";
   listEl.appendChild(headerText);
 
   roleOptions.forEach(opt => {
@@ -349,7 +349,7 @@ export function openMemberEditBottomSheet(user) {
     btn.type = "button";
     btn.textContent = opt.label;
     btn.onclick = async () => {
-      console.log(`ï¿½ï¿½ï¿½å­ï¿½ [Debug] éï¿½ï¿½ï¿½æ¸²ï¿½ï¿½ï¿½ï¿½è°æ¾ï¿½ï¿½ï¿½æºï¿½ï¿½ï¿½ï¿½: ${user.name} -> ${opt.label}`);
+      console.log(`嚙踝蕭嚙賢嚙� [Debug] �蕭嚙踝蕭皜莎蕭嚙踝蕭嚙質瞉蕭嚙踝蕭�綽蕭嚙踝蕭嚙�: ${user.name} -> ${opt.label}`);
       closeAdminFilterBottomSheet();
       if (isSelected) return;
 
@@ -378,10 +378,10 @@ export function openMemberEditBottomSheet(user) {
           if (additionalFields.managed_groups !== undefined) state.currentUser.managed_groups = additionalFields.managed_groups;
           if (typeof renderProfileView === "function") renderProfileView();
         }
-        alert("æè«ï¿½ï¿½ï¿½ï¿½ï¿½éï¿½ï¿½ï¿½æ¹ï¿½ï¿½ï¿½ï¿½â¥ï¿½ï¿½ï¿½ï¿½ï¿½é«ï¿½ï¿½ï¿½èï¿½ï¿½");
+        alert("�嚙踝蕭嚙踝蕭嚙賡�嚙踝蕭嚙賣�嚙踝蕭嚙踝蕭�伐蕭嚙踝蕭嚙踝蕭�恬蕭嚙踝蕭�蕭嚙�");
         renderAdminUserManagement();
       } else {
-        alert("éï¿½ï¿½ï¿½æ¸²ï¿½ï¿½ï¿½ï¿½è£ä»ï¿½ï¿½ï¿½åï¿½é¢ï¿½ï¿½ï¿½ï¿½é°è¾ï¿½ï¿½");
+        alert("�蕭嚙踝蕭皜莎蕭嚙踝蕭嚙質隞蕭嚙踝蕭�蕭�ｇ蕭嚙踝蕭嚙賡�橘蕭嚙�");
       }
     };
     listEl.appendChild(btn);
@@ -603,7 +603,7 @@ export function renderAdminOrgManagement() {
 
   if (!regionSelect || !zoneSelect || !groupSelect) return;
 
-  regionSelect.innerHTML = `<option value="">-- é¢ï¿½ï¿½ï¿½è±¢ï¿½ï¿½æ­æ¹ï¿½ï¿½ --</option>`;
+  regionSelect.innerHTML = `<option value="">-- �ｇ蕭嚙踝蕭鞊ｇ蕭嚙賣�對蕭嚙� --</option>`;
   if (state.isSupabaseMode && state.orgStructure.rawRegions) {
     state.orgStructure.rawRegions.forEach(r => {
       regionSelect.innerHTML += `<option value="${r.id}">${r.name}</option>`;
@@ -614,8 +614,8 @@ export function renderAdminOrgManagement() {
     });
   }
 
-  zoneSelect.innerHTML = `<option value="">-- é¢ï¿½ï¿½ï¿½è±¢ï¿½ï¿½æ­æ¹ï¿½ï¿½æºï¿½é ï¿½ï¿½ï¿½ï¿½ --</option>`;
-  groupSelect.innerHTML = `<option value="">-- é¢ï¿½ï¿½ï¿½è±¢ï¿½ï¿½ï¿½ï¿½æ¹ï¿½ï¿½æºï¿½é ï¿½ï¿½ï¿½ï¿½ --</option>`;
+  zoneSelect.innerHTML = `<option value="">-- �ｇ蕭嚙踝蕭鞊ｇ蕭嚙賣�對蕭嚙賣嚙賡�嚙踝蕭嚙踝蕭 --</option>`;
+  groupSelect.innerHTML = `<option value="">-- �ｇ蕭嚙踝蕭鞊ｇ蕭嚙踝蕭嚙賣嚙踝蕭�綽蕭�蕭嚙踝蕭嚙� --</option>`;
 }
 
 export function populateAdminZones() {
@@ -623,8 +623,8 @@ export function populateAdminZones() {
   const zoneSelect = document.getElementById("admin-org-zone");
   const groupSelect = document.getElementById("admin-org-group");
 
-  zoneSelect.innerHTML = `<option value="">-- é¢ï¿½ï¿½ï¿½è±¢ï¿½ï¿½ï¿½ï¿½æ¹ï¿½ï¿½ --</option>`;
-  groupSelect.innerHTML = `<option value="">-- é¢ï¿½ï¿½ï¿½è±¢ï¿½ï¿½ï¿½ï¿½æ¹ï¿½ï¿½æºï¿½é ï¿½ï¿½ï¿½ï¿½ --</option>`;
+  zoneSelect.innerHTML = `<option value="">-- �ｇ蕭嚙踝蕭鞊ｇ蕭嚙踝蕭嚙賣嚙踝蕭 --</option>`;
+  groupSelect.innerHTML = `<option value="">-- �ｇ蕭嚙踝蕭鞊ｇ蕭嚙踝蕭嚙賣嚙踝蕭�綽蕭�蕭嚙踝蕭嚙� --</option>`;
 
   const regionVal = regionSelect.value;
   if (!regionVal) return;
@@ -646,7 +646,7 @@ export function populateAdminGroups() {
   const zoneSelect = document.getElementById("admin-org-zone");
   const groupSelect = document.getElementById("admin-org-group");
 
-  groupSelect.innerHTML = `<option value="">-- é¢ï¿½ï¿½ï¿½è±¢ï¿½ï¿½æ ï¿½è¯ï¿½ --</option>`;
+  groupSelect.innerHTML = `<option value="">-- �ｇ蕭嚙踝蕭鞊ｇ蕭嚙賣�嚙質嚙� --</option>`;
 
   const zoneVal = zoneSelect.value;
   if (!zoneVal) return;
@@ -700,17 +700,17 @@ export function showResponsibilityModal(role, user) {
     `;
     
     let roleText = "";
-    if (role === "great_zone_leader") roleText = "æ­æ¹ï¿½ï¿½ï¿½ï¿½ï¿½";
-    else if (role === "zone_leader") roleText = "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½";
-    else if (role === "group_leader") roleText = "æ ï¿½è¯ï¿½ï¿½ï¿½ï¿½";
+    if (role === "great_zone_leader") roleText = "�剜嚙踝蕭嚙踝蕭嚙�";
+    else if (role === "zone_leader") roleText = "嚙踝蕭嚙踝蕭嚙踝蕭";
+    else if (role === "group_leader") roleText = "�蕭�荔蕭嚙踝蕭嚙�";
     
     let htmlContent = `
       <div style="margin-bottom: 0.2rem;">
         <h3 style="margin-top: 0; margin-bottom: 0.5rem; font-size: 1.2rem; font-weight: 500; color: var(--text-primary);">
-          é®åï¿½ï¿½ ${roleText} ï¿½ï¿½ï¿½éï¿½éç¥ï¿½ï¿½ï¿½ï¿½ï¿½
+          �桀�嚙踝蕭 ${roleText} 嚙踝蕭嚙賡�嚙賡�蟡蕭嚙踝蕭嚙踝蕭
         </h3>
         <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0; line-height: 1.4;">
-          é¢ï¿½ï¿½ï¿½æ¸ï¿½è²åºï¿½ï¿½ï¿½ï¿½ï¿½â¥ï¿½ï¿½èâï¿½ï¿½ï¿½ï¿½ï¿½è­ï¿½ï¿½ï¿½ï¿½åï¿½ï¿½ï¿½èï¿½æ¸²ï¿½ï¿½ï¿½ï¿½è³ï¿½ï¿½ï¿½ï¿½ï¿½èé¤çµæ ï¿½éï¿½çæï¿½ï¿½çï¿½èâ ï¿½ï¿½çï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+          �ｇ蕭嚙踝蕭�賂蕭鞎�嚙踝蕭嚙踝蕭嚙賤嚙踝蕭��嚙踝蕭嚙踝蕭嚙質嚙踝蕭嚙踝蕭�蕭嚙踝蕭�嚙賣葡嚙踝蕭嚙踝蕭鞈蕭嚙踝蕭嚙踝蕭��蝯�嚙賡�嚙賜��蕭嚙賜�嚙質��蕭嚙賜�嚙踝蕭嚙踝蕭嚙踝蕭嚙�
         </p>
       </div>
       
@@ -720,7 +720,7 @@ export function showResponsibilityModal(role, user) {
     if (role === "great_zone_leader") {
       htmlContent += `
         <div class="form-group" style="margin-bottom: 0;">
-          <label style="display: block; font-size: 0.8rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.3rem;">éï¿½éç ä¹ï¿½ï¿½ï¿½ (ï¿½ï¿½èªï¿½ï¿½ï¿½ï¿½ï¿½)</label>
+          <label style="display: block; font-size: 0.8rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.3rem;">�蕭��銋蕭嚙踝蕭 (嚙踝蕭�迎蕭嚙踝蕭嚙踝蕭)</label>
           <div id="modal-regions-container" style="background: var(--bg-input); border: 1px solid var(--border-card); border-radius: 6px; padding: 0.6rem; max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.3rem;">
           </div>
         </div>
@@ -728,7 +728,7 @@ export function showResponsibilityModal(role, user) {
     } else if (role === "zone_leader") {
       htmlContent += `
         <div class="form-group" style="margin-bottom: 0;">
-          <label style="display: block; font-size: 0.8rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.3rem;">éï¿½éç¥ï¿½æ¹ï¿½ï¿½ (ï¿½ï¿½èªï¿½ï¿½ï¿½ï¿½ï¿½)</label>
+          <label style="display: block; font-size: 0.8rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.3rem;">�蕭��嚙賣嚙踝蕭 (嚙踝蕭�迎蕭嚙踝蕭嚙踝蕭)</label>
           <div id="modal-zones-container" style="background: var(--bg-input); border: 1px solid var(--border-card); border-radius: 6px; padding: 0.6rem; max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.3rem;">
           </div>
         </div>
@@ -736,7 +736,7 @@ export function showResponsibilityModal(role, user) {
     } else if (role === "group_leader") {
       htmlContent += `
         <div class="form-group" style="margin-bottom: 0;">
-          <label style="display: block; font-size: 0.8rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.3rem;">éï¿½éç ï¿½ï¿½è¯ï¿½ (ï¿½ï¿½èªï¿½ï¿½ï¿½ï¿½ï¿½)</label>
+          <label style="display: block; font-size: 0.8rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.3rem;">�蕭��嚙踝蕭�荔蕭 (嚙踝蕭�迎蕭嚙踝蕭嚙踝蕭)</label>
           <div id="modal-groups-container" style="background: var(--bg-input); border: 1px solid var(--border-card); border-radius: 6px; padding: 0.6rem; max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.3rem;">
           </div>
         </div>
@@ -746,8 +746,8 @@ export function showResponsibilityModal(role, user) {
     htmlContent += `
       </div>
       <div style="display: flex; justify-content: flex-end; gap: 0.6rem; border-top: 1px solid var(--border-card); padding-top: 0.8rem; margin-top: 0.2rem;">
-        <button id="modal-btn-cancel" class="pill-btn" style="padding: 0.5rem 1.2rem; font-size: 0.85rem;">ï¿½ï¿½ï¿½ç¨ï¿½</button>
-        <button id="modal-btn-confirm" class="primary-btn" style="padding: 0.5rem 1.2rem; font-size: 0.85rem; font-weight: 500;">è£ç®ï¿½ï¿½éï¿½ï¿½ï¿½ï¿½</button>
+        <button id="modal-btn-cancel" class="pill-btn" style="padding: 0.5rem 1.2rem; font-size: 0.85rem;">嚙踝蕭嚙賜嚙�</button>
+        <button id="modal-btn-confirm" class="primary-btn" style="padding: 0.5rem 1.2rem; font-size: 0.85rem; font-weight: 500;">���嚙踝蕭�蕭嚙踝蕭嚙�</button>
       </div>
     `;
     
@@ -785,7 +785,7 @@ export function showResponsibilityModal(role, user) {
           </label>
         `;
       });
-      regionContainer.innerHTML = html || `<span style="font-size: 0.8rem; color: var(--text-muted);">ï¿½ï¿½âªä¹ï¿½ï¿½ï¿½éï¿½ï¿½ï¿½ï¿½</span>`;
+      regionContainer.innerHTML = html || `<span style="font-size: 0.8rem; color: var(--text-muted);">嚙踝蕭�芯�嚙踝蕭嚙賡�嚙踝蕭嚙踝蕭</span>`;
     }
     
     if (role === "zone_leader" && zoneContainer) {
@@ -813,7 +813,7 @@ export function showResponsibilityModal(role, user) {
           </label>
         `;
       });
-      zoneContainer.innerHTML = html || `<span style="font-size: 0.8rem; color: var(--text-muted);">ï¿½ï¿½â ï¿½æ¹ï¿½ï¿½éï¿½ï¿½ï¿½ï¿½</span>`;
+      zoneContainer.innerHTML = html || `<span style="font-size: 0.8rem; color: var(--text-muted);">嚙踝蕭�蕭�對蕭嚙賡�嚙踝蕭嚙踝蕭</span>`;
     }
     
     if (role === "group_leader" && groupContainer) {
@@ -841,7 +841,7 @@ export function showResponsibilityModal(role, user) {
           </label>
         `;
       });
-      groupContainer.innerHTML = html || `<span style="font-size: 0.8rem; color: var(--text-muted);">ï¿½ï¿½âªï¿½ï¿½è¯ï¿½éï¿½ï¿½ï¿½ï¿½</span>`;
+      groupContainer.innerHTML = html || `<span style="font-size: 0.8rem; color: var(--text-muted);">嚙踝蕭�迎蕭嚙質嚙賡�嚙踝蕭嚙踝蕭</span>`;
     }
     
     const closeModal = (result) => {
@@ -859,7 +859,7 @@ export function showResponsibilityModal(role, user) {
       if (role === "great_zone_leader") {
         const checkedRegions = Array.from(regionContainer.querySelectorAll("input[name='region-checkbox']:checked")).map(cb => cb.dataset.name);
         if (checkedRegions.length === 0) {
-          alert("é¢ï¿½ï¿½ï¿½å³ï¿½ï¿½ï¿½ï¿½è±¢ï¿½ï¿½éï¿½ï¿½ï¿½ï¿½æ­æ¹ï¿½ï¿½åï¿½");
+          alert("�ｇ蕭嚙踝蕭�喉蕭嚙踝蕭嚙質悻嚙踝蕭�蕭嚙踝蕭嚙賣�對蕭嚙賢�嚙�");
           return;
         }
         closeModal({
@@ -870,7 +870,7 @@ export function showResponsibilityModal(role, user) {
       } else if (role === "zone_leader") {
         const checkedZones = Array.from(zoneContainer.querySelectorAll("input[name='zone-checkbox']:checked")).map(cb => cb.dataset.name);
         if (checkedZones.length === 0) {
-          alert("é¢ï¿½ï¿½ï¿½å³ï¿½ï¿½ï¿½ï¿½è±¢ï¿½ï¿½éï¿½ï¿½ï¿½ï¿½ï¿½ï¿½æ¹ï¿½ï¿½åï¿½");
+          alert("�ｇ蕭嚙踝蕭�喉蕭嚙踝蕭嚙質悻嚙踝蕭�蕭嚙踝蕭嚙踝蕭嚙賣嚙踝蕭�蕭");
           return;
         }
         closeModal({
@@ -881,7 +881,7 @@ export function showResponsibilityModal(role, user) {
       } else if (role === "group_leader") {
         const checkedGroups = Array.from(groupContainer.querySelectorAll("input[name='group-checkbox']:checked")).map(cb => cb.dataset.name);
         if (checkedGroups.length === 0) {
-          alert("é¢ï¿½ï¿½ï¿½å³ï¿½ï¿½ï¿½ï¿½è±¢ï¿½ï¿½éï¿½ï¿½ï¿½ï¿½æ ï¿½è¯ï¿½åï¿½");
+          alert("�ｇ蕭嚙踝蕭�喉蕭嚙踝蕭嚙質悻嚙踝蕭�蕭嚙踝蕭嚙賣�嚙質嚙賢�嚙�");
           return;
         }
         closeModal({
@@ -898,9 +898,9 @@ function updatePastoralWallControl(enabled, options = {}) {
   const status = document.getElementById("admin-pastoral-wall-status");
   if (!toggle || !status) return;
   toggle.setAttribute("aria-checked", enabled ? "true" : "false");
-  toggle.setAttribute("aria-label", enabled ? "æ ï¿½æ®ï¿½ï¿½ï¿½æ¹ï¿½ï¿½ï¿½ï¿½ï¿½é½æ¡ï¿½ï¿½é­æï¿½ï¿½" : "ï¿½ï¿½ï¿½ï¿½ï¿½æï¿½æ¹ï¿½ï¿½ï¿½ï¿½ï¿½é½æ¡ï¿½ï¿½é­æï¿½ï¿½");
+  toggle.setAttribute("aria-label", enabled ? "�蕭�殷蕭嚙踝蕭�對蕭嚙踝蕭嚙踝蕭�賣�嚙踝蕭�剜蕭嚙�" : "嚙踝蕭嚙踝蕭嚙賣�嚙賣嚙踝蕭嚙踝蕭嚙賡獢嚙踝蕭�剜蕭嚙�");
   toggle.disabled = options.disabled === true;
-  status.textContent = enabled ? "ï¿½ï¿½æ¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½æ©ï¿½ï¿½æï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½æ¿èå§ï¿½ï¿½ï¿½é­æï¿½ï¿½" : "ï¿½ï¿½æ¡ï¿½ï¿½æ ï¿½æ®ï¿½åï¿½æï¿½ï¿½ï¿½ï¿½éï¿½æ¿èå§ï¿½ï¿½ï¿½é­æï¿½ï¿½";
+  status.textContent = enabled ? "嚙踝蕭獢嚙踝蕭嚙踝蕭嚙踝蕭嚙賣�嚙踝蕭�蕭嚙踝蕭嚙踝蕭嚙踝蕭�輯��改蕭嚙踝蕭�剜蕭嚙�" : "嚙踝蕭獢嚙踝蕭�蕭�殷蕭�蕭�蕭嚙踝蕭嚙賡�嚙賣�嚙踝蕭嚙賡�蕭嚙�";
 }
 
 export async function renderAdminFeatureSettings() {
@@ -920,7 +920,7 @@ export async function renderAdminFeatureSettings() {
   const result = await db.getFeatureSetting("pastoral_sharing_wall", false);
   if (result.error) {
     updatePastoralWallControl(false, { disabled: true });
-    feedback.textContent = "ï¿½ï¿½æ¡ï¿½ï¿½ï¿½ï¿½â¥ï¿½ï¿½éï¿½ï¿½ï¿½ï¿½é®åï¿½ï¿½åï¿½é¢ï¿½è£ç®ï¿½ï¿½éï¿½ï¿½ï¿½ï¿½æ¨æ¥ï¿½æ¹ï¿½å£æ­æ°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½";
+    feedback.textContent = "嚙踝蕭獢嚙踝蕭嚙踝蕭�伐蕭嚙賡�嚙踝蕭嚙踝蕭�桀�嚙踝蕭�蕭�ｇ蕭���嚙踝蕭�蕭嚙踝蕭嚙賣�伐蕭皝蕭����堆蕭嚙踝蕭嚙踝蕭嚙踝蕭";
     feedback.classList.remove("hidden");
     return;
   }
@@ -938,14 +938,14 @@ export async function renderAdminFeatureSettings() {
       const saveResult = await db.updateFeatureSetting("pastoral_sharing_wall", nextEnabled);
       if (saveResult.error) {
         updatePastoralWallControl(currentEnabled);
-        feedback.textContent = "é®åï¿½ï¿½çï¿½ï¿½ï¿½ï¿½ï¿½ï¿½è£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½åï¿½é¢ï¿½èï¿½æºï¿½ï¿½ï¿½ï¿½é°è¾ï¿½ï¿½";
+        feedback.textContent = "�桀�嚙踝蕭�蕭嚙踝蕭嚙踝蕭嚙質嚙踝蕭嚙踝蕭嚙踝蕭嚙踝蕭�蕭�ｇ蕭�蕭�綽蕭嚙踝蕭嚙賡�橘蕭嚙�";
         feedback.classList.remove("hidden");
         return;
       }
 
       updatePastoralWallControl(nextEnabled);
       if (typeof showToast === "function") {
-        showToast(nextEnabled ? "ï¿½ï¿½æ¹ï¿½ï¿½ï¿½ï¿½ï¿½é½æ¡ï¿½ï¿½é­æï¿½ï¿½æè¤ï¿½ï¿½ï¿½ï¿½ï¿½" : "ï¿½ï¿½æ¹ï¿½ï¿½ï¿½ï¿½ï¿½é½æ¡ï¿½ï¿½é­æï¿½ï¿½æè£ï¿½ï¿½æ®ï¿½");
+        showToast(nextEnabled ? "嚙踝蕭�對蕭嚙踝蕭嚙踝蕭�賣�嚙踝蕭�剜蕭嚙賣��歹蕭嚙踝蕭嚙踝蕭" : "嚙踝蕭�對蕭嚙踝蕭嚙踝蕭�賣�嚙踝蕭�剜蕭嚙賣���蕭嚙賣嚙�");
       }
       window.dispatchEvent(new CustomEvent("pastoral-sharing-wall-changed", {
         detail: { enabled: nextEnabled }
