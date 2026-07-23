@@ -494,7 +494,7 @@ const db = {
     if (profile.membership_status) state.membershipStatus = profile.membership_status;
     if (profile.avatar_url) state.currentUser.avatar_url = profile.avatar_url;
     if (Array.isArray(lockedFields)) state.profileLockedFields = lockedFields;
-    state.currentUser.is_demo = !!profile.is_demo;
+    state.currentUser.is_demo = false;
     state.realRole = state.currentUser.role;
     this.refreshRoleDependentUI();
   },
@@ -503,8 +503,8 @@ const db = {
     if (typeof updateAdminNavVisibility === "function") {
       updateAdminNavVisibility();
     }
-    if (typeof updateProfileDropdown === "function") {
-      updateProfileDropdown();
+    if (typeof updateHeaderAvatar === "function") {
+      updateHeaderAvatar();
     }
     if (typeof refreshUserAvatars === "function") {
       refreshUserAvatars();
@@ -602,10 +602,6 @@ const db = {
     const appLayout = document.querySelector(".app-layout");
     if (loginGate) loginGate.classList.remove("hidden");
     if (appLayout) appLayout.classList.add("hidden");
-  },
-
-  setDemoMode() {
-    // Deprecated and disabled
   },
 
   // Handle Supabase Auth UI Switches
@@ -840,6 +836,7 @@ const db = {
     }
 
     // FALLBACK: LocalStorage mode
+    await this.loadGlobalPlans();
     const localProfile = localStorage.getItem("user_profile");
     if (localProfile) {
       state.currentUser = JSON.parse(localProfile);
@@ -920,56 +917,26 @@ const db = {
         state.activePlan = null;
       }
     } else {
-      // First run in Demo mode: default to admin with mock logs/plan
+      // First run: default to guest user with clean profile
       state.currentUser = {
-        name: "系統管理員",
-        great_region: "南區",
-        pastoral_zone: "新烏4",
-        small_group: "秀枝",
-        role: "admin",
-        chapters_read: 80,
-        plan_progress: 72,
-        streak: 15,
-        last_read: new Date().toISOString().split('T')[0]
+        name: "訪客",
+        great_region: "",
+        pastoral_zone: "",
+        small_group: "",
+        role: "member",
+        is_demo: false,
+        chapters_read: 0,
+        plan_progress: 0,
+        streak: 0,
+        last_read: null
       };
       localStorage.setItem("user_profile", JSON.stringify(state.currentUser));
-      state.realRole = "admin";
-
-      const defaultDemoPresetKey = Object.keys(CHURCH_PLAN_PRESETS)[0];
-      const defaultDemoPreset = CHURCH_PLAN_PRESETS[defaultDemoPresetKey];
-
-
-      state.activePlan = generatePlanObject(defaultDemoPreset.name, defaultDemoPreset.startDate, defaultDemoPreset.endDate, defaultDemoPreset.books, defaultDemoPresetKey);
-      state.activePlan.progress = 72;
-      state.activePlan.completedChapters = Math.round((state.activePlan.totalChapters * 72) / 100);
-      state.activePlans = [state.activePlan];
-
-      localStorage.setItem("active_reading_plans", JSON.stringify(state.activePlans));
-      localStorage.setItem("selected_plan_key", defaultDemoPresetKey);
-
-      // Fill in simulated logs
-      const completedList = [];
-      let count = 0;
-      for (const day of state.activePlan.days) {
-        for (const ch of day.chapters) {
-          if (count < state.activePlan.completedChapters) {
-            completedList.push({
-              book: ch.book,
-              chapter: ch.chapter,
-              read_at: new Date(state.activePlan.startDate).toISOString(),
-              presetKey: defaultDemoPresetKey
-            });
-            count++;
-          } else {
-            break;
-          }
-        }
-        if (count >= state.activePlan.completedChapters) break;
-      }
-      state.readingLogs = completedList;
-      localStorage.setItem("reading_logs", JSON.stringify(state.readingLogs));
-
-      state.currentUser.chapters_read = state.readingLogs.length;
+      state.realRole = "member";
+      state.activePlans = [];
+      state.activePlan = null;
+      state.readingLogs = [];
+      localStorage.setItem("active_reading_plans", "[]");
+      localStorage.setItem("reading_logs", "[]");
     }
 
         this.calculateStreak();
@@ -1066,38 +1033,14 @@ const db = {
     // 優先從 mock_stats.js 動態讀取以避免重複定義
     if (typeof MOCK_GREAT_REGIONS !== 'undefined' && MOCK_GREAT_REGIONS.length > 0) {
       state.orgStructure.regions = [...MOCK_GREAT_REGIONS];
-      const demoRegions = ["示範大區A", "示範大區B", "示範大區C", "示範大區D"];
-      demoRegions.forEach(dr => {
-        if (!state.orgStructure.regions.includes(dr)) {
-          state.orgStructure.regions.push(dr);
-        }
-      });
-
       state.orgStructure.zones = {};
       if (typeof MOCK_PASTORAL_ZONES_BY_REGION !== 'undefined') {
         Object.assign(state.orgStructure.zones, MOCK_PASTORAL_ZONES_BY_REGION);
       }
-      state.orgStructure.zones["示範大區A"] = ["示範牧區甲", "示範牧區乙", "示範牧區丙"];
-      state.orgStructure.zones["示範大區B"] = ["示範牧區丁", "示範牧區戊", "示範牧區己"];
-      state.orgStructure.zones["示範大區C"] = ["示範牧區庚", "示範牧區辛"];
-      state.orgStructure.zones["示範大區D"] = ["示範牧區壬", "示範牧區癸"];
-
       state.orgStructure.groups = {};
       if (typeof MOCK_SMALL_GROUPS !== 'undefined') {
         Object.assign(state.orgStructure.groups, MOCK_SMALL_GROUPS);
       }
-      Object.assign(state.orgStructure.groups, {
-        "示範牧區甲": ["示範小組1", "示範小組2"],
-        "示範牧區乙": ["示範小組3"],
-        "示範牧區丙": ["示範小組4"],
-        "示範牧區丁": ["示範小組5"],
-        "示範牧區戊": ["示範小組6"],
-        "示範牧區己": ["示範小組7"],
-        "示範牧區庚": ["示範小組8"],
-        "示範牧區辛": ["示範小組9"],
-        "示範牧區壬": ["示範小組10"],
-        "示範牧區癸": ["示範小組11"]
-      });
       return;
     }
 
@@ -1725,11 +1668,6 @@ const db = {
     };
   },
 
-  async switchDemoRole(role) {
-    // Deprecated and disabled
-    console.warn("switchDemoRole is deprecated and disabled.");
-  },
-
   async getDevotionalNote(date) {
     if (state.isSupabaseMode && state.supabase) {
       const user = await this.getCurrentDbUser();
@@ -2004,15 +1942,21 @@ const db = {
   async joinPresetPlan(key, scheduleSettings = null) {
     let preset = (state.globalPlans || []).find(p => p.presetKey === key || p.id === key);
     if (!preset) {
-      preset = CHURCH_PLAN_PRESETS[key];
+      preset = CHURCH_PLAN_PRESETS[key] || Object.values(CHURCH_PLAN_PRESETS).find(p => p.id === key);
     }
-    if (!preset) return;
+    if (!preset) {
+      loader.hide();
+      showToast("找不到該預設計畫。");
+      return null;
+    }
+
+    const presetKey = preset.presetKey || key;
 
         loader.show("加入挑戰計畫中...");
 
     const getCleanDisplayName = (name) => String(name || "").trim();
 
-    const planName = getCleanDisplayName(preset.name, key);
+    const planName = getCleanDisplayName(preset.name, presetKey);
     let startDate = preset.startDate;
     let endDate = preset.endDate;
     const selectedBooks = preset.books;
@@ -2052,7 +1996,7 @@ const db = {
       try {
         const user = await this.getCurrentDbUser();
         if (user) {
-          const isGlobalPlanUUID = isUuid(key);
+          const globalPlanId = isUuid(key) ? key : (isUuid(preset.id) ? preset.id : (isUuid(preset.globalPlanId) ? preset.globalPlanId : null));
 
           const insertPayload = {
             user_id: user.id,
@@ -2060,7 +2004,7 @@ const db = {
             start_date: startDate,
             end_date: endDate,
             target_books: selectedBooks,
-            preset_key: key,
+            preset_key: presetKey,
             level: 'normal',
             current_round: 1,
             was_downgraded: false,
@@ -2071,24 +2015,23 @@ const db = {
             rest_weekdays: weeklySchedule.restWeekdays
           };
 
-          // 若是來自月度預設計畫，自動關聯到 global_plans 中的 9 大分類模板 UUID
-          if (isGlobalPlanUUID) {
-            insertPayload.global_plan_id = key;
+          if (globalPlanId) {
+            insertPayload.global_plan_id = globalPlanId;
           }
 
           let existingQuery = state.supabase
             .from("reading_plans")
             .select("*")
             .eq("user_id", user.id);
-          if (isGlobalPlanUUID) existingQuery = existingQuery.eq("global_plan_id", key);
-          else existingQuery = existingQuery.eq("preset_key", key).eq("name", planName);
+          if (globalPlanId) existingQuery = existingQuery.eq("global_plan_id", globalPlanId);
+          else existingQuery = existingQuery.eq("preset_key", presetKey).eq("name", planName);
 
           const { data: existingPlan, error: existingError } = await existingQuery.maybeSingle();
           if (existingError) throw existingError;
 
           if (existingPlan) {
             const existingIsFixed = existingPlan.is_fixed !== false;
-            newPlanObj = generatePlanObject(planName, existingPlan.start_date, existingPlan.end_date, selectedBooks, key, 'normal', existingIsFixed, {
+            newPlanObj = generatePlanObject(planName, existingPlan.start_date, existingPlan.end_date, selectedBooks, presetKey, 'normal', existingIsFixed, {
               readingDaysPerWeek: existingPlan.reading_days_per_week,
               restWeekdays: existingPlan.rest_weekdays
             });
@@ -2101,7 +2044,7 @@ const db = {
             if (!state.activePlans) state.activePlans = [];
             if (!state.activePlans.some(p => p.id === newPlanObj.id)) state.activePlans.push(newPlanObj);
             state.activePlan = newPlanObj;
-            localStorage.setItem("selected_plan_key", key);
+            localStorage.setItem("selected_plan_key", presetKey);
           } else {
             const { data: dbPlan, error } = await state.supabase
               .from("reading_plans")
@@ -2119,7 +2062,7 @@ const db = {
             if (!dbPlan) throw new Error("No plan returned after insert.");
 
             const dbIsFixed = dbPlan.is_fixed !== false;
-            newPlanObj = generatePlanObject(planName, dbPlan.start_date, dbPlan.end_date, selectedBooks, key, 'normal', dbIsFixed, {
+            newPlanObj = generatePlanObject(planName, dbPlan.start_date, dbPlan.end_date, selectedBooks, presetKey, 'normal', dbIsFixed, {
               readingDaysPerWeek: dbPlan.reading_days_per_week,
               restWeekdays: dbPlan.rest_weekdays
             });
@@ -2130,7 +2073,7 @@ const db = {
             if (!state.activePlans) state.activePlans = [];
             state.activePlans.push(newPlanObj);
             state.activePlan = newPlanObj;
-            localStorage.setItem("selected_plan_key", key);
+            localStorage.setItem("selected_plan_key", presetKey);
           }
         }
       } catch (e) {
@@ -2140,14 +2083,14 @@ const db = {
         return null;
       }
     } else {
-      newPlanObj = generatePlanObject(planName, startDate, endDate, selectedBooks, key, 'normal', isFixed, weeklySchedule);
+      newPlanObj = generatePlanObject(planName, startDate, endDate, selectedBooks, presetKey, 'normal', isFixed, weeklySchedule);
       newPlanObj.isFixed = isFixed;
       newPlanObj.is_fixed = isFixed;
       if (!state.activePlans) state.activePlans = [];
       state.activePlans.push(newPlanObj);
       state.activePlan = newPlanObj;
       localStorage.setItem("active_reading_plans", JSON.stringify(state.activePlans));
-      localStorage.setItem("selected_plan_key", key);
+      localStorage.setItem("selected_plan_key", presetKey);
     }
 
     if (newPlanObj && preset.planKind) {

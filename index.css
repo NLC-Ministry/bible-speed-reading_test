@@ -2770,9 +2770,7 @@ vercel-live-feedback,
   border-color: var(--primary-color) !important;
   transform: translateY(-1px);
 }
-.demo-role-card select {
-  font-weight: var(--type-weight-strong);
-}
+
 
 /* PWA and Auth UI animations */
 @keyframes pulse {
