@@ -210,6 +210,7 @@ export async function renderAdminUserManagement() {
     });
 
     const filteredUsers = sortedUsers.filter(u => {
+      if (state.isSupabaseMode && u.is_demo) return false;
       const matchName = u.name.toLowerCase().includes(query);
       const matchEmail = u.email ? u.email.toLowerCase().includes(query) : false;
       const matchRegion = !state.adminFilters.region || u.great_region === state.adminFilters.region;
@@ -226,24 +227,30 @@ export async function renderAdminUserManagement() {
     }
 
     const roleLabels = {
-      member: "一般會友",
+      member: "一般組員",
       group_leader: "小組長",
-      zone_leader: "牧區長",
+      zone_leader: "區長",
       great_zone_leader: "大區長",
       admin: "系統管理員"
     };
 
     filteredUsers.forEach(user => {
+      const isDemo = !!user.is_demo;
       const roleLabel = roleLabels[user.role] || user.role;
       
       const item = document.createElement("div");
       item.className = "member-list-item";
       
+      const demoBadge = isDemo
+        ? `<span class="stat-badge stat-badge--warning" style="display:inline-block;margin-left:0.4rem;font-size:0.65rem;">示範</span>`
+        : "";
+
       item.innerHTML = `
         <div class="member-info-left">
           <div class="member-name-row">
             <span class="member-name-text">${escapeHTML(user.name)}</span>
             <span class="role-badge-pill">${escapeHTML(roleLabel)}</span>
+            ${demoBadge}
           </div>
           <div class="member-sub-text">
             ${escapeHTML(user.great_region)} / ${escapeHTML(user.pastoral_zone)} / ${escapeHTML(user.small_group)}
@@ -257,6 +264,10 @@ export async function renderAdminUserManagement() {
 
       item.onclick = (e) => {
         e.preventDefault();
+        if (isDemo) {
+          alert("示範帳號不可更改角色。");
+          return;
+        }
         openMemberEditBottomSheet(user);
       };
 
@@ -576,7 +587,7 @@ export function initAdminOrgManagement() {
         if (typeof renderProfileView === "function") renderProfileView();
       }
     }
-  };��組！");
+  };��組！");
       return;
     }
     const opt = groupSelect.options[groupSelect.selectedIndex];
