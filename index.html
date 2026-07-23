@@ -1440,6 +1440,12 @@
                     aria-hidden="true"></span><span>編輯個人檔案</span></span>
               </button>
 
+              <!-- Log Out Button directly in the Profile tab -->
+              <button class="danger-btn w-full" id="btn-profile-logout" style="margin-top: 0.8rem; background: var(--color-danger-muted, rgba(239, 68, 68, 0.15)); border: 1px solid var(--color-danger-border, rgba(239, 68, 68, 0.25)); color: var(--color-danger-fg, #ef4444); border-radius: var(--border-radius-btn, 8px); padding: 0.75rem 1rem; font-weight: 500; font-size: 0.9rem; cursor: pointer; transition: background 0.2s, border-color 0.2s; display: flex; align-items: center; justify-content: center; gap: 0.5rem;" onmouseenter="this.style.background='rgba(239, 68, 68, 0.25)'; this.style.borderColor='rgba(239, 68, 68, 0.45)'" onmouseleave="this.style.background='rgba(239, 68, 68, 0.15)'; this.style.borderColor='rgba(239, 68, 68, 0.25)'">
+                <span class="nlc-icon nlc-icon--sm" data-icon="logout" aria-hidden="true"></span>
+                <span>登出帳號</span>
+              </button>
+
               <!-- Collapsible Profile Form Wrapper -->
               <div id="profile-form-wrapper" class="hidden"
                 style="margin-top: 1rem; border-top: 1px solid var(--border-card); padding-top: 1.5rem;">

@@ -675,30 +675,57 @@ function initAvatarDropdown() {
     });
   }
 
+  async function handleLogoutAndClearCache() {
+    loader.show("\u767b\u51fa\u4e2b\u6e05\u9664\u5feb\u53d6\u4e2d...");
+    try {
+      if (navigator.serviceWorker) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (const reg of registrations) {
+          await reg.unregister();
+        }
+      }
+      if (window.caches) {
+        const keys = await caches.keys();
+        for (const key of keys) {
+          await caches.delete(key);
+        }
+      }
+      window.localStorage.removeItem("care_reminder_badge_last_refresh");
+
+      if (typeof auth !== "undefined" && auth.logout) {
+        await auth.logout();
+        return;
+      }
+      if (state.isSupabaseMode && state.supabase?.auth?.signOut) {
+        await state.supabase.auth.signOut();
+      }
+      state.realRole = null;
+      db.updateAuthUI(null);
+      await db.loadUserData();
+      updateHeaderAvatar();
+      alert("\u5df2\u767b\u51fa\u4e2b\u5feb\u53d6\u5df2\u91cd\u8a2d\u3002");
+      window.location.reload(true);
+    } catch (err) {
+      alert(`\u767b\u51fa\u5931\u6557: \${err.message}`);
+      window.location.reload();
+    } finally {
+      loader.hide();
+    }
+  }
+
   if (btnLogout) {
     btnLogout.addEventListener("click", async (e) => {
       e.preventDefault();
       dropdown.classList.add("hidden");
-      loader.show("\u767b\u51fa\u4e2d...");
-      try {
-        if (typeof auth !== "undefined" && auth.logout) {
-          await auth.logout();
-          return;
-        }
-        if (state.isSupabaseMode && state.supabase?.auth?.signOut) {
-          await state.supabase.auth.signOut();
-        }
-        state.realRole = null;
-        db.updateAuthUI(null);
-        await db.loadUserData();
-        updateHeaderAvatar();
-        alert("\u5df2\u767b\u51fa\u3002");
-        appRouter.switchTab("dashboard-view");
-      } catch (err) {
-        alert(`\u767b\u51fa\u5931\u6557: ${err.message}`);
-      } finally {
-        loader.hide();
-      }
+      await handleLogoutAndClearCache();
+    });
+  }
+
+  const btnProfileLogout = document.getElementById("btn-profile-logout");
+  if (btnProfileLogout) {
+    btnProfileLogout.addEventListener("click", async (e) => {
+      e.preventDefault();
+      await handleLogoutAndClearCache();
     });
   }
 }
