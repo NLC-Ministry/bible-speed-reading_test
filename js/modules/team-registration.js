@@ -272,13 +272,9 @@
     const expectedChapters = getExpectedChapters(plan, totalChapters);
     const behindCount = members.filter(member => Number(member.currentRound || 1) === 1 && Number(member.chaptersRead || 0) < expectedChapters).length;
     const rereadCount = members.filter(member => Number(member.currentRound || 1) > 1).length;
-    const averageProgress = members.length && totalChapters > 0
-      ? Math.min(100, Math.round(totalRead / (members.length * totalChapters) * 100))
-      : 0;
 
     return `<div class="reading-team-stat-grid" aria-label="團隊讀經統計">
-      <article class="reading-team-stat-card reading-team-stat-card--primary"><span>總閱讀章數</span><strong>${totalRead}<small>章</small></strong><span class="nlc-icon" data-icon="bookOpen" aria-hidden="true"></span></article>
-      <article class="reading-team-stat-card"><span>平均進度</span><strong>${averageProgress}<small>%</small></strong><span class="nlc-icon" data-icon="award" aria-hidden="true"></span></article>
+      <article class="reading-team-stat-card"><span>總閱讀章數</span><strong>${totalRead}<small>章</small></strong><span class="nlc-icon" data-icon="bookOpen" aria-hidden="true"></span></article>
       <article class="reading-team-stat-card"><span>今日活躍</span><strong>${activeToday}<small>人</small></strong><span class="nlc-icon" data-icon="lightning" aria-hidden="true"></span></article>
       <article class="reading-team-stat-card"><span>進度落後</span><strong>${behindCount}<small>人</small></strong><span class="nlc-icon" data-icon="hourglass" aria-hidden="true"></span></article>
       <article class="reading-team-stat-card"><span>進入複讀</span><strong>${rereadCount}<small>人</small></strong><span class="nlc-icon" data-icon="refresh" aria-hidden="true"></span></article>
