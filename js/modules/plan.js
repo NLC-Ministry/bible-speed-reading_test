@@ -4418,7 +4418,7 @@ async function renderGroupParticipantsRankingTable() {
 
     const tabMembers = document.getElementById("tab-plan-members");
     const isMembersActive = (tabMembers && tabMembers.classList.contains("active"))
-      || window.PlanPageController?.groupSubview === GROUP_SUBVIEW.STATS;
+      || window.currentPlanViewState === PLAN_ROUTE.ORG_STATS;
 
     if (isMembersActive) {
       populateMembersSelector();
