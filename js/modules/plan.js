@@ -243,35 +243,13 @@ async function showPlanGroupSubview(view = GROUP_SUBVIEW.STATS) {
     await window.switchStatTab("personal");
   } else if (target === GROUP_SUBVIEW.STATS) {
     const regContainer = document.getElementById("reading-team-registration-inline");
-    const isTeamPlan = typeof window.isReadingTeamPlan === "function" && window.isReadingTeamPlan(state.activePlan);
-    let hasTeam = false;
-    if (isTeamPlan) {
-      const teamResult = await db.getMyReadingTeam(state.activePlan);
-      const teamContexts = (teamResult && teamResult.success)
-        ? getJoinedReadingTeamContexts(teamResult.context)
-        : [];
-      hasTeam = teamContexts.length > 0;
-    }
+    if (regContainer) regContainer.classList.add("hidden");
 
     // Hide personal section under the stats tab
     const personalSec = document.getElementById("stats-personal-section");
     if (personalSec) personalSec.classList.add("hidden");
 
-    if (!hasTeam) {
-      if (regContainer) {
-        regContainer.classList.remove("hidden");
-        if (typeof window.renderReadingTeamRegistrationInline === "function") {
-          window.renderReadingTeamRegistrationInline(regContainer, state.activePlan);
-        }
-      }
-      const teamSwitcher = document.getElementById("stats-team-view-switch");
-      const teamInline = document.getElementById("reading-team-stats-inline");
-      if (teamSwitcher) teamSwitcher.classList.add("hidden");
-      if (teamInline) teamInline.classList.add("hidden");
-    } else {
-      if (regContainer) regContainer.classList.add("hidden");
-      await prepareReadingTeamSubview("stats");
-    }
+    await prepareReadingTeamSubview("stats");
   } else if (target === GROUP_SUBVIEW.RANKING) {
     await renderPlanRankingView();
   }
