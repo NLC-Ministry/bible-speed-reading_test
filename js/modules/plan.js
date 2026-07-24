@@ -924,20 +924,30 @@ function initPlanControls() {
       const joinedContainer = document.getElementById("joined-plans-list-container");
       const presetContainer = document.getElementById("preset-plans-list-container");
       const sidebarCard = document.getElementById("plan-sidebar-info-card");
+      const joinTeamContainer = document.getElementById("join-team-container");
 
       if (filter === "mine") {
         if (joinedContainer) joinedContainer.classList.remove("hidden");
         if (presetContainer) presetContainer.classList.add("hidden");
+        if (joinTeamContainer) joinTeamContainer.classList.add("hidden");
         if (sidebarCard) sidebarCard.classList.remove("hidden");
         renderJoinedPlansList();
       } else if (filter === "saved") {
         if (joinedContainer) joinedContainer.classList.add("hidden");
         if (presetContainer) presetContainer.classList.remove("hidden");
+        if (joinTeamContainer) joinTeamContainer.classList.add("hidden");
         if (sidebarCard) sidebarCard.classList.remove("hidden");
         renderPresetPlansList();
+      } else if (filter === "join-team") {
+        if (joinedContainer) joinedContainer.classList.add("hidden");
+        if (presetContainer) presetContainer.classList.add("hidden");
+        if (joinTeamContainer) joinTeamContainer.classList.remove("hidden");
+        if (sidebarCard) sidebarCard.classList.add("hidden");
+        setupGlobalJoinTeamForm();
       } else {
         if (joinedContainer) joinedContainer.classList.remove("hidden");
         if (presetContainer) presetContainer.classList.add("hidden");
+        if (joinTeamContainer) joinTeamContainer.classList.add("hidden");
         if (sidebarCard) sidebarCard.classList.add("hidden");
         renderJoinedPlansList();
       }
@@ -1239,6 +1249,10 @@ function renderJoinedPlansList() {
             ? `已完成第 ${currentRound - 1} 遍 👑<br>第 ${currentRound} 遍：已讀 ${progress}% (${plan.completedChapters} / ${plan.currentRoundTotalChapters || plan.totalChapters} 章)`
             : `已讀 ${progress}% (${plan.completedChapters} / ${plan.currentRoundTotalChapters || plan.totalChapters} 章)`);
 
+        const isTeamPlan = (typeof window.isReadingTeamPlan === "function" && window.isReadingTeamPlan(plan)) || 
+          !!(plan && (plan.planKind === "church_campaign_stage" || (plan.presetKey && (plan.presetKey.startsWith("church_stage_") || plan.presetKey.startsWith("preset-stage-")))));
+        const teamHtml = isTeamPlan ? `<div class="plan-card-team-controls" style="display: flex; gap: 0.5rem; margin-top: 0.6rem; flex-wrap: wrap;"></div>` : "";
+
         card.innerHTML = `
           ${getPlanCoverHtml(plan)}
           <div style="flex-grow: 1; display: flex; flex-direction: column; gap: 0.25rem; min-width: 0;">
@@ -1258,8 +1272,63 @@ function renderJoinedPlansList() {
               <span class="nlc-icon nlc-icon--sm" data-icon="calendarThirty" aria-hidden="true"></span>
               <span>${escapeHTML(weeklyScheduleSummary)}</span>
             </div>
+            ${teamHtml}
           </div>
         `;
+
+        if (isTeamPlan) {
+          const teamContainer = card.querySelector(".plan-card-team-controls");
+          if (teamContainer) {
+            teamContainer.innerHTML = `<span style="font-size: 0.73rem; color: var(--text-muted);">正在載入團隊狀態...</span>`;
+            db.getMyReadingTeam(plan).then(result => {
+              if (!teamContainer.parentElement) return;
+              teamContainer.innerHTML = "";
+
+              const contexts = (result && result.success) ? getJoinedReadingTeamContexts(result.context) : [];
+              const joinedDivisions = new Set(contexts.map(c => Number(c.team.division)));
+
+              [3, 6].forEach(division => {
+                const hasJoined = joinedDivisions.has(division);
+                const btn = document.createElement("button");
+                btn.type = "button";
+                btn.style.cssText = `
+                  font-size: 0.75rem;
+                  padding: 0.3rem 0.6rem;
+                  border-radius: 8px;
+                  display: inline-flex;
+                  align-items: center;
+                  gap: 0.25rem;
+                  cursor: pointer;
+                  margin: 0;
+                  border: 1px solid var(--border-card);
+                  transition: all 0.2s;
+                `;
+
+                if (hasJoined) {
+                  const teamName = contexts.find(c => Number(c.team.division) === division)?.team?.name || "";
+                  btn.className = "secondary-btn";
+                  btn.innerHTML = `<span class="nlc-icon nlc-icon--xs" data-icon="people" style="color: var(--color-success-foreground);"></span><span>已入 ${division}人組 (${escapeHTML(teamName)})</span>`;
+                  btn.onclick = (e) => {
+                    e.stopPropagation();
+                    window.openReadingTeamDialog(plan, { preferredDivision: division });
+                  };
+                } else {
+                  btn.className = "primary-btn";
+                  btn.innerHTML = `<span class="nlc-icon nlc-icon--xs" data-icon="plus"></span><span>報名 ${division}人組</span>`;
+                  btn.onclick = (e) => {
+                    e.stopPropagation();
+                    window.openReadingTeamDialog(plan, { preferredDivision: division });
+                  };
+                }
+                teamContainer.appendChild(btn);
+              });
+              if (typeof hydrateIcons === "function") hydrateIcons(teamContainer);
+            }).catch(err => {
+              console.error("Error loading team info for card:", err);
+              teamContainer.innerHTML = `<span style="font-size: 0.73rem; color: var(--color-danger);">無法載入團隊資料</span>`;
+            });
+          }
+        }
       }
 
       container.appendChild(card);
@@ -1275,6 +1344,235 @@ function formatCampaignReadingRange(reading) {
   const from = Number(reading.from || 1);
   const to = Number(reading.to || book && book.chapters || from);
   return reading.book + " " + (from === to ? from : from + "–" + to) + "章";
+}
+
+// ==================== 加入模式選擇對話框 ====================
+// 顯示「個人 or 團體」選擇，在加入計畫之前呼叫。
+// 回傳 3（3人團隊）、6（6人團隊）或 null（先自己開始）。
+function openJoinModeDialog(plan) {
+  return new Promise(resolve => {
+    const existing = document.getElementById("join-mode-dialog");
+    if (existing) existing.remove();
+
+    const overlay = document.createElement("div");
+    overlay.id = "join-mode-dialog";
+    overlay.className = "modal-overlay";
+    overlay.style.cssText = "position:fixed;inset:0;z-index:10001;background:rgba(15,23,42,.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:1rem;animation:fadeIn 0.18s ease;";
+
+    overlay.innerHTML = `
+      <div class="glass-card" role="dialog" aria-modal="true" aria-labelledby="join-mode-title"
+        style="width:min(400px,100%);padding:1.5rem;background:var(--bg-card);border:1px solid var(--border-card);box-shadow:var(--shadow-lg);border-radius:20px;animation:slideUp 0.22s cubic-bezier(0.34,1.56,0.64,1);">
+
+        <div style="display:flex;align-items:center;gap:.65rem;margin-bottom:.35rem;">
+          <span class="nlc-icon nlc-icon--md" data-icon="people" style="color:var(--color-brand,#04A9D2);" aria-hidden="true"></span>
+          <h3 id="join-mode-title" style="margin:0;font-size:1.05rem;font-weight:600;color:var(--text-primary);">要與夥伴一起讀嗎？</h3>
+        </div>
+        <p style="margin:0 0 1.2rem;font-size:.83rem;color:var(--text-muted);line-height:1.5;">
+          計畫已加入！你可以額外選擇報名讀經小組團隊，與夥伴彼此鼓勵；若暫不組隊，請點擊下方的「先自己開始」。
+        </p>
+
+        <div style="display:flex;flex-direction:column;gap:.65rem;margin-bottom:1.4rem;">
+          <!-- 3人團隊 -->
+          <button type="button" id="join-mode-team-3"
+            style="display:flex;align-items:center;gap:.9rem;padding:.9rem 1rem;border-radius:14px;
+                   border:1.5px solid var(--border-card);background:var(--bg-input);
+                   cursor:pointer;transition:all .18s ease;text-align:left;width:100%;">
+            <span style="width:40px;height:40px;border-radius:50%;display:grid;place-items:center;
+                         background:rgba(4,169,210,.10);flex-shrink:0;">
+              <span class="nlc-icon nlc-icon--sm" data-icon="people" style="color:var(--color-brand,#04A9D2);" aria-hidden="true"></span>
+            </span>
+            <span style="display:flex;flex-direction:column;gap:.18rem;">
+              <strong style="font-size:.92rem;font-weight:600;color:var(--text-primary);">報名 3 人團隊</strong>
+              <span style="font-size:.77rem;color:var(--text-muted);">固定三人組隊，共同挑戰進度</span>
+            </span>
+            <span class="nlc-icon nlc-icon--sm" data-icon="chevronRight" style="color:var(--text-muted);margin-left:auto;flex-shrink:0;" aria-hidden="true"></span>
+          </button>
+
+          <!-- 6人團隊 -->
+          <button type="button" id="join-mode-team-6"
+            style="display:flex;align-items:center;gap:.9rem;padding:.9rem 1rem;border-radius:14px;
+                   border:1.5px solid var(--border-card);background:var(--bg-input);
+                   cursor:pointer;transition:all .18s ease;text-align:left;width:100%;">
+            <span style="width:40px;height:40px;border-radius:50%;display:grid;place-items:center;
+                         background:rgba(34,197,94,.10);flex-shrink:0;">
+              <span class="nlc-icon nlc-icon--sm" data-icon="people" style="color:var(--color-success-foreground,#16a34a);" aria-hidden="true"></span>
+            </span>
+            <span style="display:flex;flex-direction:column;gap:.18rem;">
+              <strong style="font-size:.92rem;font-weight:600;color:var(--text-primary);">報名 6 人團隊</strong>
+              <span style="font-size:.77rem;color:var(--text-muted);">固定六人組隊，挑戰更高榮譽</span>
+            </span>
+            <span class="nlc-icon nlc-icon--sm" data-icon="chevronRight" style="color:var(--text-muted);margin-left:auto;flex-shrink:0;" aria-hidden="true"></span>
+          </button>
+        </div>
+
+        <div style="display:flex;justify-content:flex-start;">
+          <button type="button" id="join-mode-cancel" class="secondary-btn"
+            style="font-size:.83rem;padding:.45rem 1rem;cursor:pointer;">先自己開始</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+    if (typeof hydrateIcons === "function") hydrateIcons(overlay);
+
+    const close = value => { overlay.remove(); resolve(value); };
+
+    // Hover effects
+    const addHover = (btn, borderColor, bgColor) => {
+      if (!btn) return;
+      btn.addEventListener("mouseenter", () => {
+        btn.style.borderColor = borderColor;
+        btn.style.background = bgColor;
+      });
+      btn.addEventListener("mouseleave", () => {
+        btn.style.borderColor = "var(--border-card)";
+        btn.style.background = "var(--bg-input)";
+      });
+    };
+
+    const team3Btn = overlay.querySelector("#join-mode-team-3");
+    const team6Btn = overlay.querySelector("#join-mode-team-6");
+    const cancelBtn = overlay.querySelector("#join-mode-cancel");
+
+    addHover(team3Btn, "var(--color-brand,#04A9D2)", "rgba(4,169,210,.06)");
+    addHover(team6Btn, "var(--color-success-foreground,#16a34a)", "rgba(34,197,94,.06)");
+
+    team3Btn?.addEventListener("click", () => close(3));
+    team6Btn?.addEventListener("click", () => close(6));
+    cancelBtn?.addEventListener("click", () => close(null));
+    overlay.addEventListener("click", e => { if (e.target === overlay) close(null); });
+  });
+}
+
+// ==================== 全域加入團隊支援 ====================
+async function joinTeamGlobally(inviteCode) {
+  const code = String(inviteCode || "").trim().toUpperCase();
+  if (!code) {
+    return { success: false, message: "請輸入邀請碼。" };
+  }
+
+  if (!state.isSupabaseMode || !state.supabase || (state.currentUser && state.currentUser.is_demo)) {
+    return { success: false, message: "團隊功能需登入正式帳號使用。" };
+  }
+
+  loader.show("正在尋找並加入團隊...");
+  try {
+    const candidatePlans = [];
+    const seenIds = new Set();
+
+    const addPlan = (p) => {
+      if (!p) return;
+      const id = p.globalPlanId || p.id;
+      if (id && !seenIds.has(id)) {
+        seenIds.add(id);
+        candidatePlans.push(p);
+      }
+    };
+
+    (state.activePlans || []).forEach(addPlan);
+    (state.globalPlans || []).forEach(addPlan);
+
+    if (candidatePlans.length === 0 && typeof CHURCH_PLAN_PRESETS !== "undefined") {
+      Object.values(CHURCH_PLAN_PRESETS).forEach(addPlan);
+    }
+
+    let joinResult = null;
+    let matchingPlan = null;
+
+    // Try joining for each plan UUID
+    for (const plan of candidatePlans) {
+      const planId = typeof db._readingTeamPlanId === "function" ? db._readingTeamPlanId(plan) : (plan.globalPlanId || plan.id);
+      if (!planId) continue;
+
+      const res = await db.joinReadingTeam(plan, code);
+      if (res && res.success) {
+        joinResult = res;
+        matchingPlan = plan;
+        break;
+      } else if (res && res.message && !res.message.includes("找不到這組邀請碼")) {
+        joinResult = res;
+        matchingPlan = plan;
+        break;
+      }
+    }
+
+    if (!joinResult || !joinResult.success) {
+      return {
+        success: false,
+        message: (joinResult && joinResult.message) || "找不到這組邀請碼，請向隊長確認。"
+      };
+    }
+
+    // Auto join the plan itself if not joined yet
+    const hasJoinedPlan = (state.activePlans || []).some(p =>
+      p.id === matchingPlan.id || p.presetKey === matchingPlan.presetKey || p.globalPlanId === matchingPlan.globalPlanId
+    );
+
+    if (!hasJoinedPlan) {
+      const defaultSchedule = { readingDaysPerWeek: 7, restWeekdays: [] };
+      await db.joinPresetPlan(matchingPlan.presetKey || matchingPlan.id, defaultSchedule);
+    }
+
+    return { success: true, plan: matchingPlan, result: joinResult };
+  } catch (err) {
+    console.error("joinTeamGlobally error:", err);
+    return { success: false, message: "加入失敗：" + (err.message || err) };
+  } finally {
+    loader.hide();
+  }
+}
+window.joinTeamGlobally = joinTeamGlobally;
+
+function setupGlobalJoinTeamForm() {
+  const form = document.getElementById("global-join-team-form");
+  if (!form || form.dataset.listenerBound) return;
+  form.dataset.listenerBound = "true";
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const input = document.getElementById("global-team-code-input");
+    const errorEl = document.getElementById("global-join-team-error");
+    const submitBtn = document.getElementById("global-join-team-submit-btn");
+
+    if (!input || !errorEl) return;
+    errorEl.style.display = "none";
+    errorEl.textContent = "";
+
+    const code = input.value.trim().toUpperCase();
+    if (!code) {
+      errorEl.textContent = "請輸入邀請碼！";
+      errorEl.style.display = "block";
+      return;
+    }
+
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.style.opacity = "0.7";
+    }
+
+    try {
+      const res = await window.joinTeamGlobally(code);
+      if (res && res.success) {
+        showToast(`已成功加入「${res.plan.name}」團隊！`);
+        input.value = "";
+
+        if (typeof renderJoinedPlansList === "function") renderJoinedPlansList();
+        const minePill = Array.from(document.querySelectorAll("#plan-list-status-pills .pill-btn")).find(p => p.getAttribute("data-filter") === "mine");
+        if (minePill) minePill.click();
+      } else {
+        errorEl.textContent = (res && res.message) || "加入失敗，請確認邀請碼是否正確。";
+        errorEl.style.display = "block";
+      }
+    } catch (err) {
+      errorEl.textContent = "加入團隊時發生錯誤：" + (err.message || err);
+      errorEl.style.display = "block";
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.style.opacity = "1";
+      }
+    }
+  });
 }
 
 function openPlanDetailsDialog(plan, options = {}) {
@@ -1608,18 +1906,21 @@ function renderPresetPlansList() {
       </div>
     `;
 
+
     card.onclick = () => {
       openPlanDetailsDialog(plan, { onJoin: async () => {
-        const scheduleSettings = await openFlexibleScheduleDialog(plan);
-        if (!scheduleSettings) return;
-        const joinedPlan = await db.joinPresetPlan(key, scheduleSettings);
+        // Step 1: Ask personal vs team BEFORE joining
+        const joinMode = await openJoinModeDialog(plan);
+        if (joinMode === null) return; // user dismissed
+
+        // Step 2: Join with default 7-day schedule (user can edit later from the plan menu)
+        const defaultSchedule = { readingDaysPerWeek: 7, restWeekdays: [] };
+        const joinedPlan = await db.joinPresetPlan(key, defaultSchedule);
         if (!joinedPlan) return;
 
-        const division = typeof window.offerReadingTeamParticipation === "function"
-          ? await window.offerReadingTeamParticipation(joinedPlan)
-          : null;
-        if (division && typeof window.openReadingTeamDialog === "function") {
-          await window.openReadingTeamDialog(joinedPlan, { preferredDivision: division });
+        // Step 3: If team mode chosen, open team setup
+        if (joinMode === "team" && typeof window.openReadingTeamDialog === "function") {
+          await window.openReadingTeamDialog(joinedPlan, {});
         }
       }});
     };
