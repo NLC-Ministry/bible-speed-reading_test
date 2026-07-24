@@ -4757,11 +4757,30 @@ window.displayParticipantsList = function (limit = 100) {
   const _careRole = (state.currentUser && state.currentUser.role) || "member";
   const _canSendCare = ["group_leader", "zone_leader", "great_zone_leader", "admin"].includes(_careRole);
 
+  // Align header columns dynamically based on _canSendCare
+  const headerEl = document.getElementById("members-ranking-header");
+  if (headerEl) {
+    if (_canSendCare) {
+      headerEl.style.gridTemplateColumns = "1fr 80px 80px 70px 90px 44px";
+      if (!document.getElementById("members-ranking-reminder-col")) {
+        const reminderHeader = document.createElement("div");
+        reminderHeader.id = "members-ranking-reminder-col";
+        reminderHeader.style.color = "var(--text-muted)";
+        reminderHeader.textContent = "提醒";
+        headerEl.appendChild(reminderHeader);
+      }
+    } else {
+      headerEl.style.gridTemplateColumns = "1fr 80px 80px 70px 90px";
+      const reminderHeader = document.getElementById("members-ranking-reminder-col");
+      if (reminderHeader) reminderHeader.remove();
+    }
+  }
+
   visibleItems.forEach(m => {
     const itemRow = document.createElement("div");
     itemRow.style.cssText = `
       display: grid;
-      grid-template-columns: 1fr 80px 80px 70px 90px${_canSendCare && !m.isMe ? ' 44px' : ''};
+      grid-template-columns: 1fr 80px 80px 70px 90px${_canSendCare ? ' 44px' : ''};
       gap: 0.4rem;
       align-items: center;
       padding: 0.6rem 0.2rem;
@@ -4786,32 +4805,39 @@ window.displayParticipantsList = function (limit = 100) {
     `;
 
     // 💌 關心戳一下按鈕（僅限領袖，自己的列不顯示）
-    if (_canSendCare && !m.isMe) {
-      const careBtn = document.createElement("button");
-      careBtn.title = "傳送關心提醒";
-      careBtn.setAttribute("aria-label", `關心 ${m.name}`);
-      careBtn.style.cssText = `
-        display: flex; align-items: center; justify-content: center;
-        width: 32px; height: 32px; border-radius: 50%;
-        border: 1px solid var(--border-card);
-        background: var(--bg-input);
-        cursor: pointer; transition: background 0.18s, border-color 0.18s;
-        margin: 0 auto;
-        color: var(--color-warning-text, #D97706);
-        flex-shrink: 0;
-      `;
-      careBtn.innerHTML = `<span class="nlc-icon nlc-icon--sm" data-icon="remind" aria-hidden="true"></span>`;
-      careBtn.addEventListener("mouseenter", () => {
-        careBtn.style.background = "var(--color-warning-muted, rgba(251,191,36,0.15))";
-        careBtn.style.borderColor = "var(--color-warning-text, #D97706)";
-      });
-      careBtn.addEventListener("mouseleave", () => {
-        careBtn.style.background = "var(--bg-input)";
-        careBtn.style.borderColor = "var(--border-card)";
-      });
-      careBtn.onclick = () => window.openCareReminderDialog(m);
-      itemRow.appendChild(careBtn);
-      if (typeof hydrateIcons === "function") hydrateIcons(careBtn);
+    if (_canSendCare) {
+      if (!m.isMe) {
+        const careBtn = document.createElement("button");
+        careBtn.title = "傳送關心提醒";
+        careBtn.setAttribute("aria-label", `關心 ${m.name}`);
+        careBtn.style.cssText = `
+          display: flex; align-items: center; justify-content: center;
+          width: 32px; height: 32px; border-radius: 50%;
+          border: 1px solid var(--border-card);
+          background: var(--bg-input);
+          cursor: pointer; transition: background 0.18s, border-color 0.18s;
+          margin: 0 auto;
+          color: var(--color-warning-text, #D97706);
+          flex-shrink: 0;
+        `;
+        careBtn.innerHTML = `<span class="nlc-icon nlc-icon--sm" data-icon="remind" aria-hidden="true"></span>`;
+        careBtn.addEventListener("mouseenter", () => {
+          careBtn.style.background = "var(--color-warning-muted, rgba(251,191,36,0.15))";
+          careBtn.style.borderColor = "var(--color-warning-text, #D97706)";
+        });
+        careBtn.addEventListener("mouseleave", () => {
+          careBtn.style.background = "var(--bg-input)";
+          careBtn.style.borderColor = "var(--border-card)";
+        });
+        careBtn.onclick = () => window.openCareReminderDialog(m);
+        itemRow.appendChild(careBtn);
+        if (typeof hydrateIcons === "function") hydrateIcons(careBtn);
+      } else {
+        // 自己的列提供空白的佔位元素，確保表格寬度跟 header 完全對齊
+        const spacer = document.createElement("div");
+        spacer.style.width = "44px";
+        itemRow.appendChild(spacer);
+      }
     }
 
     listContainer.appendChild(itemRow);
