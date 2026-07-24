@@ -3441,6 +3441,8 @@ function setupCascadingSelectors(regionId, zoneId, groupId, masterId) {
   const isZoneLeader = userRole === "zone_leader";
   const isGroupLeader = userRole === "group_leader";
 
+  let isInitializing = true;
+
   // Hide selectors that exceed user's permission level
   if (isAdmin || isGreatZoneLeader) {
     regionSelect.style.display = "";
@@ -3496,9 +3498,21 @@ function setupCascadingSelectors(regionId, zoneId, groupId, masterId) {
   if (isAdmin) {
     regionSelect.options.add(new Option("-- 請選擇大區 --", ""));
     regions.forEach(r => regionSelect.options.add(new Option(`大區：${r}`, `region:${r}`)));
+    if (isInitializing) {
+      const userGreatRegion = state.currentUser ? state.currentUser.great_region : "";
+      if (userGreatRegion) {
+        regionSelect.value = "region:" + userGreatRegion;
+      }
+    }
   } else if (isGreatZoneLeader) {
     regionSelect.options.add(new Option(`全部大區 (${myRegions.join(",")})`, ""));
     myRegions.forEach(r => regionSelect.options.add(new Option(`大區：${r}`, `region:${r}`)));
+    if (isInitializing) {
+      const userGreatRegion = state.currentUser ? state.currentUser.great_region : "";
+      if (userGreatRegion && myRegions.includes(userGreatRegion)) {
+        regionSelect.value = "region:" + userGreatRegion;
+      }
+    }
   } else {
     const userReg = state.currentUser.great_region || "";
     regionSelect.options.add(new Option(userReg ? `大區：${userReg}` : "大區", ""));
@@ -3564,6 +3578,12 @@ function setupCascadingSelectors(regionId, zoneId, groupId, masterId) {
         zoneSelect.options.add(new Option("全部牧區", ""));
         const zones = getZonesForRegion(rName);
         zones.sort().forEach(z => zoneSelect.options.add(new Option(`牧區：${z}`, z)));
+        if (isInitializing) {
+          const userZone = state.currentUser ? state.currentUser.pastoral_zone : "";
+          if (userZone && zones.includes(userZone)) {
+            zoneSelect.value = userZone;
+          }
+        }
       }
     } else if (isGreatZoneLeader) {
       const regVal = regionSelect.value;
@@ -3575,6 +3595,12 @@ function setupCascadingSelectors(regionId, zoneId, groupId, masterId) {
         zoneSelect.options.add(new Option("全部牧區", ""));
         const zones = getZonesForRegion(rName);
         zones.sort().forEach(z => zoneSelect.options.add(new Option(`牧區：${z}`, z)));
+        if (isInitializing) {
+          const userZone = state.currentUser ? state.currentUser.pastoral_zone : "";
+          if (userZone && zones.includes(userZone)) {
+            zoneSelect.value = userZone;
+          }
+        }
       }
     } else if (isZoneLeader) {
       const userZone = state.currentUser.pastoral_zone || "";
@@ -3613,6 +3639,12 @@ function setupCascadingSelectors(regionId, zoneId, groupId, masterId) {
         groupSelect.options.add(new Option("全部小組", ""));
         const groups = getGroupsForZone(zoneVal);
         groups.sort().forEach(g => groupSelect.options.add(new Option(`小組：${g}`, g)));
+        if (isInitializing) {
+          const userGroup = state.currentUser ? state.currentUser.small_group : "";
+          if (userGroup && groups.includes(userGroup)) {
+            groupSelect.value = userGroup;
+          }
+        }
       }
     } else if (isZoneLeader) {
       const userZone = state.currentUser.pastoral_zone || "";
@@ -3625,6 +3657,12 @@ function setupCascadingSelectors(regionId, zoneId, groupId, masterId) {
         groupSelect.options.add(new Option("全部小組", ""));
         const groups = getGroupsForZone(activeZone);
         groups.sort().forEach(g => groupSelect.options.add(new Option(`小組：${g}`, g)));
+        if (isInitializing) {
+          const userGroup = state.currentUser ? state.currentUser.small_group : "";
+          if (userGroup && groups.includes(userGroup)) {
+            groupSelect.value = userGroup;
+          }
+        }
       }
     } else if (isGroupLeader) {
       const userGroup = state.currentUser.small_group || "";
@@ -3652,6 +3690,8 @@ function setupCascadingSelectors(regionId, zoneId, groupId, masterId) {
 
   // Set initial master select value mapping without triggering render loop
   updateMasterValue(true);
+
+  isInitializing = false;
 }
 
 // ==================== STATS SELECTOR POPULATOR ====================
@@ -3967,10 +4007,6 @@ async function renderGroupMiniStats(overrideFilter) {
   // Priority: explicit overrideFilter param → _statsTabScope → cached _grpScopedUsers → default scope
   let scopedUsers = window._grpScopedUsers;
   const effectiveFilter = overrideFilter !== undefined ? overrideFilter : window._statsTabScope;
-  console.log("[OrgStats] renderGroupMiniStats called: overrideFilter=", overrideFilter,
-    "| effectiveFilter=", effectiveFilter,
-    "| allUsers.length=", allUsers.length,
-    "| _statsTabScope=", window._statsTabScope);
   if (effectiveFilter !== null && effectiveFilter !== undefined && allUsers.length > 0) {
 
     if (effectiveFilter === "all") {
@@ -5293,10 +5329,6 @@ async function renderPlanMembersView() {
     // change listener and re-render with the wrong scope.
     const membersZoneSel = document.getElementById("members-zone-selector");
     const currentOrgFilter = membersZoneSel ? membersZoneSel.value : null;
-
-    console.log("[OrgStats] renderPlanMembersView org-stats block running, currentOrgFilter=", currentOrgFilter,
-      "| _grpScopedUsers count=", (window._grpScopedUsers || []).length,
-      "| _statsTabScope=", window._statsTabScope);
 
     // Pass the filter explicitly so renderGroupMiniStats uses it for both
     // scopedUsers calculation and scopeLabel, bypassing _statsTabScope.
