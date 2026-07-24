@@ -3259,8 +3259,10 @@ async function renderPlanStatsView() {
   if (currentTab === 'personal') {
     const teamSwitcher = document.getElementById("stats-team-view-switch");
     const teamInline = document.getElementById("reading-team-stats-inline");
+    const regContainer = document.getElementById("reading-team-registration-inline");
     if (teamSwitcher) teamSwitcher.classList.add("hidden");
     if (teamInline) teamInline.classList.add("hidden");
+    if (regContainer) regContainer.classList.add("hidden");
     // Show personal, hide group
     if (personalSec) personalSec.classList.remove("hidden");
     if (groupSec) groupSec.classList.add("hidden");
