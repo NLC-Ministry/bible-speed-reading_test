@@ -129,9 +129,15 @@ function renderMemberHubProfileLinks() {
   const btnToggle = document.getElementById("btn-toggle-profile-form");
   const formWrapper = document.getElementById("profile-form-wrapper");
   if (btnToggle && hubManaged && formWrapper && formWrapper.classList.contains("hidden")) {
-    btnToggle.innerHTML = typeof iconLabel === "function"
-      ? iconLabel("setting", copy.profileSettings || "帳號設定（本 app）")
-      : (copy.profileSettings || "帳號設定（本 app）");
+    const label = copy.profileSettings || "帳號設定（本 app）";
+    btnToggle.innerHTML = `
+      <span class="settings-row-btn__icon-wrap">
+        <span class="nlc-icon nlc-icon--sm" data-icon="setting" aria-hidden="true"></span>
+      </span>
+      <span class="settings-row-btn__label">${label}</span>
+      <span class="settings-row-btn__chevron">
+        <span class="nlc-icon nlc-icon--sm" data-icon="chevron-right" aria-hidden="true"></span>
+      </span>`;
   }
 
   if (typeof hydrateIcons === "function") {
@@ -692,11 +698,24 @@ export function init() {
       const copy = (window.APP_COPY && window.APP_COPY.memberHub) || {};
       if (isHidden) {
         formWrapper.classList.remove("hidden");
-        btnToggleForm.innerHTML = iconLabel("chevronUp", "收起個人檔案編輯");
+        btnToggleForm.innerHTML = `
+          <span class="settings-row-btn__icon-wrap">
+            <span class="nlc-icon nlc-icon--sm" data-icon="chevronUp" aria-hidden="true"></span>
+          </span>
+          <span class="settings-row-btn__label">收起個人檔案編輯</span>`;
       } else {
         formWrapper.classList.add("hidden");
-        btnToggleForm.innerHTML = iconLabel("edit", copy.profileSettings || "編輯個人檔案");
+        const label = copy.profileSettings || "帳號設定（本 app）";
+        btnToggleForm.innerHTML = `
+          <span class="settings-row-btn__icon-wrap">
+            <span class="nlc-icon nlc-icon--sm" data-icon="setting" aria-hidden="true"></span>
+          </span>
+          <span class="settings-row-btn__label">${label}</span>
+          <span class="settings-row-btn__chevron">
+            <span class="nlc-icon nlc-icon--sm" data-icon="chevron-right" aria-hidden="true"></span>
+          </span>`;
       }
+      if (typeof hydrateIcons === "function") hydrateIcons(btnToggleForm);
     };
   }
 

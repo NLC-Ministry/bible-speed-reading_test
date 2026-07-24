@@ -1810,94 +1810,191 @@ vercel-live-feedback,
   box-shadow: var(--shadow-focus-ring);
 }
 
-/* Buttons */
+/* ═══ Buttons (2025 Modern Redesign) ═══════════════════════════════════════ */
+
+/* ─── Primary CTA — gradient + brand glow ─── */
 .primary-btn {
-  background: var(--color-brand);
+  background: linear-gradient(135deg, #04A9D2 0%, #0284A3 100%);
   color: #ffffff;
   border: none;
-  padding: 0.75rem 1.5rem;
+  padding: 0.78rem 1.5rem;
   font-size: 0.95rem;
-  font-weight: var(--type-weight-strong);
-  border-radius: var(--radius-sm);
+  font-weight: 600;
+  border-radius: var(--radius-md);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  box-shadow: var(--shadow-none);
-  transition: var(--transition-smooth);
+  /* inner shine + glow */
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.10) inset,
+    0 1px 0 rgba(255,255,255,0.18) inset,
+    0 4px 16px -4px rgba(4,169,210,0.45);
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  letter-spacing: 0.01em;
+  position: relative;
+  overflow: hidden;
 }
-
+.primary-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.12) 0%, transparent 55%);
+  pointer-events: none;
+}
 .primary-btn:hover {
-  background: var(--color-brand-hover);
+  background: linear-gradient(135deg, #26B8DC 0%, #04A9D2 100%);
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.12) inset,
+    0 1px 0 rgba(255,255,255,0.22) inset,
+    0 6px 20px -4px rgba(4,169,210,0.55);
+  transform: translateY(-1px);
 }
 
+/* ─── Secondary — frosted glass ─── */
 .secondary-btn {
-  background: var(--bg-input);
+  background: rgba(255, 255, 255, 0.06);
   color: var(--text-primary);
-  border: 1px solid var(--border-card);
-  padding: 0.75rem 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 0.78rem 1.5rem;
   font-size: 0.95rem;
-  font-weight: var(--type-weight-strong);
-  border-radius: var(--radius-sm);
+  font-weight: 500;
+  border-radius: var(--radius-md);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  box-shadow: var(--shadow-none);
-  transition: var(--transition-smooth);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  letter-spacing: 0.01em;
 }
-
 .secondary-btn:hover {
-  background-color: var(--color-brand-muted);
-  border-color: var(--primary-color);
+  background: rgba(4, 169, 210, 0.10);
+  border-color: rgba(4, 169, 210, 0.35);
+  transform: translateY(-1px);
+}
+/* Light-mode secondary override */
+body:not(.dark-theme) .secondary-btn {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.10);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+}
+body:not(.dark-theme) .secondary-btn:hover {
+  background: rgba(4, 169, 210, 0.08);
+  border-color: rgba(4, 169, 210, 0.30);
 }
 
+/* ─── Settings row — iOS-style list item ─── */
+.settings-row-btn {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  padding: 0.8rem 1rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: left;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.10);
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  letter-spacing: 0.01em;
+}
+.settings-row-btn:hover {
+  background: rgba(4, 169, 210, 0.08);
+  border-color: rgba(4, 169, 210, 0.25);
+  transform: translateY(-1px);
+}
+.settings-row-btn .settings-row-btn__icon-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--color-brand-subtle);
+  color: var(--color-brand);
+  flex-shrink: 0;
+}
+.settings-row-btn .settings-row-btn__label {
+  flex: 1;
+}
+.settings-row-btn .settings-row-btn__chevron {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+body:not(.dark-theme) .settings-row-btn {
+  background: rgba(0, 0, 0, 0.03);
+  border-color: rgba(0, 0, 0, 0.08);
+}
+body:not(.dark-theme) .settings-row-btn:hover {
+  background: rgba(4, 169, 210, 0.06);
+  border-color: rgba(4, 169, 210, 0.22);
+}
+
+/* ─── Focus rings ─── */
 .primary-btn:focus-visible,
 .secondary-btn:focus-visible,
-.danger-btn:focus-visible {
+.danger-btn:focus-visible,
+.settings-row-btn:focus-visible {
   outline: none;
   box-shadow: var(--shadow-focus-ring);
 }
 
+/* ─── Active press states ─── */
 .primary-btn:active,
 .secondary-btn:active,
 .danger-btn:active,
+.settings-row-btn:active,
 .tab-btn:active,
 .mobile-nav-btn:active,
 .reading-team-choice:active,
 .reading-team-remind-btn:active {
-  transform: scale(0.96);
+  transform: scale(0.97) translateY(0);
   transition: transform 0.08s ease;
 }
 
+/* ─── Disabled ─── */
 .primary-btn:disabled,
 .secondary-btn:disabled,
-.danger-btn:disabled {
+.danger-btn:disabled,
+.settings-row-btn:disabled {
   cursor: not-allowed;
-  opacity: 0.55;
+  opacity: 0.50;
+  transform: none !important;
 }
 
+/* ─── Danger — ghost red ─── */
 .danger-btn {
-  background: var(--color-danger);
-  color: #ffffff;
-  border: none;
-  padding: 0.75rem 1.5rem;
+  background: rgba(239, 68, 68, 0.10);
+  color: var(--color-danger);
+  border: 1px solid rgba(239, 68, 68, 0.22);
+  padding: 0.78rem 1.5rem;
   font-size: 0.95rem;
-  font-weight: var(--type-weight-strong);
-  border-radius: var(--radius-sm);
+  font-weight: 500;
+  border-radius: var(--radius-md);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  box-shadow: var(--shadow-none);
-  transition: var(--transition-smooth);
+  box-shadow: 0 1px 4px rgba(239,68,68,0.08);
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  letter-spacing: 0.01em;
 }
-
 .danger-btn:hover {
-  opacity: 0.92;
+  background: rgba(239, 68, 68, 0.18);
+  border-color: rgba(239, 68, 68, 0.40);
+  box-shadow: 0 2px 8px rgba(239,68,68,0.15);
+  transform: translateY(-1px);
 }
 
 .circle-btn {
