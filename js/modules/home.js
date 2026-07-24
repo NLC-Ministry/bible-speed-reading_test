@@ -1547,42 +1547,7 @@ async function fetchRandomVerse(event, options = {}) {
   }
   const imgPromise = preloadVerseCardImage(nextImageUrl);
 
-  const fetchPromise = (async () => {
-    if (isBlessingMode) {
-      return { text: cardText, source: cardSource };
-    }
-
-    try {
-      const match = cardSource.match(/^([\u4e00-\u9fa5]+)\s*(\d+):(\d+)(?:-(\d+))?$/);
-      if (match) {
-        const chineseBook = match[1];
-        const chapter = match[2];
-        const verseStart = match[3];
-        const verseEnd = match[4];
-        const passage = `${chineseBook} ${chapter}:${verseStart}` + (verseEnd ? `-${verseEnd}` : "");
-
-        const url = `https://bible-api.com/${encodeURIComponent(passage)}?translation=cuv`;
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3500);
-
-        const res = await fetch(url, { signal: controller.signal });
-        clearTimeout(timeoutId);
-
-        if (res.ok) {
-          const data = await res.json();
-          if (data && data.text) {
-            return {
-              text: `「${data.text.trim().replace(/\s+/g, " ").replace(/\n/g, "")}」`,
-              source: cardSource
-            };
-          }
-        }
-      }
-    } catch (err) {
-      console.warn("Fetch random verse from API failed, falling back to local dataset:", err);
-    }
-    return { text: cardText, source: cardSource };
-  })();
+  const fetchPromise = Promise.resolve({ text: cardText, source: cardSource });
 
   const [result, loadedUrl] = await Promise.all([fetchPromise, imgPromise]);
   applyVerseCardContent(result, loadedUrl);
