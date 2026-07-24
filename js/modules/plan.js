@@ -3763,6 +3763,47 @@ function populateStatsSelector() {
     });
   }
 }
+// ==================== ORG FILTER UTILITY ====================
+function getActiveOrgFilter() {
+  const regionSelect = document.getElementById("members-admin-region-select");
+  const zoneSelect = document.getElementById("members-admin-zone-select");
+  const groupSelect = document.getElementById("members-admin-group-select");
+
+  if (!regionSelect || !zoneSelect || !groupSelect) return "all";
+
+  const userRole = (state.currentUser && state.currentUser.role) || "member";
+  const isAdmin = userRole === "admin";
+  const isGreatZoneLeader = userRole === "great_zone_leader";
+  const isZoneLeader = userRole === "zone_leader";
+  const isGroupLeader = userRole === "group_leader";
+
+  if (isGroupLeader) {
+    const userGroup = state.currentUser.small_group || "";
+    return userGroup ? `group:${userGroup}` : "all_groups";
+  } else if (isZoneLeader) {
+    const userZone = state.currentUser.pastoral_zone || "";
+    const selectedGrp = groupSelect.value;
+    return selectedGrp ? `group:${selectedGrp}` : (userZone ? `zone:${userZone}` : "all_zones");
+  } else if (isGreatZoneLeader) {
+    const selectedGrp = groupSelect.value;
+    const selectedZone = zoneSelect.value;
+    const selectedReg = regionSelect.value;
+    if (selectedGrp) return `group:${selectedGrp}`;
+    else if (selectedZone) return `zone:${selectedZone}`;
+    else if (selectedReg) return selectedReg;
+    return "all_great_region";
+  } else if (isAdmin) {
+    const selectedGrp = groupSelect.value;
+    const selectedZone = zoneSelect.value;
+    const selectedReg = regionSelect.value;
+    if (selectedGrp) return `group:${selectedGrp}`;
+    else if (selectedZone) return `zone:${selectedZone}`;
+    else if (selectedReg) return selectedReg;
+    return "all";
+  }
+  return "all";
+}
+
 // ==================== MEMBERS SELECTOR POPULATOR ====================
 function populateMembersSelector() {
   setupCascadingSelectors("members-admin-region-select", "members-admin-zone-select", "members-admin-group-select", "members-zone-selector");
@@ -5002,7 +5043,7 @@ async function renderGroupParticipantsRankingTable() {
         groupMembers = scopedUsersList.filter(u => u.name.toLowerCase().includes(query));
         if (rankingTitle) rankingTitle.textContent = `搜尋結果: ${query}`;
       } else {
-        const selectedFilter = membersZoneSelector ? membersZoneSelector.value : null;
+        const selectedFilter = getActiveOrgFilter();
         if (selectedFilter) {
           if (selectedFilter.startsWith("zone:")) {
             const zone = selectedFilter.replace("zone:", "");
@@ -5356,8 +5397,7 @@ async function renderPlanMembersView() {
     // Read the current filter value from the members selector directly.
     // Do NOT sync to ranking-zone-selector because that would fire its own
     // change listener and re-render with the wrong scope.
-    const membersZoneSel = document.getElementById("members-zone-selector");
-    const currentOrgFilter = membersZoneSel ? membersZoneSel.value : null;
+    const currentOrgFilter = getActiveOrgFilter();
 
     // Pass the filter explicitly so renderGroupMiniStats/charts use it for both
     // scopedUsers calculation and scopeLabel, bypassing _statsTabScope.
