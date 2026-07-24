@@ -1108,6 +1108,20 @@ function renderJoinedPlansList() {
       plansToRender = (state.activePlans || []).filter(p => isExpired(p));
     }
 
+    console.log("🔍 [Debug renderJoinedPlansList]", {
+      filter,
+      today: today.toISOString().split('T')[0],
+      activePlansLength: state.activePlans ? state.activePlans.length : null,
+      activePlans: state.activePlans
+    });
+    
+    (state.activePlans || []).forEach(plan => {
+      console.log(`  Active Plan: ${plan.name} (${plan.presetKey || plan.id})`, {
+        endDate: plan.endDate,
+        isExpired: isExpired(plan)
+      });
+    });
+
     plansToRender = plansToRender.filter(matchesPlanSearch);
 
     if (plansToRender.length === 0 && planSearchQuery) {
@@ -1495,14 +1509,39 @@ function renderPresetPlansList() {
       || normalizedName === "2026-2029 新生生命聖經速讀計畫");
   };
 
-  const visiblePlans = sourcePlans.filter(plan => {
-    if (!plan || isObsoleteCategoryPlan(plan) || isLegacyCampaignMaster(plan)) return false;
-    if (isPlanHidden(plan) && !canManageHiddenPlans()) return false;
-    if (!matchesPlanSearch(plan)) return false;
-    return ![plan.id, plan.globalPlanId, plan.presetKey, plan.name]
-      .filter(Boolean)
-      .some(value => joinedKeys.has(String(value)));
+  console.log("🔍 [Debug renderPresetPlansList]", {
+    isSupabaseMode: state.isSupabaseMode,
+    globalPlansLength: state.globalPlans ? state.globalPlans.length : null,
+    globalPlans: state.globalPlans,
+    activePlans: state.activePlans,
+    presets: CHURCH_PLAN_PRESETS
   });
+
+  const visiblePlans = sourcePlans.filter(plan => {
+    if (!plan) return false;
+    const isObsolete = isObsoleteCategoryPlan(plan);
+    const isLegacy = isLegacyCampaignMaster(plan);
+    const isHidden = isPlanHidden(plan);
+    const matchesSearch = matchesPlanSearch(plan);
+    
+    const joinedKeysValues = [plan.id, plan.globalPlanId, plan.presetKey, plan.name].filter(Boolean).map(String);
+    const isAlreadyJoined = joinedKeysValues.some(value => joinedKeys.has(value));
+    
+    console.log(`  Plan: ${plan.name} (${plan.presetKey || plan.id})`, {
+      isObsolete,
+      isLegacy,
+      isHidden,
+      matchesSearch,
+      isAlreadyJoined,
+      joinedKeysValues
+    });
+
+    if (isObsolete || isLegacy) return false;
+    if (isHidden && !canManageHiddenPlans()) return false;
+    if (!matchesSearch) return false;
+    return !isAlreadyJoined;
+  });
+  console.log("🔍 [Debug renderPresetPlansList] visiblePlans:", visiblePlans);
 
   if (visiblePlans.length === 0) {
     container.innerHTML = `
