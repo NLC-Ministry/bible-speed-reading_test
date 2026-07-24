@@ -517,6 +517,15 @@ function getJoinedReadingTeamContexts(context) {
 }
 
 async function prepareReadingTeamSubview(mode) {
+  // Bypass reading team subview when in ORG_STATS mode
+  if (window.currentPlanViewState === PLAN_ROUTE.ORG_STATS) {
+    const switcher = document.getElementById(mode === "stats" ? "stats-team-view-switch" : "members-team-view-switch");
+    const inline = document.getElementById(mode === "stats" ? "reading-team-stats-inline" : "reading-team-members-inline");
+    if (switcher) switcher.classList.add("hidden");
+    if (inline) inline.classList.add("hidden");
+    return true;
+  }
+
   const isStats = mode === "stats";
   const switcher = document.getElementById(isStats ? "stats-team-view-switch" : "members-team-view-switch");
   const select = document.getElementById(isStats ? "stats-team-view-select" : "members-team-view-select");
@@ -3757,6 +3766,20 @@ function populateStatsSelector() {
 // ==================== MEMBERS SELECTOR POPULATOR ====================
 function populateMembersSelector() {
   setupCascadingSelectors("members-admin-region-select", "members-admin-zone-select", "members-admin-group-select", "members-zone-selector");
+
+  // Direct bindings to guarantee that any dropdown selection change immediately updates stats
+  const regionSelect = document.getElementById("members-admin-region-select");
+  const zoneSelect = document.getElementById("members-admin-zone-select");
+  const groupSelect = document.getElementById("members-admin-group-select");
+
+  [regionSelect, zoneSelect, groupSelect].forEach(el => {
+    if (el && !el.dataset.directListenerBound) {
+      el.dataset.directListenerBound = "true";
+      el.addEventListener("change", async () => {
+        await renderPlanMembersView();
+      });
+    }
+  });
 
   const membersZoneSelector = document.getElementById("members-zone-selector");
   if (membersZoneSelector && !membersZoneSelector.dataset.listenerInitialized) {
