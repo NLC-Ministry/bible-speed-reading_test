@@ -1246,9 +1246,6 @@ function renderJoinedPlansList() {
       const campaignAwardHtml = isCampaignStage ? `<div style="margin-top:.25rem;padding:.42rem .6rem;border-radius:10px;background:var(--bg-secondary);color:${campaignAwardEarned ? "var(--color-success-foreground)" : "var(--primary-color)"};font-size:.75rem;font-weight:500;display:flex;align-items:center;gap:.35rem;"><span class="nlc-icon" data-icon="award" aria-hidden="true"></span><span>${campaignAwardEarned ? "已獲得" : "完成可獲得"} ${escapeHTML(campaignAwardName)}</span></div>` : "";
       const weeklyScheduleSummary = formatFlexibleScheduleSummary(plan);
       const isUpcomingFixed = isFixedPlanUpcoming(plan);
-      const upcomingJoinedHtml = isUpcomingFixed
-        ? `<div style="margin-top:.25rem;padding:.42rem .6rem;border-radius:10px;background:var(--bg-secondary);color:var(--text-secondary);font-size:.75rem;line-height:1.45;"><span class="nlc-icon" data-icon="hourglass" aria-hidden="true"></span> 已預先加入並開放預覽・${escapeHTML(plan.startDate)} 正式開始，敬請期待</div>`
-        : "";
 
       if (filter === "completed") {
         // Expired plan: show status label instead of progress bar
@@ -1263,7 +1260,6 @@ function renderJoinedPlansList() {
             <div style="font-size: 0.78rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.3rem;">
               <span class="nlc-icon" data-icon="calendarThirty" aria-hidden="true"></span> <span>${plan.startDate} ~ ${plan.endDate}</span>
             </div>
-            ${upcomingJoinedHtml}
             ${campaignAwardHtml}
             <div style="font-size: 0.82rem; font-weight: 600; color: ${statusColor}; margin-top: 0.25rem; display: flex; align-items: center; gap: 0.25rem;">
               狀態：${statusText}
@@ -1273,7 +1269,7 @@ function renderJoinedPlansList() {
       } else {
         // Normal active plan: show progress bar
         const progressText = isUpcomingFixed
-          ? "可先查看計畫內容與每週安排"
+          ? `預計 ${escapeHTML(plan.startDate)} 開始`
           : (currentRound > 1
             ? `已完成第 ${currentRound - 1} 遍 👑<br>第 ${currentRound} 遍：已讀 ${progress}% (${plan.completedChapters} / ${plan.currentRoundTotalChapters || plan.totalChapters} 章)`
             : `已讀 ${progress}% (${plan.completedChapters} / ${plan.currentRoundTotalChapters || plan.totalChapters} 章)`);
@@ -1281,6 +1277,11 @@ function renderJoinedPlansList() {
         const isTeamPlan = (typeof window.isReadingTeamPlan === "function" && window.isReadingTeamPlan(plan)) || 
           !!(plan && (plan.planKind === "church_campaign_stage" || (plan.presetKey && (plan.presetKey.startsWith("church_stage_") || plan.presetKey.startsWith("preset-stage-")))));
         const teamHtml = isTeamPlan ? `<div class="plan-card-team-controls" style="display: flex; gap: 0.5rem; margin-top: 0.6rem; flex-wrap: wrap;"></div>` : "";
+        const progressHtml = isUpcomingFixed
+          ? ""
+          : `<div class="plan-progress-wrapper plan-progress-wrapper--compact">
+              <div class="plan-progress-bar" style="width: ${progress}%;"></div>
+            </div>`;
 
         card.innerHTML = `
           ${getPlanCoverHtml(plan)}
@@ -1289,11 +1290,8 @@ function renderJoinedPlansList() {
             <div style="font-size: 0.78rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.3rem;">
               <span class="nlc-icon" data-icon="calendarThirty" aria-hidden="true"></span> <span>${plan.startDate} ~ ${plan.endDate}</span>
             </div>
-            ${upcomingJoinedHtml}
             ${campaignAwardHtml}
-            <div class="plan-progress-wrapper plan-progress-wrapper--compact">
-              <div class="plan-progress-bar" style="width: ${progress}%;"></div>
-            </div>
+            ${progressHtml}
             <div style="font-size: 0.76rem; font-weight: 500; color: var(--text-secondary); margin-top: 0.1rem; line-height: 1.35;">
               ${progressText}
             </div>
