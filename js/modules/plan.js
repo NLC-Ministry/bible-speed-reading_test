@@ -3967,7 +3967,12 @@ async function renderGroupMiniStats(overrideFilter) {
   // Priority: explicit overrideFilter param → _statsTabScope → cached _grpScopedUsers → default scope
   let scopedUsers = window._grpScopedUsers;
   const effectiveFilter = overrideFilter !== undefined ? overrideFilter : window._statsTabScope;
+  console.log("[OrgStats] renderGroupMiniStats called: overrideFilter=", overrideFilter,
+    "| effectiveFilter=", effectiveFilter,
+    "| allUsers.length=", allUsers.length,
+    "| _statsTabScope=", window._statsTabScope);
   if (effectiveFilter !== null && effectiveFilter !== undefined && allUsers.length > 0) {
+
     if (effectiveFilter === "all") {
       scopedUsers = allUsers;
     } else if (effectiveFilter === "me") {
@@ -5289,6 +5294,10 @@ async function renderPlanMembersView() {
     const membersZoneSel = document.getElementById("members-zone-selector");
     const currentOrgFilter = membersZoneSel ? membersZoneSel.value : null;
 
+    console.log("[OrgStats] renderPlanMembersView org-stats block running, currentOrgFilter=", currentOrgFilter,
+      "| _grpScopedUsers count=", (window._grpScopedUsers || []).length,
+      "| _statsTabScope=", window._statsTabScope);
+
     // Pass the filter explicitly so renderGroupMiniStats uses it for both
     // scopedUsers calculation and scopeLabel, bypassing _statsTabScope.
     await renderGroupMiniStats(currentOrgFilter);
@@ -5303,6 +5312,7 @@ async function renderPlanMembersView() {
     }
   }
 }
+
 
 
 
