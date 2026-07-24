@@ -477,8 +477,15 @@ window.switchStatTab = async function (tab) {
   tabs.forEach(t => t.classList.toggle("active", t.getAttribute("data-tab") === tab));
 
   const adminScopeBar = document.getElementById("stats-admin-scope-bar");
+  const membersOrgControls = document.getElementById("members-organization-controls");
+
   if (adminScopeBar) {
     adminScopeBar.classList.toggle("hidden", tab !== 'admin');
+    adminScopeBar.style.display = tab === 'admin' ? "" : "none";
+  }
+  if (membersOrgControls) {
+    // Members controls only show on members-related views, never alongside stats-admin-scope-bar
+    membersOrgControls.style.display = "none";
   }
 
   if (tab === 'personal') {
@@ -4896,10 +4903,19 @@ async function renderPlanMembersView() {
 
   if (!(await prepareReadingTeamSubview("members"))) return;
 
+  // Switch the header filter bars: show members controls, hide stats controls
+  const adminScopeBar = document.getElementById("stats-admin-scope-bar");
+  const membersOrgControls = document.getElementById("members-organization-controls");
+  if (adminScopeBar) {
+    adminScopeBar.classList.add("hidden");
+    adminScopeBar.style.display = "none";
+  }
+  if (membersOrgControls) {
+    membersOrgControls.style.display = "";
+  }
+
   // Make sure selectors are populated correctly
   populateMembersSelector();
-
-
 
   // Use members-ranking-title element instead of ranking-title so the title
   // updates show up in the members subview card.
@@ -6425,6 +6441,9 @@ async function enterOrgStatsState() {
 
   populateStatsSelector();
   populateMembersSelector();
+  // Hide members controls first; renderPlanMembersView will reveal when appropriate
+  const membersOrgCtrl = document.getElementById("members-organization-controls");
+  if (membersOrgCtrl) membersOrgCtrl.style.display = "none";
   await window.switchStatTab("admin");
   await renderPlanMembersView();
 }
