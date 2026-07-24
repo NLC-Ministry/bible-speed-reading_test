@@ -1062,10 +1062,6 @@ function renderJoinedPlansList() {
         transition: all 0.2s ease;
       `;
       card.onclick = async () => {
-        if (isPlanExpired(plan)) {
-          showToast("此計畫已過期，無法再進入進度閱讀。");
-          return;
-        }
         state.activePlan = plan;
         state.planDetailOpen = true;
         state.planActiveSubTab = "today";
@@ -1073,6 +1069,9 @@ function renderJoinedPlansList() {
         if (typeof window.syncActivePlanContext === 'function') window.syncActivePlanContext(plan);
         state.selectedPlanDay = null; // reset to first uncompleted day
         localStorage.setItem("selected_plan_key", plan.presetKey || "");
+        if (isPlanExpired(plan)) {
+          showToast("此計畫已過期，僅供查看紀錄與統計。");
+        }
         if (typeof window.setPlanState === 'function') {
           await window.setPlanState(PLAN_ROUTE.DETAIL);
         } else {
@@ -6265,9 +6264,7 @@ async function setPlanState(newState) {
   const normalized = String(newState || "").toUpperCase();
   if (normalized === PLAN_ROUTE.DETAIL || normalized === "DETAIL" || normalized === PLAN_ROUTE.GROUP || normalized === "GROUP" || normalized === "ORG_STATS" || newState === PLAN_ROUTE.ORG_STATS) {
     if (state.activePlan && isPlanExpired(state.activePlan)) {
-      showToast("此計畫已過期，無法再進入進度閱讀。");
-      await enterPlanListState();
-      return;
+      showToast("此計畫已過期，僅供查看紀錄與統計。");
     }
   }
 
