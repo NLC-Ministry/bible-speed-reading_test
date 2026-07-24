@@ -6839,9 +6839,15 @@ async function enterOrgStatsState() {
   // Hide members controls first; renderPlanMembersView will reveal when appropriate
   const membersOrgCtrl = document.getElementById("members-organization-controls");
   if (membersOrgCtrl) membersOrgCtrl.style.display = "none";
-  await window.switchStatTab("admin");
+
+  // Do NOT call switchStatTab("admin") here — that would invoke renderPlanHistoryView()
+  // which uses _statsTabScope (from the old stats filter, e.g. "group:青少年教會") and
+  // overwrites the stats cards. In org-stats mode the members filter is the single
+  // source of truth. We go straight to renderPlanMembersView() which shows the members
+  // filter bar and calls renderGroupMiniStats with the correct scope via our org-stats block.
   await renderPlanMembersView();
 }
+
 
 
 async function setPlanState(newState) {
