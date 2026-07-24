@@ -689,19 +689,26 @@ function initPlanControls() {
   const optionsBtn = document.getElementById("btn-plan-options");
   const dropdown = document.getElementById("plan-options-dropdown");
   if (optionsBtn && dropdown) {
-    optionsBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const flexibleScheduleMenuButton = document.getElementById("edit-flexible-plan-schedule-btn");
-      if (flexibleScheduleMenuButton) flexibleScheduleMenuButton.style.display = "";
-      const readingTeamMenuButton = document.getElementById("view-reading-team-btn");
-      const isTeamPlan = typeof window.isReadingTeamPlan === "function" && window.isReadingTeamPlan(state.activePlan);
-      const hasPermission = state.currentUser && ['admin', 'great_zone_leader', 'zone_leader', 'group_leader'].includes(state.currentUser.role);
-      if (readingTeamMenuButton) readingTeamMenuButton.hidden = !isTeamPlan || !hasPermission;
-      dropdown.classList.toggle("hidden");
-    });
-    document.addEventListener("click", () => {
-      dropdown.classList.add("hidden");
-    });
+    if (!optionsBtn.dataset.dropdownBound) {
+      optionsBtn.dataset.dropdownBound = "true";
+      optionsBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const flexibleScheduleMenuButton = document.getElementById("edit-flexible-plan-schedule-btn");
+        if (flexibleScheduleMenuButton) flexibleScheduleMenuButton.style.display = "";
+        const readingTeamMenuButton = document.getElementById("view-reading-team-btn");
+        const isTeamPlan = typeof window.isReadingTeamPlan === "function" && window.isReadingTeamPlan(state.activePlan);
+        const hasPermission = state.currentUser && ['admin', 'great_zone_leader', 'zone_leader', 'group_leader'].includes(state.currentUser.role);
+        if (readingTeamMenuButton) readingTeamMenuButton.hidden = !isTeamPlan || !hasPermission;
+        dropdown.classList.toggle("hidden");
+      });
+    }
+    if (!window._planDropdownClickListenerBound) {
+      window._planDropdownClickListenerBound = true;
+      document.addEventListener("click", () => {
+        const dd = document.getElementById("plan-options-dropdown");
+        if (dd) dd.classList.add("hidden");
+      });
+    }
   }
 
 
