@@ -4758,12 +4758,16 @@ window.displayParticipantsList = function (limit = 100) {
   const _canSendCare = ["group_leader", "zone_leader", "great_zone_leader", "admin"].includes(_careRole);
 
   // Align header columns dynamically based on _canSendCare
-  const headerEl = document.getElementById("members-ranking-header");
+  const headerEl = document.getElementById("members-ranking-header") || listContainer.previousElementSibling;
   if (headerEl) {
     if (_canSendCare) {
       headerEl.style.gridTemplateColumns = "1fr 80px 80px 70px 90px 44px";
-      if (!document.getElementById("members-ranking-reminder-col")) {
-        const reminderHeader = document.createElement("div");
+      let reminderHeader = document.getElementById("members-ranking-reminder-col");
+      if (!reminderHeader) {
+        reminderHeader = Array.from(headerEl.children).find(child => child.id === "members-ranking-reminder-col" || child.textContent === "提醒");
+      }
+      if (!reminderHeader) {
+        reminderHeader = document.createElement("div");
         reminderHeader.id = "members-ranking-reminder-col";
         reminderHeader.style.color = "var(--text-muted)";
         reminderHeader.textContent = "提醒";
@@ -4771,7 +4775,8 @@ window.displayParticipantsList = function (limit = 100) {
       }
     } else {
       headerEl.style.gridTemplateColumns = "1fr 80px 80px 70px 90px";
-      const reminderHeader = document.getElementById("members-ranking-reminder-col");
+      const reminderHeader = document.getElementById("members-ranking-reminder-col")
+        || Array.from(headerEl.children).find(child => child.id === "members-ranking-reminder-col" || child.textContent === "提醒");
       if (reminderHeader) reminderHeader.remove();
     }
   }
@@ -4808,26 +4813,29 @@ window.displayParticipantsList = function (limit = 100) {
     if (_canSendCare) {
       if (!m.isMe) {
         const careBtn = document.createElement("button");
+        careBtn.className = "secondary-btn";
         careBtn.title = "傳送關心提醒";
         careBtn.setAttribute("aria-label", `關心 ${m.name}`);
         careBtn.style.cssText = `
           display: flex; align-items: center; justify-content: center;
           width: 32px; height: 32px; border-radius: 50%;
-          border: 1px solid var(--border-card);
-          background: var(--bg-input);
-          cursor: pointer; transition: background 0.18s, border-color 0.18s;
+          padding: 0;
           margin: 0 auto;
-          color: var(--color-warning-text, #D97706);
+          color: var(--color-brand, #04A9D2);
+          background: transparent;
+          border: 1px solid var(--border-card, rgba(0,0,0,0.1));
+          cursor: pointer; transition: all 0.2s ease;
           flex-shrink: 0;
+          box-shadow: none;
         `;
-        careBtn.innerHTML = `<span class="nlc-icon nlc-icon--sm" data-icon="remind" aria-hidden="true"></span>`;
+        careBtn.innerHTML = `<span class="nlc-icon nlc-icon--sm" data-icon="remind" aria-hidden="true" style="color: inherit; background: transparent;"></span>`;
         careBtn.addEventListener("mouseenter", () => {
-          careBtn.style.background = "var(--color-warning-muted, rgba(251,191,36,0.15))";
-          careBtn.style.borderColor = "var(--color-warning-text, #D97706)";
+          careBtn.style.background = "var(--color-brand-muted, rgba(4,169,210,0.08))";
+          careBtn.style.borderColor = "var(--color-brand-border, rgba(4,169,210,0.24))";
         });
         careBtn.addEventListener("mouseleave", () => {
-          careBtn.style.background = "var(--bg-input)";
-          careBtn.style.borderColor = "var(--border-card)";
+          careBtn.style.background = "transparent";
+          careBtn.style.borderColor = "var(--border-card, rgba(0,0,0,0.1))";
         });
         careBtn.onclick = () => window.openCareReminderDialog(m);
         itemRow.appendChild(careBtn);
