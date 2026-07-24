@@ -3953,7 +3953,7 @@ async function renderPlanHistoryView() {
   }
 }
 
-async function renderGroupMiniStats() {
+async function renderGroupMiniStats(overrideFilter) {
   if (!state.activePlan) return;
 
   let allUsers = [];
@@ -3963,28 +3963,40 @@ async function renderGroupMiniStats() {
     console.warn('Failed to fetch users for group stats mini-cards', e);
   }
 
-  // Use the selector's scoped users if available, otherwise fallback to user's scope
+  // Use the selector's scoped users if available, otherwise fallback to user's scope.
+  // Priority: explicit overrideFilter param → _statsTabScope → cached _grpScopedUsers → default scope
   let scopedUsers = window._grpScopedUsers;
-  // If tab scope is overridden, recalculate scopedUsers using it instead of using cached window._grpScopedUsers
-  if (window._statsTabScope !== null && allUsers.length > 0) {
-    const overrideFilter = window._statsTabScope;
-    if (overrideFilter === "all") {
+  const effectiveFilter = overrideFilter !== undefined ? overrideFilter : window._statsTabScope;
+  if (effectiveFilter !== null && effectiveFilter !== undefined && allUsers.length > 0) {
+    if (effectiveFilter === "all") {
       scopedUsers = allUsers;
-    } else if (overrideFilter === "me") {
+    } else if (effectiveFilter === "me") {
       scopedUsers = allUsers.filter(u => u.name === state.currentUser.name);
-    } else if (overrideFilter === "all_groups") {
+    } else if (effectiveFilter === "all_groups") {
       scopedUsers = allUsers.filter(u => u.small_group === state.currentUser.small_group);
-    } else if (overrideFilter.startsWith("group:")) {
-      const group = overrideFilter.replace("group:", "");
+    } else if (effectiveFilter === "all_great_region") {
+      const userGreatRegion = state.currentUser.great_region || "";
+      const myRegions = userGreatRegion.split(",").map(s => s.trim()).filter(Boolean);
+      scopedUsers = allUsers.filter(u => myRegions.includes(u.great_region));
+    } else if (effectiveFilter === "all_zones") {
+      const userZoneStr = state.currentUser.pastoral_zone || "";
+      const myZones = userZoneStr.split(",").map(s => s.trim()).filter(Boolean);
+      scopedUsers = allUsers.filter(u => myZones.includes(u.pastoral_zone));
+    } else if (effectiveFilter.startsWith("region:")) {
+      const region = effectiveFilter.replace("region:", "");
+      scopedUsers = allUsers.filter(u => u.great_region === region);
+    } else if (effectiveFilter.startsWith("group:")) {
+      const group = effectiveFilter.replace("group:", "");
       scopedUsers = allUsers.filter(u => u.small_group === group);
-    } else if (overrideFilter.startsWith("zone:")) {
-      const zone = overrideFilter.replace("zone:", "");
+    } else if (effectiveFilter.startsWith("zone:")) {
+      const zone = effectiveFilter.replace("zone:", "");
       scopedUsers = allUsers.filter(u => u.pastoral_zone === zone);
     }
   } else if (scopedUsers === undefined) {
     scopedUsers = getScopedUsers(allUsers, state.currentUser);
   }
   if (!scopedUsers) scopedUsers = [];
+
 
   const totalChapters = scopedUsers.reduce((sum, u) => sum + (u.chapters_read || 0), 0);
   const totalMembers = scopedUsers.length;
@@ -3993,9 +4005,11 @@ async function renderGroupMiniStats() {
   // Determine current scope label from selector
   let scopeLabel = "全教會";
   const rankingZoneSelector = document.getElementById("ranking-zone-selector");
-  const selectedFilter = window._statsTabScope !== null
-    ? window._statsTabScope
-    : (rankingZoneSelector ? rankingZoneSelector.value : null);
+  const selectedFilter = overrideFilter !== undefined
+    ? overrideFilter
+    : (window._statsTabScope !== null
+      ? window._statsTabScope
+      : (rankingZoneSelector ? rankingZoneSelector.value : null));
 
   if (selectedFilter) {
     if (selectedFilter === "all") {
@@ -5269,26 +5283,17 @@ async function renderPlanMembersView() {
   // statistics cards and charts on this page. After renderGroupParticipantsRankingTable
   // has set window._grpScopedUsers for the selected scope, re-render the stats.
   if (window.currentPlanViewState === PLAN_ROUTE.ORG_STATS) {
-    // Sync ranking-zone-selector (read by all chart/card render functions for labels)
-    // with members-zone-selector (controlled by the org-stats page filter).
+    // Read the current filter value from the members selector directly.
+    // Do NOT sync to ranking-zone-selector because that would fire its own
+    // change listener and re-render with the wrong scope.
     const membersZoneSel = document.getElementById("members-zone-selector");
-    const rankingZoneSel = document.getElementById("ranking-zone-selector");
-    if (membersZoneSel && rankingZoneSel) {
-      rankingZoneSel.value = membersZoneSel.value;
-    }
+    const currentOrgFilter = membersZoneSel ? membersZoneSel.value : null;
 
-    // Temporarily clear _statsTabScope so renderGroupMiniStats/charts
-    // use the _grpScopedUsers already set by the members filter above,
-    // instead of recalculating from a different scope variable.
-    const savedScope = window._statsTabScope;
-    window._statsTabScope = null;
-
-    await renderGroupMiniStats();
+    // Pass the filter explicitly so renderGroupMiniStats uses it for both
+    // scopedUsers calculation and scopeLabel, bypassing _statsTabScope.
+    await renderGroupMiniStats(currentOrgFilter);
     renderGroupGrowthTrend();
     renderGroupTeamHeatmap();
-
-    // Restore scope so other tab transitions still work
-    window._statsTabScope = savedScope;
 
     // Also update the group stats section visibility
     const groupSec = document.getElementById("stats-group-section");
