@@ -876,14 +876,18 @@ async function renderPlanView() {
     ensurePlanRouteShell();
 
     if (state.activePlan && state.planDetailOpen) {
-      const groupViews = [GROUP_SUBVIEW.PERSONAL, GROUP_SUBVIEW.STATS, GROUP_SUBVIEW.RANKING, "group"];
-      if (groupViews.includes(state.planActiveSubTab)) {
-        if (window.PlanPageController && state.planActiveSubTab !== "group") {
-          window.PlanPageController.groupSubview = state.planActiveSubTab;
-        }
-        await setPlanState(PLAN_ROUTE.GROUP);
+      if (window.currentPlanViewState === PLAN_ROUTE.ORG_STATS) {
+        await setPlanState(PLAN_ROUTE.ORG_STATS);
       } else {
-        await setPlanState(PLAN_ROUTE.DETAIL);
+        const groupViews = [GROUP_SUBVIEW.PERSONAL, GROUP_SUBVIEW.STATS, GROUP_SUBVIEW.RANKING, "group"];
+        if (groupViews.includes(state.planActiveSubTab)) {
+          if (window.PlanPageController && state.planActiveSubTab !== "group") {
+            window.PlanPageController.groupSubview = state.planActiveSubTab;
+          }
+          await setPlanState(PLAN_ROUTE.GROUP);
+        } else {
+          await setPlanState(PLAN_ROUTE.DETAIL);
+        }
       }
     } else {
       await setPlanState(PLAN_ROUTE.LIST);
@@ -6210,12 +6214,27 @@ async function enterOrgStatsState() {
   state.planDetailOpen = true;
   window._currentStatsTab = 'admin';
 
-  const listSub = document.getElementById("plan-list-subview");
-  const detailSub = document.getElementById("plan-detail-subview");
+  // Show the plan-detail wrapper shell, but hide lists
+  setOnlyPlanRouteVisible(PLAN_ROUTE.ORG_STATS);
+
+  // Hide detail sub-components (tab strip & main view window) to only leave org-stats visible
+  const tabStrip = document.getElementById("plan-detail-tab-strip");
+  const viewWindow = document.getElementById("plan-view-window");
+  if (tabStrip) {
+    tabStrip.classList.add("hidden");
+    tabStrip.style.display = "none";
+  }
+  if (viewWindow) {
+    viewWindow.classList.add("hidden");
+    viewWindow.style.display = "none";
+  }
+
+  // Ensure org stats subview is visible
   const orgSub = document.getElementById("plan-org-stats-subview");
-  if (listSub) listSub.classList.add("hidden");
-  if (detailSub) detailSub.classList.add("hidden");
-  if (orgSub) orgSub.classList.remove("hidden");
+  if (orgSub) {
+    orgSub.classList.remove("hidden");
+    orgSub.style.display = "flex";
+  }
 
   const brandText = document.querySelector("#top-bar-title-area .brand-text");
   const planNameEl = document.getElementById("top-bar-plan-name");
