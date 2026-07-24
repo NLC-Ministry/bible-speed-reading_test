@@ -5264,7 +5264,33 @@ async function renderPlanMembersView() {
   } else {
     await renderGroupParticipantsRankingTable();
   }
+
+  // When in org-stats mode, the members filter should also control all the
+  // statistics cards and charts on this page. After renderGroupParticipantsRankingTable
+  // has set window._grpScopedUsers for the selected scope, re-render the stats.
+  if (window.currentPlanViewState === PLAN_ROUTE.ORG_STATS) {
+    // Temporarily clear _statsTabScope so renderGroupMiniStats/charts
+    // use the _grpScopedUsers already set by the members filter above,
+    // instead of recalculating from a different scope variable.
+    const savedScope = window._statsTabScope;
+    window._statsTabScope = null;
+
+    await renderGroupMiniStats();
+    renderGroupGrowthTrend();
+    renderGroupTeamHeatmap();
+
+    // Restore scope so other tab transitions still work
+    window._statsTabScope = savedScope;
+
+    // Also update the group stats section visibility
+    const groupSec = document.getElementById("stats-group-section");
+    if (groupSec) {
+      groupSec.classList.remove("hidden");
+      groupSec.style.display = "";
+    }
+  }
 }
+
 
 window.showPlanStatsModal = function () {
   if (!state.activePlan) {
