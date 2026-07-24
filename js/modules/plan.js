@@ -1639,8 +1639,15 @@ function openPlanDetailsDialog(plan, options = {}) {
   overlay.style.cssText = "position:fixed;inset:0;z-index:10000;background:rgba(15,23,42,.58);display:flex;align-items:center;justify-content:center;padding:1rem;";
   overlay.innerHTML = `
     <div class="glass-card" role="dialog" aria-modal="true" aria-labelledby="plan-details-title"
-      style="width:min(520px,100%);height:auto!important;max-height:84vh;overflow:auto;padding:1.5rem;background:var(--bg-card);border:1px solid var(--border-card);box-shadow:var(--shadow-lg);">
-      <h3 id="plan-details-title" style="margin:0 0 1rem;font-size:1.15rem;font-weight:500;color:var(--text-primary);">${escapeHTML(plan.name || "讀經計畫")}</h3>
+      style="width:min(520px,100%);height:auto!important;max-height:84vh;overflow:auto;padding:1.5rem;background:var(--bg-card);border:1px solid var(--border-card);box-shadow:var(--shadow-lg);position:relative;">
+      
+      <!-- X Close Button -->
+      <button type="button" id="plan-details-x-btn" aria-label="關閉"
+        style="position:absolute;top:1rem;right:1rem;width:30px;height:30px;border-radius:50%;border:none;background:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--text-secondary);transition:all 0.15s ease;">
+        <span class="nlc-icon" data-icon="close" aria-hidden="true" style="font-size:1.1rem;"></span>
+      </button>
+
+      <h3 id="plan-details-title" style="margin:0 0 1rem;font-size:1.15rem;font-weight:500;color:var(--text-primary);padding-right:2rem;">${escapeHTML(plan.name || "讀經計畫")}</h3>
       ${isCampaignStage ? `<div style="display:flex;align-items:center;gap:.75rem;padding:.9rem;margin-bottom:1rem;border-radius:14px;background:var(--bg-secondary);border:1px solid var(--border-card);"><div style="width:46px;height:46px;border-radius:50%;display:grid;place-items:center;background:var(--primary-color);color:white;"><span class="nlc-icon" data-icon="award" aria-hidden="true"></span></div><div><div style="font-size:.72rem;color:var(--text-muted);">${awardEarned ? "已完成並獲得" : "完成本階段可獲得"}</div><strong style="font-size:1rem;color:var(--text-primary);">${escapeHTML(awardName)}</strong></div></div>` : ""}
       ${plan.description ? `<p style="margin:0 0 1rem;font-size:.84rem;line-height:1.6;color:var(--text-secondary);">${escapeHTML(plan.description)}</p>` : ""}
       <dl style="display:grid;grid-template-columns:auto 1fr;gap:.65rem .9rem;margin:0;font-size:.82rem;">
@@ -1656,22 +1663,35 @@ function openPlanDetailsDialog(plan, options = {}) {
   document.body.appendChild(overlay);
   if (typeof hydrateIcons === "function") hydrateIcons(overlay);
   const close = () => overlay.remove();
+  
+  const xBtn = overlay.querySelector("#plan-details-x-btn");
+  xBtn.addEventListener("click", close);
+  xBtn.addEventListener("mouseenter", () => {
+    xBtn.style.color = "var(--text-primary)";
+    xBtn.style.background = "var(--bg-secondary)";
+  });
+  xBtn.addEventListener("mouseleave", () => {
+    xBtn.style.color = "var(--text-secondary)";
+    xBtn.style.background = "transparent";
+  });
+
   const closeButton = overlay.querySelector("#plan-details-close");
   closeButton.addEventListener("click", close);
+
   if (joinAction) {
-    closeButton.textContent = "\u8fd4\u56de\u8a08\u756b\u5217\u8868";
-    closeButton.className = "secondary-btn";
-    closeButton.parentElement.style.gap = ".65rem";
+    const parent = closeButton.parentElement;
+    closeButton.remove();
+    
     const joinButton = document.createElement("button");
     joinButton.type = "button";
     joinButton.className = "primary-btn";
-    joinButton.textContent = isFixedPlanUpcoming(plan) ? "\u9810\u5148\u52a0\u5165\u8a08\u756b" : "\u52a0\u5165\u8a08\u756b";
+    joinButton.textContent = isFixedPlanUpcoming(plan) ? "預先加入計畫" : "加入計畫";
     joinButton.addEventListener("click", async () => {
       joinButton.disabled = true;
       close();
       await joinAction();
     });
-    closeButton.before(joinButton);
+    parent.appendChild(joinButton);
   }
   overlay.addEventListener("click", event => { if (event.target === overlay) close(); });
 }
