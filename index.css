@@ -8649,6 +8649,28 @@ body.dark-theme .plan-calendar .plan-day-cell .day-status-dot.dot-grey {
   color: inherit;
 }
 
+.member-list-header-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.2rem;
+  gap: 1rem;
+}
+
+@media (max-width: 600px) {
+  .member-list-header-wrapper {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+  .member-list-header-wrapper .card-title {
+    width: 100%;
+  }
+  .member-list-header-wrapper .member-search-wrapper {
+    max-width: 100%;
+  }
+}
+
 .member-search-wrapper {
   position: relative;
   display: flex;
