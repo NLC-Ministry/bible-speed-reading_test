@@ -5269,6 +5269,14 @@ async function renderPlanMembersView() {
   // statistics cards and charts on this page. After renderGroupParticipantsRankingTable
   // has set window._grpScopedUsers for the selected scope, re-render the stats.
   if (window.currentPlanViewState === PLAN_ROUTE.ORG_STATS) {
+    // Sync ranking-zone-selector (read by all chart/card render functions for labels)
+    // with members-zone-selector (controlled by the org-stats page filter).
+    const membersZoneSel = document.getElementById("members-zone-selector");
+    const rankingZoneSel = document.getElementById("ranking-zone-selector");
+    if (membersZoneSel && rankingZoneSel) {
+      rankingZoneSel.value = membersZoneSel.value;
+    }
+
     // Temporarily clear _statsTabScope so renderGroupMiniStats/charts
     // use the _grpScopedUsers already set by the members filter above,
     // instead of recalculating from a different scope variable.
@@ -5290,6 +5298,7 @@ async function renderPlanMembersView() {
     }
   }
 }
+
 
 
 window.showPlanStatsModal = function () {
