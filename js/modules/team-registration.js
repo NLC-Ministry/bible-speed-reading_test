@@ -274,10 +274,9 @@
     const rereadCount = members.filter(member => Number(member.currentRound || 1) > 1).length;
     return `<div class="reading-team-stat-grid" aria-label="團隊讀經統計">
       <article class="reading-team-stat-card reading-team-stat-card--primary"><span>總閱讀章數</span><strong>${totalRead}<small>章</small></strong><span class="nlc-icon" data-icon="bookOpen" aria-hidden="true"></span></article>
-      <article class="reading-team-stat-card"><span>團隊人數</span><strong>${members.length}<small>人</small></strong><span class="nlc-icon" data-icon="people" aria-hidden="true"></span></article>
       <article class="reading-team-stat-card"><span>今日活躍</span><strong>${activeToday}<small>人</small></strong><span class="nlc-icon" data-icon="lightning" aria-hidden="true"></span></article>
       <article class="reading-team-stat-card"><span>進度落後</span><strong>${behindCount}<small>人</small></strong><span class="nlc-icon" data-icon="hourglass" aria-hidden="true"></span></article>
-      <article class="reading-team-stat-card"><span>進入複讀</span><strong>${rereadCount}<small>人</small></strong><span class="nlc-icon" data-icon="refresh" aria-hidden="true"></span></article>
+      <article class="reading-team-stat-card reading-team-stat-card--primary"><span>進入複讀</span><strong>${rereadCount}<small>人</small></strong><span class="nlc-icon" data-icon="refresh" aria-hidden="true"></span></article>
     </div>`;
   }
 
@@ -486,9 +485,8 @@
       : 0;
     const isReady = team.status === "ready" || Number(team.memberCount) === Number(team.capacity);
     const summary = mode === "stats" ? `
-      <div class="reading-team-summary">
-        <div><span>團隊完成狀況</span><strong>${averageProgress}%</strong><span>${totalRead} / ${totalChapters * members.length} 章</span></div>
-        <div class="reading-team-summary__progress"><span>組隊狀態</span><strong>${Number(team.memberCount)} / ${Number(team.capacity)}</strong><span>${isReady ? "已成隊" : "等待隊員"}</span></div>
+      <div class="reading-team-summary" style="justify-content: center; text-align: center;">
+        <div style="align-items: center;"><span>團隊完成狀況</span><strong>${averageProgress}%</strong><span>${totalRead} / ${totalChapters * members.length} 章</span></div>
       </div>` : "";
     container.classList.toggle("reading-team-inline--stats", mode === "stats");
     container.innerHTML = `
