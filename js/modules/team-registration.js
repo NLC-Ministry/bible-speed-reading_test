@@ -316,11 +316,12 @@
         <form id="reading-team-create-form" class="reading-team-form-card reading-team-registration-panel" data-registration-panel="create" role="tabpanel">
           <div class="reading-team-registration-panel__heading">
             <span class="reading-team-form-card__icon"><span class="nlc-icon nlc-icon--md" data-icon="plus" aria-hidden="true"></span></span>
-            <div><h4>建立新團隊</h4><p>選擇人數並命名，你會成為隊長。</p></div>
+            <div><h4>建立新團隊</h4><p>設定團隊名稱即可建立，你會成為隊長。</p></div>
           </div>
-          <span class="reading-team-field-label">團隊人數</span>
-          <div class="reading-team-division-switch" role="radiogroup" aria-label="選擇團隊組別">
-            ${availableDivisions.map(division => `<button type="button" role="radio" data-division="${division}" aria-checked="${preferredDivision === division}">${division} 人團隊</button>`).join("")}
+          <span class="reading-team-field-label">團隊人數組別</span>
+          <div style="font-size: 0.95rem; font-weight: 600; color: var(--color-brand, #04A9D2); margin-bottom: 1.1rem; padding: 0.2rem 0; display: flex; align-items: center; gap: 0.35rem;">
+            <span class="nlc-icon nlc-icon--sm" data-icon="people" aria-hidden="true"></span>
+            <span>${preferredDivision} 人組團隊</span>
           </div>
           <label for="reading-team-name">團隊名稱</label>
           <input id="reading-team-name" class="form-control" maxlength="40" required placeholder="例如：恩典同行隊">
@@ -348,13 +349,6 @@
           panel.querySelectorAll("[data-registration-mode]").forEach(item => item.setAttribute("aria-selected", String(item === button)));
           panel.querySelectorAll("[data-registration-panel]").forEach(item => { item.hidden = item.dataset.registrationPanel !== mode; });
           panel.querySelector(mode === "join" ? "#reading-team-code" : "#reading-team-name")?.focus();
-        };
-      });
-      panel.querySelectorAll("[data-division]").forEach(button => {
-        button.onclick = () => {
-          preferredDivision = Number(button.dataset.division);
-          panel.querySelectorAll("[data-division]").forEach(item => item.setAttribute("aria-checked", String(item === button)));
-          panel.querySelector("[data-division-label]").textContent = preferredDivision;
         };
       });
       panel.querySelector("#reading-team-create-form").onsubmit = async event => {
@@ -488,15 +482,20 @@
       const result = await db.getMyReadingTeam(plan);
       if (closed) return;
       if (!result.success) {
-        panel.innerHTML = `<header class="reading-team-dialog__header"><h3 id="reading-team-dialog-title">團隊報名</h3><button type="button" class="reading-team-close" data-team-close aria-label="關閉"><span class="nlc-icon nlc-icon--sm" data-icon="close" aria-hidden="true"></span></button></header><div class="reading-team-empty-error"><p>${escapeHTML(result.message || "目前無法載入團隊資料。")}</p><button type="button" class="secondary-btn" data-team-retry>重新載入</button></div>`;
+        const isAuthExpired = result.message && (result.message.includes("登入狀態已失效") || result.message.includes("重新登入") || result.message.includes("會員資料"));
+        panel.innerHTML = `<header class="reading-team-dialog__header"><h3 id="reading-team-dialog-title">團隊報名</h3><button type="button" class="reading-team-close" data-team-close aria-label="關閉"><span class="nlc-icon nlc-icon--sm" data-icon="close" aria-hidden="true"></span></button></header><div class="reading-team-empty-error"><p>${escapeHTML(result.message || "目前無法載入團隊資料。")}</p><button type="button" class="secondary-btn" data-team-retry>${isAuthExpired ? "重新登入" : "重新載入"}</button></div>`;
         panel.querySelector("[data-team-close]").onclick = close;
-        panel.querySelector("[data-team-retry]").onclick = refresh;
+        panel.querySelector("[data-team-retry]").onclick = isAuthExpired ? () => { close(); if (typeof auth !== "undefined") auth.login(); } : refresh;
         hydrate(panel);
         return;
       }
       const contexts = getTeamContexts(result.context);
-      if (contexts.length) renderTeam(contexts[0], contexts);
-      else renderEmpty();
+      const targetContext = contexts.find(item => Number(item.team.division) === preferredDivision);
+      if (targetContext) {
+        renderTeam(targetContext, contexts);
+      } else {
+        renderEmpty(contexts);
+      }
     };
 
     await refresh();

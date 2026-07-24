@@ -1279,54 +1279,61 @@ function renderJoinedPlansList() {
         if (isTeamPlan) {
           const teamContainer = card.querySelector(".plan-card-team-controls");
           if (teamContainer) {
-            teamContainer.innerHTML = `<span style="font-size: 0.73rem; color: var(--text-muted);">正在載入團隊狀態...</span>`;
-            db.getMyReadingTeam(plan).then(result => {
-              if (!teamContainer.parentElement) return;
-              teamContainer.innerHTML = "";
+            const isDemo = state.currentUser && state.currentUser.is_demo;
+            const isLoggedIn = typeof auth !== "undefined" && auth.isLoggedIn();
 
-              const contexts = (result && result.success) ? getJoinedReadingTeamContexts(result.context) : [];
-              const joinedDivisions = new Set(contexts.map(c => Number(c.team.division)));
+            if (isDemo || !isLoggedIn) {
+              teamContainer.innerHTML = `<span style="font-size: 0.73rem; color: var(--text-muted);">👥 團隊功能需登入正式帳號</span>`;
+            } else {
+              teamContainer.innerHTML = `<span style="font-size: 0.73rem; color: var(--text-muted);">正在載入團隊狀態...</span>`;
+              db.getMyReadingTeam(plan).then(result => {
+                if (!teamContainer.parentElement) return;
+                teamContainer.innerHTML = "";
 
-              [3, 6].forEach(division => {
-                const hasJoined = joinedDivisions.has(division);
-                const btn = document.createElement("button");
-                btn.type = "button";
-                btn.style.cssText = `
-                  font-size: 0.75rem;
-                  padding: 0.3rem 0.6rem;
-                  border-radius: 8px;
-                  display: inline-flex;
-                  align-items: center;
-                  gap: 0.25rem;
-                  cursor: pointer;
-                  margin: 0;
-                  border: 1px solid var(--border-card);
-                  transition: all 0.2s;
-                `;
+                const contexts = (result && result.success) ? getJoinedReadingTeamContexts(result.context) : [];
+                const joinedDivisions = new Set(contexts.map(c => Number(c.team.division)));
 
-                if (hasJoined) {
-                  const teamName = contexts.find(c => Number(c.team.division) === division)?.team?.name || "";
-                  btn.className = "secondary-btn";
-                  btn.innerHTML = `<span class="nlc-icon nlc-icon--xs" data-icon="people" style="color: var(--color-success-foreground);"></span><span>已入 ${division}人組 (${escapeHTML(teamName)})</span>`;
-                  btn.onclick = (e) => {
-                    e.stopPropagation();
-                    window.openReadingTeamDialog(plan, { preferredDivision: division });
-                  };
-                } else {
-                  btn.className = "primary-btn";
-                  btn.innerHTML = `<span class="nlc-icon nlc-icon--xs" data-icon="plus"></span><span>報名 ${division}人組</span>`;
-                  btn.onclick = (e) => {
-                    e.stopPropagation();
-                    window.openReadingTeamDialog(plan, { preferredDivision: division });
-                  };
-                }
-                teamContainer.appendChild(btn);
+                [3, 6].forEach(division => {
+                  const hasJoined = joinedDivisions.has(division);
+                  const btn = document.createElement("button");
+                  btn.type = "button";
+                  btn.style.cssText = `
+                    font-size: 0.75rem;
+                    padding: 0.3rem 0.6rem;
+                    border-radius: 8px;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.25rem;
+                    cursor: pointer;
+                    margin: 0;
+                    border: 1px solid var(--border-card);
+                    transition: all 0.2s;
+                  `;
+
+                  if (hasJoined) {
+                    const teamName = contexts.find(c => Number(c.team.division) === division)?.team?.name || "";
+                    btn.className = "secondary-btn";
+                    btn.innerHTML = `<span class="nlc-icon nlc-icon--xs" data-icon="people" style="color: var(--color-success-foreground);"></span><span>已入 ${division}人組 (${escapeHTML(teamName)})</span>`;
+                    btn.onclick = (e) => {
+                      e.stopPropagation();
+                      window.openReadingTeamDialog(plan, { preferredDivision: division });
+                    };
+                  } else {
+                    btn.className = "primary-btn";
+                    btn.innerHTML = `<span class="nlc-icon nlc-icon--xs" data-icon="plus"></span><span>報名 ${division}人組</span>`;
+                    btn.onclick = (e) => {
+                      e.stopPropagation();
+                      window.openReadingTeamDialog(plan, { preferredDivision: division });
+                    };
+                  }
+                  teamContainer.appendChild(btn);
+                });
+                if (typeof hydrateIcons === "function") hydrateIcons(teamContainer);
+              }).catch(err => {
+                console.error("Error loading team info for card:", err);
+                teamContainer.innerHTML = `<span style="font-size: 0.73rem; color: var(--color-danger);">無法載入團隊資料</span>`;
               });
-              if (typeof hydrateIcons === "function") hydrateIcons(teamContainer);
-            }).catch(err => {
-              console.error("Error loading team info for card:", err);
-              teamContainer.innerHTML = `<span style="font-size: 0.73rem; color: var(--color-danger);">無法載入團隊資料</span>`;
-            });
+            }
           }
         }
       }
