@@ -4104,15 +4104,17 @@ async function renderGroupMiniStats(overrideFilter) {
   window._grpAllUsers = allUsers;
 }
 
-function renderGroupProgressDistribution() {
+function renderGroupProgressDistribution(overrideFilter) {
   const scopedUsers = window._grpScopedUsers || [];
   const totalCount = scopedUsers.length;
 
   let titleSuffix = "團體進度狀態分佈";
   const rankingZoneSelector = document.getElementById("ranking-zone-selector");
-  const selectedFilter = window._statsTabScope !== null
-    ? window._statsTabScope
-    : (rankingZoneSelector ? rankingZoneSelector.value : null);
+  const selectedFilter = overrideFilter !== undefined
+    ? overrideFilter
+    : (window._statsTabScope !== null
+      ? window._statsTabScope
+      : (rankingZoneSelector ? rankingZoneSelector.value : null));
 
   if (selectedFilter) {
     if (selectedFilter === "all") titleSuffix = "全教會進度狀態分佈";
@@ -4206,7 +4208,7 @@ function renderGroupZoneChartWithSelector() {
   return;
 }
 
-function renderGroupGrowthTrend() {
+function renderGroupGrowthTrend(overrideFilter) {
   const scopedUsers = window._grpScopedUsers || [];
   const chartCard = document.getElementById('grp-daily-active-chart-card');
   const titleEl = document.getElementById('grp-daily-active-chart-title');
@@ -4224,9 +4226,11 @@ function renderGroupGrowthTrend() {
   // Update title based on scope
   if (titleEl) {
     const rankingZoneSelector = document.getElementById('ranking-zone-selector');
-    const selectedFilter = window._statsTabScope !== null
-      ? window._statsTabScope
-      : (rankingZoneSelector ? rankingZoneSelector.value : null);
+    const selectedFilter = overrideFilter !== undefined
+      ? overrideFilter
+      : (window._statsTabScope !== null
+        ? window._statsTabScope
+        : (rankingZoneSelector ? rankingZoneSelector.value : null));
     let scopeLabel = '全教會';
     if (selectedFilter) {
       if (selectedFilter === 'all') scopeLabel = '全教會';
@@ -4376,7 +4380,7 @@ function renderGroupGrowthTrend() {
   });
 }
 
-function renderGroupTeamHeatmap() {
+function renderGroupTeamHeatmap(overrideFilter) {
   const scopedUsers = window._grpScopedUsers || [];
   const heatmapCard = document.getElementById("grp-heatmap-card");
 
@@ -4390,9 +4394,11 @@ function renderGroupTeamHeatmap() {
   // Determine current scope label from selector
   let scopeLabel = "全教會";
   const rankingZoneSelector = document.getElementById("ranking-zone-selector");
-  const selectedFilter = window._statsTabScope !== null
-    ? window._statsTabScope
-    : (rankingZoneSelector ? rankingZoneSelector.value : null);
+  const selectedFilter = overrideFilter !== undefined
+    ? overrideFilter
+    : (window._statsTabScope !== null
+      ? window._statsTabScope
+      : (rankingZoneSelector ? rankingZoneSelector.value : null));
 
   if (selectedFilter) {
     if (selectedFilter === "all") {
@@ -5330,11 +5336,16 @@ async function renderPlanMembersView() {
     const membersZoneSel = document.getElementById("members-zone-selector");
     const currentOrgFilter = membersZoneSel ? membersZoneSel.value : null;
 
-    // Pass the filter explicitly so renderGroupMiniStats uses it for both
+    // Pass the filter explicitly so renderGroupMiniStats/charts use it for both
     // scopedUsers calculation and scopeLabel, bypassing _statsTabScope.
     await renderGroupMiniStats(currentOrgFilter);
-    renderGroupGrowthTrend();
-    renderGroupTeamHeatmap();
+    renderGroupGrowthTrend(currentOrgFilter);
+    renderGroupTeamHeatmap(currentOrgFilter);
+
+    const distCard = document.getElementById("grp-distribution-card");
+    if (distCard && distCard.style.display !== "none") {
+      renderGroupProgressDistribution(currentOrgFilter);
+    }
 
     // Also update the group stats section visibility
     const groupSec = document.getElementById("stats-group-section");
