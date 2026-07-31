@@ -17,13 +17,37 @@ export function installPullToRefresh({
   let startPoint = null;
   let pullDistance = 0;
   let status = "idle";
+  let hasVibratedThisPull = false;
 
   const indicator = document.createElement("div");
   indicator.className = "pull-to-refresh-status";
   indicator.setAttribute("aria-live", "polite");
   indicator.setAttribute("aria-atomic", "true");
-  indicator.textContent = "下拉更新";
+  
+  // Set up inner structure with SVG and text
+  indicator.innerHTML = `
+    <div class="pull-to-refresh-icon">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <!-- Arrow Icon (Pulling / Ready) -->
+        <g class="ptr-icon-arrow">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <polyline points="19 12 12 19 5 12"></polyline>
+        </g>
+        <!-- Spinner Icon (Refreshing) -->
+        <g class="ptr-icon-spinner">
+          <path d="M21 12a9 9 0 0 1-9 9m-9-9a9 9 0 0 1 9-9"></path>
+        </g>
+        <!-- Checkmark Icon (Done) -->
+        <g class="ptr-icon-check">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </g>
+      </svg>
+    </div>
+    <span class="pull-to-refresh-text">下拉更新</span>
+  `;
+  
   document.body.appendChild(indicator);
+  const textSpan = indicator.querySelector(".pull-to-refresh-text");
 
   function isPullToRefreshAllowed(target) {
     if (window.appRouter && window.appRouter.currentTab && window.appRouter.currentTab !== "dashboard-view" && window.appRouter.currentTab !== "plan-view") {
@@ -53,13 +77,20 @@ export function installPullToRefresh({
     status = nextStatus;
     indicator.dataset.status = status;
     indicator.style.setProperty("--pull-distance", `${Math.max(0, pullDistance - 48)}px`);
-    indicator.textContent = status === "ready"
+    
+    const textContent = status === "ready"
       ? "放開更新"
       : status === "refreshing"
         ? "更新中"
         : status === "done"
           ? "已更新"
           : "下拉更新";
+
+    if (textSpan) {
+      textSpan.textContent = textContent;
+    } else {
+      indicator.textContent = textContent;
+    }
   }
 
   window.registerPullToRefresh = handler => {
@@ -82,6 +113,13 @@ export function installPullToRefresh({
     try {
       await (refreshHandler || fallbackRefresh)();
       render("done");
+      if (typeof navigator !== "undefined" && navigator.vibrate) {
+        try {
+          navigator.vibrate([10, 45, 10]);
+        } catch (e) {
+          // Ignore
+        }
+      }
     } catch (error) {
       console.error("[PullToRefresh] Refresh failed:", error);
       render("idle");
@@ -101,6 +139,7 @@ export function installPullToRefresh({
 
     const touch = event.touches && event.touches[0];
     startPoint = touch ? { x: touch.clientX, y: touch.clientY } : null;
+    hasVibratedThisPull = false;
   }
 
   function onTouchMove(event) {
@@ -112,8 +151,40 @@ export function installPullToRefresh({
     if (deltaY <= 0 || deltaX > deltaY) return;
 
     event.preventDefault();
-    pullDistance = Math.min(deltaY, MAX_PULL_DISTANCE);
-    render(pullDistance >= REFRESH_THRESHOLD ? "ready" : "pulling");
+    
+    // Apply logarithmic damping for smooth resistance
+    const rawPull = deltaY;
+    const startDamping = 90;
+    let computedDistance = 0;
+    if (rawPull <= startDamping) {
+      computedDistance = rawPull;
+    } else {
+      const excess = rawPull - startDamping;
+      const dampingFactor = 100;
+      computedDistance = startDamping + dampingFactor * Math.log1p(excess / dampingFactor);
+    }
+    
+    pullDistance = Math.min(computedDistance, MAX_PULL_DISTANCE);
+    
+    const nextStatus = pullDistance >= REFRESH_THRESHOLD ? "ready" : "pulling";
+    
+    // Vibrate once on crossing threshold
+    if (nextStatus === "ready") {
+      if (!hasVibratedThisPull) {
+        if (typeof navigator !== "undefined" && navigator.vibrate) {
+          try {
+            navigator.vibrate(12);
+          } catch (e) {
+            // Ignore
+          }
+        }
+        hasVibratedThisPull = true;
+      }
+    } else {
+      hasVibratedThisPull = false;
+    }
+    
+    render(nextStatus);
   }
 
   function onTouchEnd() {
